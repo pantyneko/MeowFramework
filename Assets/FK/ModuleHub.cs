@@ -1,36 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 /*
- * ==============================================================================
- * 项目名称: NekoFramework<精简版QF>
- * 版权: (C) 版权所有 2024 PantyNeko - 保留所有权利。
- * 编码标准: UTF-8
- * 创建人: [ Panty ]
- * 创建日期: 2024-05-09
- * 语言版本: C# 8.0 建议使用 Unity 2021
- * 
- * 描述 => 
- *  这是一套由QF架构进行魔改的高性能架构,提供了高度开放的扩展权限,适合喜欢自定义,追求极限轻量的开发者
- *  架构旨在支持高度模块化和灵活的系统设计,通过实现单例模式、命令/查询处理模式、事件处理等
- * ==============================================================================
- * 版本号: 1.0.4
- * 修改历史:
- * - 1.0.4 (2024-05-13) 修复内部语法错误 增加对Deinit的状态变更 避免重复调用
- * - 1.0.3 (2024-05-12) 内嵌获取架构函数 移除反射机制 增加延迟初始化机制
- * - 1.0.2 (2024-05-11) 调整架构的整体生命周期 避免重复初始化
- * - 1.0.1 (2024-05-09) 区分有参数和无参数事件的API 
- * - 1.0.0 (2024-05-09) 基本完善内容 
- * ==============================================================================
- * 联系方式:
- * - QQ: 363518300
- * - Tell: 18758611985
- * - Gitee: https://gitee.com/PantyNeko
- * - B站: https://space.bilibili.com/656352
- * ==============================================================================
- * 原架构作者[凉鞋]:
- * - Github: https://github.com/liangxiegame/QFramework
- * ==============================================================================
- */
+* ==============================================================================
+* 项目名称: MeowFramework<精简版QF>
+* 版权: (C) 版权所有 2024 PantyNeko - 保留所有权利。
+* 编码标准: UTF-8
+* 创建人: [ Panty ]
+* 创建日期: 2024-05-09
+* 语言版本: C# 8.0 建议使用 Unity 2021
+* 
+* 描述 => 
+*  这是一套由QF架构进行魔改的高性能架构,提供了高度开放的扩展权限,适合喜欢自定义,追求极限轻量的开发者
+*  架构旨在支持高度模块化和灵活的系统设计,通过实现单例模式、命令/查询处理模式、事件处理等
+* ==============================================================================
+* 版本号: 1.0.4
+* 修改历史:
+* - 1.0.4 (2024-05-13) 修复内部语法错误 增加对Deinit的状态变更 避免重复调用
+* - 1.0.3 (2024-05-12) 内嵌获取架构函数 移除反射机制 增加延迟初始化机制
+* - 1.0.2 (2024-05-11) 调整架构的整体生命周期 避免重复初始化
+* - 1.0.1 (2024-05-09) 区分有参数和无参数事件的API 
+* - 1.0.0 (2024-05-09) 基本完善内容 
+* ==============================================================================
+* 联系方式:
+* - Gitee: https://gitee.com/PantyNeko
+* - Github: https://github.com/pantyneko
+* - B站: https://space.bilibili.com/656352
+* ==============================================================================
+* 原架构作者[凉鞋]:
+* - Github: https://github.com/liangxiegame/QFramework
+* ==============================================================================
+*/
 namespace Panty
 {
     public interface ICmd { void Do(IModuleHub hub); }
@@ -130,11 +129,52 @@ namespace Panty
         {
             if (mHub == null)
             {
+#if DEBUG
+                CheckUpdate();
+#endif
                 mHub = new H();
                 mHub.BuildModule();
             }
             return mHub;
         }
+#if DEBUG
+        private static async void CheckUpdate()
+        {
+            string url = "https://raw.githubusercontent.com/pantyneko/MeowFramework/main/Assets/VersionInfo.txt";
+            string version = "1.0.5";
+            using (var client = new System.Net.Http.HttpClient())
+            {
+                try
+                {
+                    var response = await client.GetAsync(url);
+                    response.EnsureSuccessStatusCode();
+                    string responseBody = await response.Content.ReadAsStringAsync();
+                    if (responseBody != version)
+                    {
+                        string msg = $"当前架构版本为:{version},最新版本为:{responseBody},请及时更新!\r\n更新地址↓\r\n" +
+                            $"GitHub => https://github.com/pantyneko/MeowFramework\r\n" +
+                            $"Gitee => https://gitee.com/PantyNeko/MeowFramework\r\n";
+#if UNITY_EDITOR
+                        UnityEngine.Debug.LogWarning(msg);
+#else
+                        if (Environment.UserInteractive) Console.WriteLine(msg);
+                        else System.Diagnostics.Debug.WriteLine(msg);
+#endif
+                    }
+                }
+                catch (System.Net.Http.HttpRequestException e)
+                {
+#if UNITY_EDITOR
+                    UnityEngine.Debug.LogWarning(e.Message);
+#else
+                    if (Environment.UserInteractive) Console.WriteLine(e.Message);
+                    else System.Diagnostics.Debug.WriteLine(e.Message);
+#endif
+                }
+
+            }
+        }
+#endif
         private Dictionary<Type, IUtility> mUtilities = new Dictionary<Type, IUtility>();
         private Dictionary<Type, IModule> mModules = new Dictionary<Type, IModule>();
         private Dictionary<Type, Delegate> mEvents = new Dictionary<Type, Delegate>();

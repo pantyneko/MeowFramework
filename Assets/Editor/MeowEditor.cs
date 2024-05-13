@@ -12,8 +12,6 @@ namespace Panty
         protected string NameSpace => "Panty.Test";
         [MenuItem("PnTool/MeowEditor")]
         public static void ShowWindow() => GetWindow<MeowEditor>("MeowEditor", true);
-        [MenuItem("PnTool/Install ModuleHub")]
-        public static void InstallModuleHub() => Application.OpenURL("https://gitee.com/PantyNeko/pn-fk");
         protected override E_Type Empty => E_Type.Empty;
         protected override (string, Action)[] InitBtnInfo()
         {

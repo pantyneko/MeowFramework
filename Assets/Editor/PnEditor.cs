@@ -16,6 +16,7 @@ namespace Panty
             DocumentsPath,
             DataPath,
             SelectPath,
+            UpdateFK,
             Custom,
         }
         protected string inputText = "Welcome!";
@@ -141,6 +142,7 @@ namespace Panty
                     E_Path.DesktopPath => Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                     E_Path.DocumentsPath => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                     E_Path.SelectPath => EditorKit.GetSelectionFolder(),
+                    E_Path.UpdateFK => "https://github.com/pantyneko/MeowFramework",
                     _ => mDisabledInputBox ? "https://gitee.com/PantyNeko" : inputText,
                 };
                 try
