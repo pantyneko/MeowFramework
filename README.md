@@ -6,8 +6,9 @@ MeowFramework是一套基于QF架构改良的高性能框架，适合追求自�
 
 (注：该架构会自动提示更新 如运行后提示更新 请及时前往Github 获取最新版本)
 
-[GitHub]: https://github.com/pantyneko/MeowFramework
-[Gitee]: https://gitee.com/PantyNeko/MeowFramework
+https://github.com/pantyneko/MeowFramework
+
+https://gitee.com/PantyNeko/MeowFramework
 
 ## 环境要求
 
@@ -180,7 +181,9 @@ var ins = ExampleHub.GetIns()
 
 - 框架的核心接口，负责提供架构中所有的对外功能函数。主要方法如下：
 
-#### Module< M>() 
+#### 模块
+
+##### Module< M>() 
 
 - 获取一个已注册的模块实例 通常会在命令或查询等特殊情况使用。
 
@@ -189,7 +192,7 @@ var ins = ExampleHub.GetIns()
 var myModule = hub.Module<MyModule>();
 ```
 
-#### Utility< U>() 
+##### Utility< U>() 
 
 获取一个已注册的工具实例 通常会在命令或查询等特殊情况使用。
 
@@ -197,7 +200,9 @@ var myModule = hub.Module<MyModule>();
 var myUtility = hub.Utility<MyUtility>();
 ```
 
-#### => 定义事件 
+#### 事件
+
+##### => Define Event 
 
 ```c#
 public struct MyEvent
@@ -206,7 +211,7 @@ public struct MyEvent
 }
 ```
 
-#### AddEvent< E>(Action< E> call)
+##### AddEvent< E>(Action< E> call)
 
 注册一个携带自身类型的事件监听器 注意不要注册到一些不可控的对象中。
 
@@ -214,7 +219,7 @@ public struct MyEvent
 hub.AddEvent<MyEvent>(eventHandler);
 ```
 
-#### RmvEvent< E>(Action< E> call)
+##### RmvEvent< E>(Action< E> call)
 
 移除一个携带自身类型的事件监听器 与注册同理 。
 
@@ -222,7 +227,7 @@ hub.AddEvent<MyEvent>(eventHandler);
 hub.RmvEvent<MyEvent>(eventHandler);
 ```
 
-#### SendEvent< E>(E e)
+##### SendEvent< E>(E e)
 
 触发一个携带自身类型的事件 <外部赋值> 通常会在命令或查询等特殊情况使用。
 
@@ -230,7 +235,7 @@ hub.RmvEvent<MyEvent>(eventHandler);
 hub.SendEvent(new MyEvent { Message = "Hello World" });
 ```
 
-#### SendEvent< E>()
+##### SendEvent< E>()
 
 触发一个携带自身类型的事件 <内部赋值> 通常会在命令或查询等特殊情况使用。
 
@@ -238,13 +243,15 @@ hub.SendEvent(new MyEvent { Message = "Hello World" });
 hub.SendEvent<MyEvent>();
 ```
 
-#### => 定义通知 
+#### 通知
+
+##### => Define Notify
 
 ```c#
 public struct MyNotify{}
 ```
 
-#### AddNotify< N>(Action call)
+##### AddNotify< N>(Action call)
 
 注册一个仅通知的事件监听器 注意不要注册到一些不可控的对象中。
 
@@ -252,7 +259,7 @@ public struct MyNotify{}
 hub.AddNotify<MyNotify>(notifyHandler);
 ```
 
-#### RmvNotify< N>(Action call)
+##### RmvNotify< N>(Action call)
 
 移除一个仅通知的事件监听器 与注册同理。
 
@@ -260,7 +267,7 @@ hub.AddNotify<MyNotify>(notifyHandler);
 hub.RmvNotify<MyNotify>(notifyHandler);
 ```
 
-#### SendNotify< N>()
+##### SendNotify< N>()
 
 触发一个仅通知的事件 通常会在命令或查询等特殊情况使用。
 
@@ -268,7 +275,9 @@ hub.RmvNotify<MyNotify>(notifyHandler);
 hub.SendNotify<MyNotify>();
 ```
 
-#### SendCmd< C>(C cmd)
+#### 命令
+
+##### SendCmd< C>(C cmd)
 
 发送一条无参数命令 <外部赋值> 通常会在命令或查询等特殊情况使用。
 
@@ -284,7 +293,7 @@ public struct ExampleCmd : ICmd
 hub.SendCmd(new ExampleCmd());
 ```
 
-#### SendCmd<C, P>(C cmd, P info)
+##### SendCmd<C, P>(C cmd, P info)
 
 发送一条有参数命令 <外部赋值> 通常会在命令或查询等特殊情况使用。
 
@@ -300,7 +309,7 @@ public struct ExampleDataCmd : ICmd<string>
 hub.SendCmd(new ExampleDataCmd(), "消息");
 ```
 
-#### SendCmd< C>()
+##### SendCmd< C>()
 
 发送一条无参数命令 <内部赋值> 通常会在命令或查询等特殊情况使用。
 
@@ -316,7 +325,7 @@ public struct ExampleCmd : ICmd
 hub.SendCmd<ExampleCmd>();
 ```
 
-#### SendCmd<C, P>(P info)
+##### SendCmd<C, P>(P info)
 
 发送一条有参数命令 <内部赋值> 通常会在命令或查询等特殊情况使用。
 
@@ -332,7 +341,9 @@ public struct ExampleDataCmd : ICmd<string>
 hub.SendCmd<ExampleDataCmd, string>("消息");
 ```
 
-#### Query<Q, R>()
+#### 查询
+
+##### Query<Q, R>()
 
 发送一条无参数的查询 通常会在命令或查询等特殊情况使用
 
@@ -347,7 +358,7 @@ public struct ExampleQuery : IQuery<string>
 var str = hub.Query<ExampleQuery, string>();
 ```
 
-#### Query<Q, P, R>(P info)
+##### Query<Q, P, R>(P info)
 
 发送一条有参数的查询 通常会在命令或查询等特殊情况使用
 
@@ -362,7 +373,7 @@ public struct ExampleDataQuery : IQuery<int, string>
 var str = hub.Query<ExampleDataQuery, int, string>(10);
 ```
 
-#### Query< Q>()
+##### Query< Q>()
 
 发送一条无参数且返回自身的查询 通常会在命令或查询等特殊情况使用
 
@@ -377,7 +388,7 @@ public struct ExampleSelfQuery : IQuery<ExampleSelfQuery>
 var q = hub.Query<ExampleSelfQuery>();
 ```
 
-#### Query<Q, P>(P info)
+##### Query<Q, P>(P info)
 
 发送一条有参数且返回自身的查询 通常会在命令或查询等特殊情况使用
 
@@ -396,7 +407,9 @@ var q = hub.Query<ExampleSelfDataQuery, int>(10);
 
 - 架构权限的静态扩展类 用于给 IPermissionProvider 接口 提供静态扩展方法 主要功能如下：
 
-#### GetModule< M>() 
+#### 模块
+
+##### GetModule< M>() 
 
 - 获取一个已注册的模块实例 。
 
@@ -404,7 +417,7 @@ var q = hub.Query<ExampleSelfDataQuery, int>(10);
 var myModule = this.GetModule<MyModule>();
 ```
 
-#### Model< D>() 
+##### Model< D>() 
 
 - 获取一个已注册的模块实例 是 GetModule 的别名 用于在视觉上将模块定义为<**数据**>。
 
@@ -412,7 +425,7 @@ var myModule = this.GetModule<MyModule>();
 var myModule = this.Model<MyModule>();
 ```
 
-#### System< S>() 
+##### System< S>() 
 
 - 获取一个已注册的模块实例 是 GetModule 的别名 用于在视觉上将模块定义为<**系统**>。
 
@@ -420,7 +433,7 @@ var myModule = this.Model<MyModule>();
 var myModule = this.System<MyModule>();
 ```
 
-#### Utility< U>() 
+##### Utility< U>() 
 
 获取一个已注册的工具实例 。
 
@@ -428,7 +441,9 @@ var myModule = this.System<MyModule>();
 var myUtility = this.Utility<MyUtility>();
 ```
 
-#### => 定义事件 
+#### 事件
+
+##### => Define Event
 
 ```c#
 public struct MyEvent
@@ -437,7 +452,7 @@ public struct MyEvent
 }
 ```
 
-#### AddEvent< E>(Action< E> call)
+##### AddEvent< E>(Action< E> call)
 
 注册一个携带自身类型的事件监听器 。
 
@@ -445,7 +460,7 @@ public struct MyEvent
 this.AddEvent<MyEvent>(eventHandler);
 ```
 
-#### RmvEvent< E>(Action< E> call)
+##### RmvEvent< E>(Action< E> call)
 
 移除一个携带自身类型的事件监听器 记得注销 。
 
@@ -453,7 +468,7 @@ this.AddEvent<MyEvent>(eventHandler);
 this.RmvEvent<MyEvent>(eventHandler);
 ```
 
-#### SendEvent< E>(E e)
+##### SendEvent< E>(E e)
 
 触发一个携带自身类型的事件 <外部赋值> 。
 
@@ -461,7 +476,7 @@ this.RmvEvent<MyEvent>(eventHandler);
 this.SendEvent(new MyEvent { Message = "Hello World" });
 ```
 
-#### SendEvent< E>()
+##### SendEvent< E>()
 
 触发一个携带自身类型的事件 <内部赋值> 。
 
@@ -469,13 +484,15 @@ this.SendEvent(new MyEvent { Message = "Hello World" });
 this.SendEvent<MyEvent>();
 ```
 
-#### => 定义通知 
+#### 通知
+
+##### => Define Notify
 
 ```c#
 public struct MyNotify{}
 ```
 
-#### AddNotify< N>(Action call)
+##### AddNotify< N>(Action call)
 
 注册一个仅通知的事件监听器 。
 
@@ -483,7 +500,7 @@ public struct MyNotify{}
 this.AddNotify<MyNotify>(notifyHandler);
 ```
 
-#### RmvNotify< N>(Action call)
+##### RmvNotify< N>(Action call)
 
 移除一个仅通知的事件监听器 。
 
@@ -491,7 +508,7 @@ this.AddNotify<MyNotify>(notifyHandler);
 this.RmvNotify<MyNotify>(notifyHandler);
 ```
 
-#### SendNotify< N>()
+##### SendNotify< N>()
 
 触发一个仅通知的事件 。
 
@@ -499,7 +516,9 @@ this.RmvNotify<MyNotify>(notifyHandler);
 this.SendNotify<MyNotify>();
 ```
 
-#### SendCmd< C>(C cmd)
+#### 命令
+
+##### SendCmd< C>(C cmd)
 
 发送一条无参数命令 <外部赋值> 。
 
@@ -515,7 +534,7 @@ public struct ExampleCmd : ICmd
 this.SendCmd(new ExampleCmd());
 ```
 
-#### SendCmd<C, P>(C cmd, P info)
+##### SendCmd<C, P>(C cmd, P info)
 
 发送一条有参数命令 <外部赋值> 。
 
@@ -531,7 +550,7 @@ public struct ExampleDataCmd : ICmd<string>
 this.SendCmd(new ExampleDataCmd(), "消息");
 ```
 
-#### SendCmd< C>()
+##### SendCmd< C>()
 
 发送一条无参数命令 <内部赋值> 。
 
@@ -547,7 +566,7 @@ public struct ExampleCmd : ICmd
 this.SendCmd<ExampleCmd>();
 ```
 
-#### SendCmd<C, P>(P info)
+##### SendCmd<C, P>(P info)
 
 发送一条有参数命令 <内部赋值> 。
 
@@ -563,7 +582,9 @@ public struct ExampleDataCmd : ICmd<string>
 this.SendCmd<ExampleDataCmd, string>("消息");
 ```
 
-#### Query<Q, R>()
+#### 查询
+
+##### Query<Q, R>()
 
 发送一条无参数的查询 
 
@@ -578,7 +599,7 @@ public struct ExampleQuery : IQuery<string>
 var str = this.Query<ExampleQuery, string>();
 ```
 
-#### Query<Q, P, R>(P info)
+##### Query<Q, P, R>(P info)
 
 发送一条有参数的查询 
 
@@ -593,7 +614,7 @@ public struct ExampleDataQuery : IQuery<int, string>
 var str = this.Query<ExampleDataQuery, int, string>(10);
 ```
 
-#### Query< Q>()
+##### Query< Q>()
 
 发送一条无参数且返回自身的查询 
 
@@ -608,7 +629,7 @@ public struct ExampleSelfQuery : IQuery<ExampleSelfQuery>
 var q = this.Query<ExampleSelfQuery>();
 ```
 
-#### Query<Q, P>(P info)
+##### Query<Q, P>(P info)
 
 发送一条有参数且返回自身的查询 
 
