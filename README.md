@@ -650,11 +650,11 @@ var q = this.Query<ExampleSelfDataQuery, int>(10);
 
 首先从GitHub中拿到框架后 会拿到一个名字叫 MeowEditor 的编辑器 我们使用在顶部菜单 ”PnTool“中 点击打开 MeowEditor 会弹出一个编辑窗口
 
-![image-20240515135801514](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240515135801514.png)
+![](https://github.com/pantyneko/MeowFramework/blob/main/Assets/Doc/img1.png)
 
 弹出编辑器窗口后 按照下图进行设置 文本框中设置的是当前项目的架构名 设置完成 点击创建Hub类 会自动创建一个脚本文件 如下
 
-![image-20240515141434617](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240515141434617.png)
+![](https://github.com/pantyneko/MeowFramework/blob/main/Assets/Doc/img2.png)
 
 ```c#
 using UnityEngine;
