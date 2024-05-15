@@ -646,31 +646,64 @@ var q = this.Query<ExampleSelfDataQuery, int>(10);
 
 ## 快速搭建
 
-- 可以使用架构中带的 MeowEditor 来快速生成模板代码 也可以通过手动定义来搭建架构环境 样板代码如下：
+可以使用架构中带的 MeowEditor 来快速生成模板代码 
 
-- ```c#
-  using UnityEngine;
-  
-  namespace Panty.Test
-  {
-      public class ExampleHub : ModuleHub<ExampleHub>
-      {
-          protected override void BuildModule()
-          {
-              // 推荐使用 MonoKit 的 OnDeInit事件 来进行销毁
-              MonoKit.GetIns().OnDeInit += Deinit;
-          }
-      }
-      public class ExampleGame : MonoBehaviour, IPermissionProvider
-      {
-          IModuleHub IPermissionProvider.Hub => ExampleHub.GetIns();
-      }
-      public class ExampleUI : UIPanel, IPermissionProvider
-      {
-          IModuleHub IPermissionProvider.Hub => ExampleHub.GetIns();
-      }
-  }
-  ```
+首先从GitHub中拿到框架后 会拿到一个名字叫 MeowEditor 的编辑器 我们使用在顶部菜单 ”PnTool“中 点击打开 MeowEditor 会弹出一个编辑窗口
+
+![image-20240515135801514](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240515135801514.png)
+
+弹出编辑器窗口后 按照下图进行设置 文本框中设置的是当前项目的架构名 设置完成 点击创建Hub类 会自动创建一个脚本文件 如下
+
+![image-20240515141434617](C:\Users\Administrator\AppData\Roaming\Typora\typora-user-images\image-20240515141434617.png)
+
+```c#
+using UnityEngine;
+
+namespace Panty.Test
+{
+    public class CounterHub : ModuleHub<CounterHub>
+    {
+        protected override void BuildModule()
+        {
+            MonoKit.GetIns().OnDeInit += Deinit;
+        }
+    }
+    public class CounterGame : MonoBehaviour, IPermissionProvider
+    {
+        IModuleHub IPermissionProvider.Hub => CounterHub.GetIns();
+    }
+    public class CounterUI : UIPanel, IPermissionProvider
+    {
+        IModuleHub IPermissionProvider.Hub => CounterHub.GetIns();
+    }
+}
+```
+
+也可以通过手动定义来搭建架构环境 样板代码如下：
+
+```c#
+using UnityEngine;
+
+namespace Panty.Test
+{
+    public class ExampleHub : ModuleHub<ExampleHub>
+    {
+        protected override void BuildModule()
+        {
+            // 推荐使用 MonoKit 的 OnDeInit事件 来进行销毁
+            MonoKit.GetIns().OnDeInit += Deinit;
+        }
+    }
+    public class ExampleGame : MonoBehaviour, IPermissionProvider
+    {
+        IModuleHub IPermissionProvider.Hub => ExampleHub.GetIns();
+    }
+    public class ExampleUI : UIPanel, IPermissionProvider
+    {
+        IModuleHub IPermissionProvider.Hub => ExampleHub.GetIns();
+    }
+}
+```
 
 ## 版本更新
 
