@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System;
 using UnityEngine;
+using System.Threading.Tasks;
 
 namespace Panty
 {
@@ -59,12 +60,13 @@ namespace Panty
         }
         protected virtual void Init() { }
         protected abstract void DeInit();
-        private void OnDestroy()
+        private async void OnDestroy()
         {
             if (_instance == this)
             {
-                _instance.DeInit();
                 _applicationIsQuitting = true;
+                await Task.Yield();
+                _instance.DeInit();
             }
         }
         private void OnApplicationQuit()

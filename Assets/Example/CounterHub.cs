@@ -6,6 +6,7 @@ namespace Panty.Test
     {
         protected override void BuildModule()
         {
+            // 这里记得注册模块进去
             AddModule<ICounterModel>(new CounterModel());
 
             MonoKit.GetIns().OnDeInit += Deinit;
