@@ -718,15 +718,15 @@ namespace Panty.Test
 {
     public interface ICounterModel : IModule
     {
-        ValueBinder<int> A { get; }
-        ValueBinder<int> B { get; }
+        ValueBinder<float> A { get; }
+        ValueBinder<float> B { get; }
         string GetOpIcon(int id);
         string[] GetItems();
     }
     public class CounterModel : AbsModule, ICounterModel
     {
-        ValueBinder<int> ICounterModel.A { get; } = new ValueBinder<int>();
-        ValueBinder<int> ICounterModel.B { get; } = new ValueBinder<int>();
+        ValueBinder<float> ICounterModel.A { get; } = new ValueBinder<float>();
+        ValueBinder<float> ICounterModel.B { get; } = new ValueBinder<float>();
 
         private string[] Items;
 
@@ -766,13 +766,13 @@ namespace Panty.Test
             model.B.Value = UnityEngine.Random.Range(1, 100);
         }
     }
-    public struct ResultQuery : IQuery<CounterApp.Op, int>
+    public struct ResultQuery : IQuery<CounterApp.Op, float>
     {
-        public int Do(IModuleHub hub, CounterApp.Op op)
+        public float Do(IModuleHub hub, CounterApp.Op op)
         {
             var model = hub.Module<ICounterModel>();
-            var a = model.A.Value;
-            var b = model.B.Value;
+            float a = model.A.Value;
+            float b = model.B.Value;
             return op switch
             {
                 CounterApp.Op.Add => a + b,
@@ -841,11 +841,11 @@ namespace Panty.Test
             this.RmvNotify<OperationSuccessfulNotify>(OnOperationSuccessful);
             this.RmvNotify<OperationFailedNotify>(OnOperationFailed);
         }
-        private void OnAChange(int a)
+        private void OnAChange(float a)
         {
             A = a.ToString();
         }
-        private void OnBChange(int b)
+        private void OnBChange(float b)
         {
             B = b.ToString();
         }
@@ -868,7 +868,7 @@ namespace Panty.Test
             }
             float size = 50f;
             var startX = startW - size * 4f;
-            var rect = new Rect(startX, startH - size, size * 5f, size);
+            var rect = new Rect(startX, startH - size, size * 6f, size);
             if (GUI.Button(rect, "RandomNum", btnStyle))
             {
                 this.SendCmd<RandomValueCmd>();
@@ -906,19 +906,19 @@ namespace Panty.Test
             rect.x += size;
             GUI.Label(rect, "=", style);
             rect.x += size;
-            GUI.enabled = false;
-            GUI.TextArea(rect, R, inputStyle);
-            GUI.enabled = true;
-            rect.y += size;
             rect.width = size * 2f;
+            GUI.Label(rect, R, inputStyle);
+            rect.y += size;
             rect.x = startW - size;
+            rect.width = size * 3f;
             if (GUI.Button(rect, "Calc", btnStyle))
             {
-                R = this.Query<ResultQuery, Op, int>((Op)mSelect).ToString();
+                var op = (Op)mSelect;
+                float r = this.Query<ResultQuery, Op, float>(op);
+                R = op == Op.Div ? r.ToString("F2") : r.ToString();
                 this.SendNotify<OperationSuccessfulNotify>();
             }
             rect.x = startX;
-            rect.width = size * 3f;
             if (GUI.Button(rect, "Operator", btnStyle))
             {
                 ShowList = !ShowList;
@@ -937,8 +937,6 @@ namespace Panty.Test
     }
 }
 ```
-
-
 
 ## 版本更新
 
