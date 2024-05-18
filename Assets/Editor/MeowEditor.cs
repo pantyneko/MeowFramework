@@ -26,6 +26,7 @@ namespace Panty
         {
             longText = text;
             style = new GUIStyle(EditorStyles.textArea) { wordWrap = true };
+            position.Set(position.x, position.y, 100f, 300f);
             return this;
         }
         private void OnGUI()
@@ -143,13 +144,13 @@ namespace Panty
                         string[] res = text.Split("@");
                         if (res[0] == version)
                         {
-                            EditorKit.ShowTips($"当前架构版本为最新版本{version}");
+                            TextDialog.Show($"当前架构为最新版本：[ {version} ] > 无需更新\r\n{res[1]}");
                         }
                         else
                         {
                             mPath = E_Path.Custom;
                             inputText = "https://github.com/pantyneko/MeowFramework";
-                            TextDialog.Show($"当前架构版本为:{version},最新版本为:{res[0]},请点击 >>> 打开路径 <<< 按钮访问最新版本{6}");
+                            TextDialog.Show($"当前架构版本为：{version},最新版本为:{res[0]},请点击 >>> 打开路径 <<< 按钮访问最新版本\r\n{res[1]}");
                         }
                         IsAsync = false;
                     }

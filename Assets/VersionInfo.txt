@@ -6,7 +6,7 @@
 # 移除原架构中System和Model 的 API
 # 增加 UnityModuleHub 扩展类
 # 增加两个特殊的事件注册方法
-# 移除 BuildModule 中的 MonoKit.GetIns().OnDeInit += Deinit;
+# 移除 BuildModule 中的 自动Deinit;
 # 将架构检查更新部分移动到MeowEditor编辑器中
 # 增加一个用于显示长文本的文本对话框
 # 调整 PnEditor 的基本布局
