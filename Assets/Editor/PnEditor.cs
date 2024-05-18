@@ -19,25 +19,28 @@ namespace Panty
             UpdateFK,
             Custom,
         }
-        protected string inputText = "Welcome!";
+        protected string inputText = "喵喵工具箱";
 
-        private T modes;
-        private E_Path mPath;
-        protected bool mIsShowBtn = false, mShowBaseInfo, mDisabledInputBox = true, mCanInit = true;
+        protected T modes;
+        protected E_Path mPath;
+        protected GUIStyle HelpBoxStyle;
+        protected bool mIsShowBtn = true, mShowBaseInfo, mDisabledInputBox = true, mCanInit = true;
 
         private (string name, Action call)[] btnInfos;
 
         private GUIContent[] mMenuItemContent;
         private GenericMenu.MenuFunction[] mMenuItemFunc;
 
-        private const float textSpacing = 8f;
-        private const byte MaxLineItemCount = 4;
+        protected const float textSpacing = 8f;
+        protected const byte MaxLineItemCount = 4;
 
         protected abstract T Empty { get; }
         protected virtual void ExecuteMode(T mode) { }
         private void OnEnable()
         {
             mCanInit = true;
+            HelpBoxStyle = new GUIStyle(EditorStyles.helpBox);
+            HelpBoxStyle.padding = new RectOffset(6, 6, 6, 6);
         }
         private void Update()
         {
@@ -121,7 +124,6 @@ namespace Panty
                 menu.ShowAsContext();
                 Event.current.Use();
             }
-
             EditorGUILayout.BeginHorizontal();
             if (OnClick("重置状态"))
             {
@@ -131,7 +133,7 @@ namespace Panty
                 modes = Empty;
                 inputText = "状态已重置!";
             }
-            else if (OnClick("打开文件夹"))
+            else if (OnClick("打开路径"))
             {
                 inputText = mPath switch
                 {
@@ -147,14 +149,8 @@ namespace Panty
                 };
                 try
                 {
-                    if (string.IsNullOrEmpty(inputText))
-                    {
-                        inputText = "路径为空";
-                    }
-                    else
-                    {
-                        System.Diagnostics.Process.Start(inputText);
-                    }
+                    if (string.IsNullOrEmpty(inputText)) inputText = "路径为空";
+                    else System.Diagnostics.Process.Start(inputText);
                 }
                 catch (System.ComponentModel.Win32Exception ex)
                 {
@@ -163,20 +159,28 @@ namespace Panty
             }
             EditorGUILayout.EndHorizontal();
 
-            if (mIsShowBtn) ShowBtn(btnInfos);
+            if (mIsShowBtn)
+            {
+                GUILayout.Label("动态按钮区域 重写InitBtnInfo进行添加 ↓", HelpBoxStyle);
+                ShowBtns(btnInfos);
+            }
 
             ExtensionControl();
 
             if (mShowBaseInfo)
             {
-                EditorGUILayout.Space();
-                GUILayout.Label($"世界 : {Camera.main.ScreenToWorldPoint(Input.mousePosition)}");
-                GUILayout.Label($"视口 : {Camera.main.ScreenToViewportPoint(Input.mousePosition)}");
-                GUILayout.Label($"屏幕 : {Input.mousePosition}");
-                GUILayout.Label("帧率 : " + (1F / Time.deltaTime).ToString("F0"));
+                GUILayout.Label("动态调试信息 重写ShowLogInfo进行添加 ↓", HelpBoxStyle);
+                ShowLogInfo();
             }
         }
-        private void ShowBtn((string name, Action call)[] btns)
+        protected virtual void ShowLogInfo()
+        {
+            GUILayout.Label($"世界 : {Camera.main.ScreenToWorldPoint(Input.mousePosition)}");
+            GUILayout.Label($"视口 : {Camera.main.ScreenToViewportPoint(Input.mousePosition)}");
+            GUILayout.Label($"屏幕 : {Input.mousePosition}");
+            GUILayout.Label("帧率 : " + (1F / Time.deltaTime).ToString("F0"));
+        }
+        private void ShowBtns((string name, Action call)[] btns)
         {
             if (btns == null) return;
             int row = btns.Length / MaxLineItemCount;

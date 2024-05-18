@@ -3,11 +3,63 @@ using System.IO;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Panty
 {
+    public class TextDialog : EditorWindow
+    {
+        private Vector2 scrollPosition;
+        private GUIStyle style;
+        private string longText = "";
+        private Action succeed, fail;
+
+        public static void Show(string msg, Action succeed = null, Action fail = null)
+        {
+            var wd = GetWindow<TextDialog>("喵喵提示器").Init(msg);
+            wd.succeed = succeed;
+            wd.fail = fail;
+        }
+        private TextDialog Init(string text)
+        {
+            longText = text;
+            style = new GUIStyle(EditorStyles.textArea) { wordWrap = true };
+            return this;
+        }
+        private void OnGUI()
+        {
+            EditorGUILayout.Space();
+            EditorGUILayout.HelpBox("您的喵喵女友来电话啦！不接的话打洗你哦", MessageType.Info);
+
+            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+            GUILayout.Label(longText, style, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
+            EditorGUILayout.EndScrollView();
+
+            GUILayout.FlexibleSpace();
+            EditorGUILayout.BeginHorizontal();
+            if (GUILayout.Button("确认", GUILayout.Height(30f)))
+            {
+                succeed?.Invoke();
+                Close();
+            }
+            if (GUILayout.Button("取消", GUILayout.Height(30f)))
+            {
+                fail?.Invoke();
+                Close();
+            }
+            EditorGUILayout.EndHorizontal();
+        }
+        private void OnDestroy()
+        {
+            succeed = null;
+            fail = null;
+        }
+    }
     public class MeowEditor : PnEditor<MeowEditor.E_Type>
     {
+        private bool IsAsync;
         public enum E_Type : byte { Empty, A }
         protected string NameSpace => "Panty.Test";
         [MenuItem("PnTool/MeowEditor")]
@@ -35,7 +87,7 @@ namespace Panty
                 {
                     if (CheckInputLegal())
                     {
-                        string code = $"using UnityEngine;\r\n\r\nnamespace {NameSpace}\r\n{{\r\n    public class @Hub : ModuleHub<@Hub>\r\n    {{\r\n        protected override void BuildModule()\r\n        {{\r\n            MonoKit.GetIns().OnDeInit += Deinit;\r\n        }}\r\n    }}\r\n    public class @Game : MonoBehaviour, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n    public class @UI : UIPanel, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n}}";
+                        string code = $"using UnityEngine;\r\n\r\nnamespace {NameSpace}\r\n{{\r\n    public class @Hub : ModuleHub<@Hub>\r\n    {{\r\n        protected override void BuildModule()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n    public class @Game : MonoBehaviour, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n    public class @UI : UIPanel, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n}}";
                         CreatScript("Hub",code);
                     }
                 }),
@@ -68,7 +120,51 @@ namespace Panty
                         CreatScript("Model", $"namespace {NameSpace}\r\n{{\r\n    public interface I@Model : IModel\r\n    {{\r\n\r\n    }}\r\n    public class @Model : AbstractModel, I@Model\r\n    {{\r\n        protected override void OnInit()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n}}");
                     }
                 }),
+                ("检查更新",CheckUpdate),
             };
+        }
+        private async void CheckUpdate()
+        {
+            if (IsAsync) return;
+            IsAsync = true;
+            string url = "https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/VersionInfo.txt";
+            string version = "1.0.6";
+            using (var client = new HttpClient())
+            {
+                try
+                {
+                    using (var cts = new CancellationTokenSource())
+                    {
+                        cts.CancelAfter(TimeSpan.FromSeconds(8)); // 设置超时时间
+                        inputText = "正在检查更新 请稍后...";
+                        var response = await client.GetAsync(url, cts.Token);
+                        response.EnsureSuccessStatusCode();
+                        string text = await response.Content.ReadAsStringAsync();
+                        string[] res = text.Split("@");
+                        if (res[0] == version)
+                        {
+                            EditorKit.ShowTips($"当前架构版本为最新版本{version}");
+                        }
+                        else
+                        {
+                            mPath = E_Path.Custom;
+                            inputText = "https://github.com/pantyneko/MeowFramework";
+                            TextDialog.Show($"当前架构版本为:{version},最新版本为:{res[0]},请点击 >>> 打开路径 <<< 按钮访问最新版本{6}");
+                        }
+                        IsAsync = false;
+                    }
+                }
+                catch (TaskCanceledException e)
+                {
+                    EditorKit.ShowTips(e.CancellationToken.IsCancellationRequested ? "请求被用户取消。" : "请求超时!");
+                    IsAsync = false;
+                }
+                catch (HttpRequestException e)
+                {
+                    EditorKit.ShowTips($"请求错误: {e.Message}");
+                    IsAsync = false;
+                }
+            }
         }
         private bool CheckInputLegal()
         {

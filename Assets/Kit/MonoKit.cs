@@ -3,14 +3,8 @@ using UnityEngine;
 
 namespace Panty
 {
-#if UNITY_EDITOR
-    public static class Logger
+    public static class MonoEx
     {
-        public static T Log<T>(this T o)
-        {
-            Debug.unityLogger.Log(LogType.Log, o);
-            return o;
-        }
         public static T Error<T>(this T o)
         {
             Debug.unityLogger.Log(LogType.Error, o);
@@ -44,10 +38,6 @@ namespace Panty
 
             DrawBox(a, b, c, d, color, duration);
         }
-    }
-#endif
-    public static class MonoEx
-    {
         /// <summary>
         /// 找到面板父节点下所有对应控件
         /// </summary>

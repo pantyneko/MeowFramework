@@ -98,7 +98,7 @@ namespace Panty.Test
             startW = Screen.width >> 1;
             startH = Screen.height >> 1;
 
-            model = this.Model<ICounterModel>();
+            model = this.Module<ICounterModel>();
             model.A.RegisterWithInitValue(OnAChange);
             model.B.RegisterWithInitValue(OnBChange);
 
@@ -120,7 +120,7 @@ namespace Panty.Test
         }
         private void OnDestroy()
         {
-            var model = this.Model<ICounterModel>();
+            var model = this.Module<ICounterModel>();
             model.A.UnRegister(OnAChange);
             model.B.UnRegister(OnBChange);
 

@@ -8,8 +8,6 @@ namespace Panty.Test
         {
             // 这里记得注册模块进去
             AddModule<ICounterModel>(new CounterModel());
-
-            MonoKit.GetIns().OnDeInit += Deinit;
         }
     }
     public class CounterGame : MonoBehaviour, IPermissionProvider

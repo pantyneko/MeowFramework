@@ -6,10 +6,6 @@ MeowFramework是一套基于QF架构改良的高性能框架，适合追求自�
 
 (注：该架构会自动提示更新 如运行后提示更新 请及时前往Github 获取最新版本)
 
-https://github.com/pantyneko/MeowFramework
-
-https://gitee.com/PantyNeko/MeowFramework
-
 ## 环境要求
 
 建议使用 C# 8.0 - Unity 2021及以上版本
@@ -41,14 +37,12 @@ https://gitee.com/PantyNeko/MeowFramework
 - ```c#
   public class MyModule : AbsModule, IMyModule
   {
-      protected override void OnInit()
-      {
-          // 初始化阶段
-      }
-      protected override void OnDeInit()
-      {
-          // 销毁阶段
-      }
+      // 对于特殊情况 可将 Preload 重写为true 以提前加载该模块
+      public override bool Preload => true;
+      // 初始化阶段
+      protected override void OnInit(){}
+      // 销毁阶段
+      protected override void OnDeInit(){}
       void IMyModule.Say() => "Say".Log();
       void IMyModule.Say(string msg) => msg.Log();
       string IMyModule.Get(int id) => id.ToString();
@@ -79,7 +73,8 @@ https://gitee.com/PantyNeko/MeowFramework
   // 这里将接口作为模块的子类 外部调用涉及IModule接口时 初始化方法不至于被错误的调用
   public interface ICanInit : IModule
   {
-      void SetHub(IModuleHub hub);
+      bool Preload { get; }
+      void PreInit(IModuleHub hub);
       void Deinit();
   }
   ```
@@ -163,15 +158,12 @@ https://gitee.com/PantyNeko/MeowFramework
 
 ```c#
 var ins = ExampleHub.GetIns()
+// CheckUpdate() 用于检查更新的函数 <架构会主动调用 不要去动它> 已移动到编辑器
 ```
 
 #### DEBUG 宏
 
 - 定义某些操作仅用于调试
-
-#### CheckUpdate()
-
-- 用于检查更新的函数 <架构会主动调用 不要去动它>
 
 #### BuildModule()
 
@@ -409,28 +401,12 @@ var q = hub.Query<ExampleSelfDataQuery, int>(10);
 
 #### 模块
 
-##### GetModule< M>() 
+##### Module< M>() 
 
 - 获取一个已注册的模块实例 。
 
 ```c#
-var myModule = this.GetModule<MyModule>();
-```
-
-##### Model< D>() 
-
-- 获取一个已注册的模块实例 是 GetModule 的别名 用于在视觉上将模块定义为<**数据**>。
-
-```c#
-var myModule = this.Model<MyModule>();
-```
-
-##### System< S>() 
-
-- 获取一个已注册的模块实例 是 GetModule 的别名 用于在视觉上将模块定义为<**系统**>。
-
-```c#
-var myModule = this.System<MyModule>();
+var myModule = this.Module<MyModule>();
 ```
 
 ##### Utility< U>() 
@@ -644,17 +620,97 @@ public struct ExampleSelfDataQuery : IQuery<int, ExampleSelfDataQuery>
 var q = this.Query<ExampleSelfDataQuery, int>(10);
 ```
 
+### UnityModuleHub
+
+```c#
+// 导入拓展后 自动注册场景卸载事件
+public abstract partial class ModuleHub<H>
+{
+    protected ModuleHub()
+    {
+        SceneManager.sceneUnloaded += op => this.ExecuteSceneUnloadEvent();
+        MonoKit.GetIns().OnDeInit += Deinit;
+    }
+}
+```
+
+##### GetModel< D>() 
+
+- 获取一个已注册的模块实例 是 Module 的别名 用于在视觉上将模块定义为<**数据**>。
+
+```c#
+var myModule = this.GetModel<MyModule>();
+```
+
+##### GetSystem< S>() 
+
+- 获取一个已注册的模块实例 是 Module 的别名 用于在视觉上将模块定义为<**系统**>。
+
+```c#
+var myModule = this.GetSystem<MyModule>();
+```
+
+##### AddEventAndUnregisterOnUnload< E>
+
+- 注册一个由当前场景卸载为注销时机的有参数事件
+
+```c#
+this.AddEventAndUnregisterOnUnload(MyEvent);
+```
+
+##### AddNotifyAndUnregisterOnUnload< N>
+
+- 注册一个由当前场景卸载为注销时机的无参数事件通知
+
+```c#
+this.AddNotifyAndUnregisterOnUnload(MyNotify);
+```
+
+ExecuteSceneUnloadEvent< H>
+
+- 手动提前执行所有场景事件和通知
+
+```c#
+this.ExecuteSceneUnloadEvent();
+```
+
+## 编辑器部分
+
+### PnEditor
+
+```c#
+//一个用于Unity编辑器的基类，它提供了一套框架和界面元素，使得开发者可以通过继承这个类来快速创建具有特定功能的自定义编辑器窗口。子类需要实现一些抽象或虚拟方法来定制窗口的行为和外观
+```
+
+### MeowEditor
+
+```c#
+// 提供了一系列的功能按钮，用于快速创建不同类型的Unity脚本或文件，比如创建脚本、创建编辑器、创建Hub类、创建模块、创建架构、创建系统、创建数据模型以及检查更新
+```
+
+### TextDialog
+
+```c#
+//提供了一个方便的方式来在 Unity 编辑器中显示一个带有确认和取消按钮的消息对话框，开发者可以在自己的编辑器扩展中使用这个对话框来提示用户或者收集用户的输入。
+```
+
+### SOCreateEditor
+
+```c#
+// 用于快速创建ScriptableObject资产。它通过一个自定义窗口提供拖放功能，允许开发者直接拖入脚本文件来自动创建对应的ScriptableObject。此外，还提供了设置保存路径和文件名的选项，并通过简单的“Create”按钮完成资产的生成和导入
+```
+
 ## 快速搭建
 
 可以使用架构中带的 MeowEditor 来快速生成模板代码 
 
 首先从GitHub中拿到框架后 会拿到一个名字叫 MeowEditor 的编辑器 我们使用在顶部菜单 ”PnTool“中 点击打开 MeowEditor 会弹出一个编辑窗口
 
-![](https://github.com/pantyneko/MeowFramework/blob/main/Assets/Doc/img1.png)
+![](https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/Doc/img1.png)
 
 弹出编辑器窗口后 按照下图进行设置 文本框中设置的是当前项目的架构名 设置完成 点击创建Hub类 会自动创建一个脚本文件 如下
 
-![](https://github.com/pantyneko/MeowFramework/blob/main/Assets/Doc/img2.png)
+![](https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/Doc/img2.png)
 
 ```c#
 using UnityEngine;
@@ -667,8 +723,6 @@ namespace Panty.Test
         {
             // 这里记得注册模块进去
             AddModule<ICounterModel>(new CounterModel());
-
-            MonoKit.GetIns().OnDeInit += Deinit;
         }
     }
     public class CounterGame : MonoBehaviour, IPermissionProvider
@@ -694,6 +748,7 @@ namespace Panty.Test
         protected override void BuildModule()
         {
             // 推荐使用 MonoKit 的 OnDeInit事件 来进行销毁
+            // 1.0.6 版本 如果是Unity 环境 将不再需要下方步骤
             MonoKit.GetIns().OnDeInit += Deinit;
         }
     }
@@ -940,6 +995,7 @@ namespace Panty.Test
 
 ## 版本更新
 
+- **1.0.6 (2024-05-18)**: 对架构底层和编辑器布局进行一些必要调整 新增了架构的拓展分布类 将检查更新移到了编辑器部分 修复事件系统无法移除key的bug  将MonoKit中的 Log 方法集成到架构中。
 - **1.0.5 (2024-05-13)**: 增加示例单元 增加文档。
 - **1.0.4 (2024-05-13)**: 修复语法错误，增加对 Deinit 的状态变更，避免重复调用。
 - **1.0.3 (2024-05-12)**: 移除反射机制，增加延迟初始化。

@@ -25,28 +25,34 @@ using System.Collections.Generic;
 namespace Panty
 {
     public interface ICmd { void Do(IModuleHub hub); }
-    public interface ICmd<P> { void Do(IModuleHub hub, P parameter); }
+    public interface ICmd<P> { void Do(IModuleHub hub, P info); }
 
     public interface IQuery<R> { R Do(IModuleHub hub); }
-    public interface IQuery<P, R> { R Do(IModuleHub hub, P parameter); }
+    public interface IQuery<P, R> { R Do(IModuleHub hub, P info); }
 
     public interface IModule { void TryInit(); }
     public interface IUtility { }
     public interface ICanInit : IModule
     {
-        void SetHub(IModuleHub hub);
+        bool Preload { get; }
+        void PreInit(IModuleHub hub);
         void Deinit();
     }
-    public interface IPermissionProvider
-    {
-        IModuleHub Hub { get; }
-    }
+    public interface IPermissionProvider { IModuleHub Hub { get; } }
     public abstract class AbsModule : ICanInit, IPermissionProvider
     {
         protected bool Inited;
-        protected IModuleHub mHub;
-        IModuleHub IPermissionProvider.Hub => mHub;
-        void ICanInit.SetHub(IModuleHub hub) => mHub = hub;
+        private IModuleHub mHub;
+
+        void ICanInit.PreInit(IModuleHub hub)
+        {
+            mHub = hub;
+            if (Preload)
+            {
+                OnInit();
+                Inited = true;
+            }
+        }
         void IModule.TryInit()
         {
             if (Inited) return;
@@ -63,12 +69,37 @@ namespace Panty
         }
         protected abstract void OnInit();
         protected virtual void OnDeInit() { }
+        public virtual bool Preload => false;
+        IModuleHub IPermissionProvider.Hub => mHub;
     }
-    public static class ModuleHubEx
+    public static partial class ModuleHubEx
     {
-        public static M GetModule<M>(this IPermissionProvider self) where M : class, IModule => self.Hub.Module<M>();
-        public static D Model<D>(this IPermissionProvider self) where D : class, IModule => self.Hub.Module<D>();
-        public static S System<S>(this IPermissionProvider self) where S : class, IModule => self.Hub.Module<S>();
+#if DEBUG
+        public static T Log<T>(this T o)
+        {
+#if UNITY_EDITOR
+            UnityEngine.Debug.unityLogger.Log(o);
+#endif
+            return o;
+        }
+#endif
+        public static void Combine(this Dictionary<Type, Delegate> dic, Type type, Delegate e)
+        {
+            if (dic.TryGetValue(type, out var del))
+                dic[type] = Delegate.Combine(del, e);
+            else dic.Add(type, e);
+        }
+        public static void Separate(this Dictionary<Type, Delegate> dic, Type type, Delegate e)
+        {
+            if (dic.TryGetValue(type, out var del))
+            {
+                del = Delegate.Remove(del, e);
+                if (del == null || del.Target == null)
+                    dic.Remove(type);
+                else dic[type] = del;
+            }
+        }
+        public static M Module<M>(this IPermissionProvider self) where M : class, IModule => self.Hub.Module<M>();
         public static U Utility<U>(this IPermissionProvider self) where U : class, IUtility => self.Hub.Utility<U>();
 
         public static void AddEvent<E>(this IPermissionProvider self, Action<E> call) where E : struct => self.Hub.AddEvent<E>(call);
@@ -82,13 +113,13 @@ namespace Panty
 
         public static void SendCmd<C>(this IPermissionProvider self, C cmd) where C : ICmd => self.Hub.SendCmd(cmd);
         public static void SendCmd<C>(this IPermissionProvider self) where C : struct, ICmd => self.Hub.SendCmd(new C());
-        public static void SendCmd<C, P>(this IPermissionProvider self, C cmd, P parameter) where C : ICmd<P> => self.Hub.SendCmd(cmd, parameter);
-        public static void SendCmd<C, P>(this IPermissionProvider self, P parameter) where C : struct, ICmd<P> => self.Hub.SendCmd(new C(), parameter);
+        public static void SendCmd<C, P>(this IPermissionProvider self, C cmd, P info) where C : ICmd<P> => self.Hub.SendCmd(cmd, info);
+        public static void SendCmd<C, P>(this IPermissionProvider self, P info) where C : struct, ICmd<P> => self.Hub.SendCmd(new C(), info);
 
         public static R Query<Q, R>(this IPermissionProvider self) where Q : struct, IQuery<R> => self.Hub.Query<Q, R>();
-        public static R Query<Q, P, R>(this IPermissionProvider self, P parameter) where Q : struct, IQuery<P, R> => self.Hub.Query<Q, P, R>(parameter);
+        public static R Query<Q, P, R>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, R> => self.Hub.Query<Q, P, R>(info);
         public static Q Query<Q>(this IPermissionProvider self) where Q : struct, IQuery<Q> => self.Hub.Query<Q>();
-        public static Q Query<Q, P>(this IPermissionProvider self, P parameter) where Q : struct, IQuery<P, Q> => self.Hub.Query<Q, P>(parameter);
+        public static Q Query<Q, P>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, Q> => self.Hub.Query<Q, P>(info);
     }
     public partial interface IModuleHub
     {
@@ -121,62 +152,21 @@ namespace Panty
         {
             if (mHub == null)
             {
-#if DEBUG
-                CheckUpdate();
-#endif
                 mHub = new H();
                 mHub.BuildModule();
             }
             return mHub;
         }
-#if DEBUG
-        private static async void CheckUpdate()
-        {
-            string url = "https://raw.githubusercontent.com/pantyneko/MeowFramework/main/Assets/VersionInfo.txt";
-            string version = "1.0.5";
-            using (var client = new System.Net.Http.HttpClient())
-            {
-                try
-                {
-                    var response = await client.GetAsync(url);
-                    response.EnsureSuccessStatusCode();
-                    string responseBody = await response.Content.ReadAsStringAsync();
-                    if (responseBody != version)
-                    {
-                        string msg = $"当前架构版本为:{version},最新版本为:{responseBody},请及时更新!\r\n更新地址↓\r\n" +
-                            $"GitHub => https://github.com/pantyneko/MeowFramework\r\n" +
-                            $"Gitee => https://gitee.com/PantyNeko/MeowFramework\r\n";
-#if UNITY_EDITOR
-                        UnityEngine.Debug.LogWarning(msg);
-#else
-                        if (Environment.UserInteractive) Console.WriteLine(msg);
-                        else System.Diagnostics.Debug.WriteLine(msg);
-#endif
-                    }
-                }
-                catch (System.Net.Http.HttpRequestException e)
-                {
-#if UNITY_EDITOR
-                    UnityEngine.Debug.LogWarning(e.Message);
-#else
-                    if (Environment.UserInteractive) Console.WriteLine(e.Message);
-                    else System.Diagnostics.Debug.WriteLine(e.Message);
-#endif
-                }
-
-            }
-        }
-#endif
         private Dictionary<Type, IUtility> mUtilities = new Dictionary<Type, IUtility>();
         private Dictionary<Type, IModule> mModules = new Dictionary<Type, IModule>();
         private Dictionary<Type, Delegate> mEvents = new Dictionary<Type, Delegate>();
-        private Dictionary<Type, Action> mNotifies = new Dictionary<Type, Action>();
+        private Dictionary<Type, Delegate> mNotifies = new Dictionary<Type, Delegate>();
 
         protected abstract void BuildModule();
         protected void AddModule<M>(M module) where M : IModule
         {
             if (mModules.TryAdd(typeof(M), module))
-                (module as ICanInit).SetHub(this);
+                (module as ICanInit).PreInit(this);
         }
         protected void AddUtility<U>(U utility) where U : IUtility
         {
@@ -200,86 +190,71 @@ namespace Panty
                 return ret as M;
             }
 #if DEBUG
-            throw new Exception($"检查{typeof(M)}模块是否被注册");
+            $"{typeof(M)}模块未被注册".Log();
 #endif
+            return null;
         }
         U IModuleHub.Utility<U>()
         {
             if (mUtilities.TryGetValue(typeof(U), out var ret)) return ret as U;
 #if DEBUG
-            throw new Exception($"检查{typeof(U)}模块是否被注册");
+            $"{typeof(U)}工具未被注册".Log();
 #endif
+            return null;
         }
         void IModuleHub.AddEvent<E>(Action<E> action)
         {
 #if DEBUG
-            CheckActionNull(action);
+            if (action == null) $"{action}不可为Null".Log();
 #endif
-            var type = typeof(E);
-            if (mEvents.TryGetValue(type, out var del))
-                mEvents[type] = Delegate.Combine(del, action);
-            else mEvents.Add(type, action);
-        }
-        void IModuleHub.RmvEvent<E>(Action<E> action)
-        {
-#if DEBUG
-            CheckActionNull(action);
-#endif
-            var type = typeof(E);
-            if (mEvents.TryGetValue(type, out var del))
-            {
-                del = Delegate.Remove(del, action);
-                if (del == null)
-                    mEvents.Remove(type);
-                else
-                    mEvents[type] = del;
-            }
-        }
-        void IModuleHub.SendEvent<E>(E e)
-        {
-            if (mEvents.TryGetValue(typeof(E), out var del))
-                (del as Action<E>).Invoke(e);
-        }
-        void IModuleHub.SendEvent<E>()
-        {
-            if (mEvents.TryGetValue(typeof(E), out var del))
-                (del as Action<E>).Invoke(new E());
+            mEvents.Combine(typeof(E), action);
         }
         void IModuleHub.AddNotify<E>(Action action)
         {
 #if DEBUG
-            CheckActionNull(action);
+            if (action == null) $"{action}不可为Null".Log();
 #endif
-            var type = typeof(E);
-            if (mNotifies.TryGetValue(type, out var del))
-                mNotifies[type] = del + action;
-            else mNotifies.Add(type, action);
+            mNotifies.Combine(typeof(E), action);
         }
-        void IModuleHub.RmvNotify<E>(Action action)
+        void IModuleHub.SendEvent<E>(E e)
         {
-#if DEBUG
-            CheckActionNull(action);
-#endif
-            var type = typeof(E);
-            if (mNotifies.TryGetValue(type, out var del))
+            if (mEvents.TryGetValue(typeof(E), out var del))
             {
-                if ((del -= action) == null)
-                    mNotifies.Remove(type);
-                else
-                    mNotifies[type] = del;
+                (del as Action<E>).Invoke(e);
+                return;
             }
-        }
 #if DEBUG
-        private void CheckActionNull(Delegate action)
-        {
-            if (action == null)
-                throw new Exception($"{action}不可为Null");
-        }
+            $"{typeof(E)}事件未被注册".Log();
 #endif
+        }
+        void IModuleHub.SendEvent<E>()
+        {
+            if (mEvents.TryGetValue(typeof(E), out var del))
+            {
+                (del as Action<E>).Invoke(new E());
+                return;
+            }
+#if DEBUG
+            $"{typeof(E)}事件未被注册".Log();
+#endif
+        }
         void IModuleHub.SendNotify<E>()
         {
-            if (mNotifies.TryGetValue(typeof(E), out var del)) del();
+            if (mNotifies.TryGetValue(typeof(E), out var del))
+            {
+                (del as Action).Invoke();
+                return;
+            }
+#if DEBUG
+            $"{typeof(E)}通知未被注册".Log();
+#endif
         }
+        public void RmvEvent(Type type, Delegate action) => mEvents.Separate(type, action);
+        public void RmvNotify(Type type, Delegate action) => mNotifies.Separate(type, action);
+
+        void IModuleHub.RmvEvent<E>(Action<E> action) => mEvents.Separate(typeof(E), action);
+        void IModuleHub.RmvNotify<E>(Action action) => mNotifies.Separate(typeof(E), action);
+
         void IModuleHub.SendCmd<C>() => SendCmd(new C());
         void IModuleHub.SendCmd<C, P>(P info) => SendCmd(new C(), info);
         public virtual void SendCmd<C>(C cmd) where C : ICmd => cmd.Do(this);

@@ -1,1 +1,12 @@
-1.0.5
+1.0.6@
+【v1.0.6 大更新】
+# 调整 ModuleHub 整体结构
+# 修复事件系统无法移除key的bug  
+# 将MonoKit中的 Log 方法集成到架构中
+# 移除原架构中System和Model 的 API
+# 增加 UnityModuleHub 扩展类
+# 增加两个特殊的事件注册方法
+# 移除 BuildModule 中的 MonoKit.GetIns().OnDeInit += Deinit;
+# 将架构检查更新部分移动到MeowEditor编辑器中
+# 增加一个用于显示长文本的文本对话框
+# 调整 PnEditor 的基本布局
