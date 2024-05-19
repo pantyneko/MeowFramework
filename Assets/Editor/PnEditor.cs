@@ -36,12 +36,7 @@ namespace Panty
 
         protected abstract T Empty { get; }
         protected virtual void ExecuteMode(T mode) { }
-        private void OnEnable()
-        {
-            mCanInit = true;
-            HelpBoxStyle = new GUIStyle(EditorStyles.helpBox);
-            HelpBoxStyle.padding = new RectOffset(6, 6, 6, 6);
-        }
+        private void OnEnable() => mCanInit = true;
         private void Update()
         {
             if (EqualityComparer<T>.Default.Equals(modes, Empty)) return;
@@ -53,6 +48,13 @@ namespace Panty
         }
         private void OnGUI()
         {
+            if (HelpBoxStyle == null)
+            {
+                HelpBoxStyle = new GUIStyle(EditorStyles.helpBox)
+                {
+                    padding = new RectOffset(6, 6, 6, 6)
+                };
+            }
             if (mCanInit)
             {
                 btnInfos = InitBtnInfo();
