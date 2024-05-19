@@ -6,7 +6,7 @@
 # 增加2个事件注册扩展和2个通知注册扩展
 # 将架构版本号集成进架构本体
 # 修复编辑器常驻时未能成功初始化BUG
-# 更新的文件有 ModuleHub、UnityModuleHub、MeowEditor、MonoKit
+# 更新的文件有 ModuleHub、UnityModuleHub、MeowEditor、MonoKit、PnEditor
 
 【v1.0.6 大更新】
 # 调整 ModuleHub 整体结构
