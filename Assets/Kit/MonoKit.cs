@@ -3,7 +3,7 @@ using UnityEngine;
 
 namespace Panty
 {
-    public static class MonoEx
+    public static class Logger
     {
         public static T Error<T>(this T o)
         {
@@ -37,23 +37,6 @@ namespace Panty
             var d = new Vector2(x1, y1);
 
             DrawBox(a, b, c, d, color, duration);
-        }
-        /// <summary>
-        /// 找到面板父节点下所有对应控件
-        /// </summary>
-        /// <typeparam name="T">控件类型</typeparam>
-        public static void FindChildrenControl<T>(this Component mono, Action<string, T> callback = null) where T : Component
-        {
-#if UNITY_EDITOR
-            if (callback == null) throw new Exception("无效回调");
-#endif
-            // 得到所有子控件
-            T[] controls = mono.GetComponentsInChildren<T>(true);
-            // 如果没有找到组件 直接 return
-            if (controls.Length == 0) return;
-            // 遍历所有子控件
-            foreach (T control in controls)
-                callback.Invoke(control.gameObject.name, control);
         }
     }
     public class MonoKit : MonoSingle<MonoKit>

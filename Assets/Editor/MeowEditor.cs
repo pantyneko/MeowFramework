@@ -129,7 +129,7 @@ namespace Panty
             if (IsAsync) return;
             IsAsync = true;
             string url = "https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/VersionInfo.txt";
-            string version = "1.0.6";
+            string version = ModuleHubTool.version;
             using (var client = new HttpClient())
             {
                 try
@@ -139,8 +139,7 @@ namespace Panty
                         cts.CancelAfter(TimeSpan.FromSeconds(8)); // 设置超时时间
                         inputText = "正在检查更新 请稍后...";
                         var response = await client.GetAsync(url, cts.Token);
-                        response.EnsureSuccessStatusCode();
-                        string text = await response.Content.ReadAsStringAsync();
+                        string text = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
                         string[] res = text.Split("@");
                         if (res[0] == version)
                         {
