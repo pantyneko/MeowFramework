@@ -158,12 +158,11 @@ namespace Panty
         /// </summary>
         public static void UnRegisterAllUnloadEvents<H>(this ModuleHub<H> hub) where H : ModuleHub<H>, new()
         {
-            mWaitUninstEvents ??= new Stack<Action>();
             while (mWaitUninstEvents.Count > 0)
                 mWaitUninstEvents.Pop().Invoke();
         }
         // 用于存储所有当前场景卸载时 需要注销的事件和通知
-        private static Stack<Action> mWaitUninstEvents;
+        private static Stack<Action> mWaitUninstEvents = new Stack<Action>();
     }
     public abstract partial class ModuleHub<H>
     {
