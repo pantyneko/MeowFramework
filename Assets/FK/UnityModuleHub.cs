@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -34,11 +35,7 @@ namespace Panty
     public static partial class HubTool
     {
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        public static void Initialize()
-        {
-            Application.quitting += () => quitting = true;
-            MonoKit.GetIns();
-        }
+        public static void Initialize() => MonoKit.GetIns();
         /// <summary>
         /// 尝试从一个物体身上获取脚本 如果获取不到就添加一个
         /// </summary>
@@ -156,7 +153,7 @@ namespace Panty
         /// <summary>
         /// 用于当前场景卸载时 注销所有事件和通知
         /// </summary>
-        public static void UnRegisterAllUnloadEvents<H>(this ModuleHub<H> hub) where H : ModuleHub<H>, new()
+        public static void UnRegisterAllUnloadEvents()
         {
             while (mWaitUninstEvents.Count > 0)
                 mWaitUninstEvents.Pop().Invoke();
@@ -168,13 +165,14 @@ namespace Panty
     {
         protected ModuleHub()
         {
+            Application.quitting += async () =>
+            {
+                await Task.Yield();
+                this.Deinit();
+            };
             // 预注册场景卸载事件
-            SceneManager.sceneUnloaded += OnSceneUnloaded;
-        }
-        private void OnSceneUnloaded(Scene scene)
-        {
-            this.UnRegisterAllUnloadEvents();
-            if (HubTool.quitting) Deinit();
+            SceneManager.sceneUnloaded +=
+                scene => HubEx.UnRegisterAllUnloadEvents();
         }
     }
 }

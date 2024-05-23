@@ -81,9 +81,11 @@ namespace Panty
         void ICanInit.PreInit(IModuleHub hub)
         {
             mHub = hub;
-            if (Inited) return;
-            if (Preload)
+            if (Preload && !Inited)
             {
+#if DEBUG
+                $"{this}模块预初始化成功".Log();
+#endif  
                 OnInit();
                 Inited = true;
             }
@@ -92,6 +94,9 @@ namespace Panty
         void IModule.TryInit()
         {
             if (Inited) return;
+#if DEBUG
+            $"{this}模块被初始化".Log();
+#endif  
             OnInit();
             Inited = true;
         }
@@ -123,7 +128,6 @@ namespace Panty
     #region 架构扩展
     public static partial class HubTool
     {
-        public static bool quitting = false;
 #if DEBUG
         public const string version = "1.0.8";
         /// <summary>
@@ -143,7 +147,7 @@ namespace Panty
             {
                 var builder = new System.Text.StringBuilder();
                 foreach (var pair in dic)
-                    builder.Append($"[key => {pair.Key}  |  value => {pair.Value}]\r\n");
+                    builder.Append($"[key => {pair.Key} | value => {pair.Value}]\r\n");
                 $"{builder}".Log();
             }
         }
@@ -235,12 +239,13 @@ namespace Panty
         /// 由子类重写实现所有模块和工具的构建与注册
         /// </summary>
         protected abstract void BuildModule();
-
+        // 往架构添加模块 尝试预初始化
         protected void AddModule<M>(M module) where M : IModule
         {
             if (mModules.TryAdd(typeof(M), module))
                 (module as ICanInit).PreInit(this);
         }
+        // 往架构添加工具
         protected void AddUtility<U>(U utility) where U : IUtility
         {
             mUtilities[typeof(U)] = utility;
@@ -258,8 +263,11 @@ namespace Panty
             {
                 foreach (var module in mModules.Values)
                     (module as ICanInit).Deinit();
+                mModules = null;
             }
-            mHub = null;
+            mUtilities = null;
+            mEvents = null;
+            mNotifies = null;
         }
         M IModuleHub.Module<M>()
         {
@@ -269,7 +277,7 @@ namespace Panty
                 return ret as M;
             }
 #if DEBUG
-            $"{typeof(M)}模块未被注册".Log();
+            $"{typeof(M)}模块未注册".Log();
 #endif
             return null;
         }
@@ -277,7 +285,7 @@ namespace Panty
         {
             if (mUtilities.TryGetValue(typeof(U), out var ret)) return ret as U;
 #if DEBUG
-            $"{typeof(U)}工具未被注册".Log();
+            $"{typeof(U)}工具未注册".Log();
 #endif
             return null;
         }
@@ -303,7 +311,7 @@ namespace Panty
                 return;
             }
 #if DEBUG
-            $"{typeof(E)}事件未被注册".Log();
+            $"{typeof(E)}事件未注册".Log();
 #endif
         }
         void IModuleHub.SendEvent<E>()
@@ -314,7 +322,7 @@ namespace Panty
                 return;
             }
 #if DEBUG
-            $"{typeof(E)}事件未被注册".Log();
+            $"{typeof(E)}事件未注册".Log();
 #endif
         }
         void IModuleHub.SendNotify<E>()
@@ -325,7 +333,7 @@ namespace Panty
                 return;
             }
 #if DEBUG
-            $"{typeof(E)}通知未被注册".Log();
+            $"{typeof(E)}通知未注册".Log();
 #endif
         }
         void IModuleHub.RmvEvent<E>(Action<E> evt) => mEvents.Separate(typeof(E), evt);
