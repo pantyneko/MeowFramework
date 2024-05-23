@@ -168,7 +168,7 @@ namespace Panty
             Application.quitting += async () =>
             {
                 await Task.Yield();
-                this.Deinit();
+                this.Dispose();
             };
             // 预注册场景卸载事件
             SceneManager.sceneUnloaded +=

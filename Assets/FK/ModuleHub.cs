@@ -84,7 +84,7 @@ namespace Panty
             if (Preload && !Inited)
             {
 #if DEBUG
-                $"{this}模块预初始化成功".Log();
+                $"{this} 预初始化成功".Log();
 #endif  
                 OnInit();
                 Inited = true;
@@ -95,7 +95,7 @@ namespace Panty
         {
             if (Inited) return;
 #if DEBUG
-            $"{this}模块被初始化".Log();
+            $"{this} 被初始化".Log();
 #endif  
             OnInit();
             Inited = true;
@@ -140,15 +140,21 @@ namespace Panty
 #endif
             return o;
         }
-        public static void DicLog<K, V>(this Dictionary<K, V> dic)
+        public static void DicLog<K, V>(this Dictionary<K, V> dic, string dicName, string prefix)
         {
-            if (dic.Count == 0) "无数据".Log();
+            if (dic.Count == 0)
+            {
+                $"{dicName} 为空".Log();
+            }
             else
             {
                 var builder = new System.Text.StringBuilder();
                 foreach (var pair in dic)
-                    builder.Append($"[key => {pair.Key} | value => {pair.Value}]\r\n");
-                $"{builder}".Log();
+                {
+                    builder.AppendLine($"键 = {pair.Key} ");
+                    builder.AppendLine($"值 = {pair.Value} \r\n");
+                }
+                $"{prefix}\r\n\r\n{builder}".Log();
             }
         }
 #endif
@@ -253,18 +259,18 @@ namespace Panty
         /// <summary>
         /// 清理所有已初始化模块的状态信息
         /// </summary>
-        protected void Deinit()
+        protected void Dispose()
         {
 #if DEBUG
-            mUtilities.DicLog();
-            mModules.DicLog();
+            mUtilities.DicLog("mUtilities", "------------///  已释放以下工具  ///------------");
+            mModules.DicLog("mModules", "------------///  已释放以下模块  ///------------");
 #endif
             if (mModules.Count > 0)
             {
                 foreach (var module in mModules.Values)
                     (module as ICanInit).Deinit();
-                mModules = null;
             }
+            mModules = null;
             mUtilities = null;
             mEvents = null;
             mNotifies = null;
@@ -277,7 +283,7 @@ namespace Panty
                 return ret as M;
             }
 #if DEBUG
-            $"{typeof(M)}模块未注册".Log();
+            $"{typeof(M)} 模块未注册".Log();
 #endif
             return null;
         }
@@ -285,21 +291,21 @@ namespace Panty
         {
             if (mUtilities.TryGetValue(typeof(U), out var ret)) return ret as U;
 #if DEBUG
-            $"{typeof(U)}工具未注册".Log();
+            $"{typeof(U)} 工具未注册".Log();
 #endif
             return null;
         }
         void IModuleHub.AddEvent<E>(Action<E> evt)
         {
 #if DEBUG
-            if (evt == null) $"{evt}不可为Null".Log();
+            if (evt == null) $"{evt} 不可为Null".Log();
 #endif
             mEvents.Combine(typeof(E), evt);
         }
         void IModuleHub.AddNotify<E>(Action evt)
         {
 #if DEBUG
-            if (evt == null) $"{evt}不可为Null".Log();
+            if (evt == null) $"{evt} 不可为Null".Log();
 #endif
             mNotifies.Combine(typeof(E), evt);
         }
@@ -311,7 +317,7 @@ namespace Panty
                 return;
             }
 #if DEBUG
-            $"{typeof(E)}事件未注册".Log();
+            $"{typeof(E)} 事件未注册".Log();
 #endif
         }
         void IModuleHub.SendEvent<E>()
@@ -322,7 +328,7 @@ namespace Panty
                 return;
             }
 #if DEBUG
-            $"{typeof(E)}事件未注册".Log();
+            $"{typeof(E)} 事件未注册".Log();
 #endif
         }
         void IModuleHub.SendNotify<E>()
@@ -333,7 +339,7 @@ namespace Panty
                 return;
             }
 #if DEBUG
-            $"{typeof(E)}通知未注册".Log();
+            $"{typeof(E)} 通知未注册".Log();
 #endif
         }
         void IModuleHub.RmvEvent<E>(Action<E> evt) => mEvents.Separate(typeof(E), evt);
