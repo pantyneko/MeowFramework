@@ -19,12 +19,35 @@ namespace Panty
     {
         private void OnDisable() => UnRegister();
     }
-    public static partial class ModuleHubTool
+    public class MonoKit : MonoSingle<MonoKit>
     {
+        public static event Action OnUpdate;
+        public static event Action OnFixedUpdate;
+        public static event Action OnLateUpdate;
+        public static event Action OnGuiUpdate;
+
+        private void Update() => OnUpdate?.Invoke();
+        private void FixedUpdate() => OnFixedUpdate?.Invoke();
+        private void LateUpdate() => OnLateUpdate?.Invoke();
+        private void OnGUI() => OnGuiUpdate?.Invoke();
+    }
+    public static partial class HubTool
+    {
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        public static void Initialize()
+        {
+            Application.quitting += () => quitting = true;
+            MonoKit.GetIns();
+        }
         /// <summary>
         /// 尝试从一个物体身上获取脚本 如果获取不到就添加一个
         /// </summary>
-        public static T GetOrAddComponent<T>(this GameObject o) where T : Component => o.GetComponent<T>() ?? o.AddComponent<T>();
+        public static T GetOrAddComponent<T>(this GameObject o) where T : Component
+        {
+            T t = o.GetComponent<T>();
+            if (t == null) t = o.AddComponent<T>();
+            return t;
+        }
         /// <summary>
         /// 找到面板父节点下所有对应控件
         /// </summary>
@@ -38,8 +61,41 @@ namespace Panty
             foreach (T ctrl in controls)
                 callback.Invoke(ctrl.gameObject.name, ctrl);
         }
+        public static T Error<T>(this T o)
+        {
+            Debug.unityLogger.Log(LogType.Error, o);
+            return o;
+        }
+        public static T Warning<T>(this T o)
+        {
+            Debug.unityLogger.Log(LogType.Warning, o);
+            return o;
+        }
+        public static void DrawBox(Vector2 a, Vector2 b, Vector2 c, Vector2 d, Color color, float duration = 0)
+        {
+            Debug.DrawLine(a, b, color, duration);
+            Debug.DrawLine(b, c, color, duration);
+            Debug.DrawLine(c, d, color, duration);
+            Debug.DrawLine(d, a, color, duration);
+        }
+        public static void DrawBox(Vector2 origin, Vector2 size, Color color, float duration = 0)
+        {
+            Vector2 _half = size * 0.5f;
+
+            float x1 = origin.x - _half.x;
+            float x2 = origin.x + _half.x;
+            float y1 = origin.y - _half.y;
+            float y2 = origin.y + _half.y;
+
+            var a = new Vector2(x1, y2);
+            var b = new Vector2(x2, y2);
+            var c = new Vector2(x2, y1);
+            var d = new Vector2(x1, y1);
+
+            DrawBox(a, b, c, d, color, duration);
+        }
     }
-    public static partial class ModuleHubEx
+    public static partial class HubEx
     {
         /// <summary>
         /// 获取系统层 Module 的别名
@@ -87,8 +143,7 @@ namespace Panty
         public static void AddEvent_OnSceneUnload_UnRegister<E>(this IPermissionProvider self, Action<E> evt) where E : struct
         {
             self.Hub.AddEvent<E>(evt);
-            mWaitUninstEvents ??= new Dictionary<Type, Delegate>();
-            mWaitUninstEvents.Combine(typeof(E), evt);
+            mWaitUninstEvents.Push(() => self.Hub.RmvEvent<E>(evt));
         }
         /// <summary>
         /// 添加通知的监听 并标记为场景卸载时注销
@@ -96,39 +151,31 @@ namespace Panty
         public static void AddNotify_OnSceneUnload_UnRegister<N>(this IPermissionProvider self, Action evt) where N : struct
         {
             self.Hub.AddNotify<N>(evt);
-            mWaitUninstNotifies ??= new Dictionary<Type, Delegate>();
-            mWaitUninstNotifies.Combine(typeof(N), evt);
+            mWaitUninstEvents.Push(() => self.Hub.RmvNotify<N>(evt));
         }
         /// <summary>
         /// 用于当前场景卸载时 注销所有事件和通知
         /// </summary>
         public static void UnRegisterAllUnloadEvents<H>(this ModuleHub<H> hub) where H : ModuleHub<H>, new()
         {
-            if (mWaitUninstEvents != null && mWaitUninstEvents.Count > 0)
-            {
-                foreach (var pair in mWaitUninstEvents)
-                    hub.RmvEvent(pair.Key, pair.Value);
-                mWaitUninstEvents = null;
-            }
-            if (mWaitUninstNotifies != null && mWaitUninstNotifies.Count > 0)
-            {
-                foreach (var pair in mWaitUninstNotifies)
-                    hub.RmvNotify(pair.Key, pair.Value);
-                mWaitUninstNotifies = null;
-            }
+            mWaitUninstEvents ??= new Stack<Action>();
+            while (mWaitUninstEvents.Count > 0)
+                mWaitUninstEvents.Pop().Invoke();
         }
         // 用于存储所有当前场景卸载时 需要注销的事件和通知
-        private static Dictionary<Type, Delegate> mWaitUninstEvents;
-        private static Dictionary<Type, Delegate> mWaitUninstNotifies;
+        private static Stack<Action> mWaitUninstEvents;
     }
     public abstract partial class ModuleHub<H>
     {
         protected ModuleHub()
         {
             // 预注册场景卸载事件
-            SceneManager.sceneUnloaded += op => this.UnRegisterAllUnloadEvents();
-            // 预注册 DeInit 事件
-            MonoKit.GetIns().OnDeInit += Deinit;
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
+        }
+        private void OnSceneUnloaded(Scene scene)
+        {
+            this.UnRegisterAllUnloadEvents();
+            if (HubTool.quitting) Deinit();
         }
     }
 }

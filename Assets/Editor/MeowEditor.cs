@@ -127,43 +127,40 @@ namespace Panty
         private async void CheckUpdate()
         {
             if (IsAsync) return;
-            IsAsync = true;
-            string url = "https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/VersionInfo.txt";
-            string version = ModuleHubTool.version;
-            using (var client = new HttpClient())
+            try
             {
-                try
+                using (var client = new HttpClient())
+                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8))) // 设置超时时间
                 {
-                    using (var cts = new CancellationTokenSource())
+                    IsAsync = true;
+                    inputText = "正在检查更新 请稍后...";
+                    string url = "https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/VersionInfo.txt";
+                    var response = await client.GetAsync(url, cts.Token);
+                    string text = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
+                    string[] res = text.Split("@");
+                    string version = HubTool.version;
+                    if (res[0] == version)
                     {
-                        cts.CancelAfter(TimeSpan.FromSeconds(8)); // 设置超时时间
-                        inputText = "正在检查更新 请稍后...";
-                        var response = await client.GetAsync(url, cts.Token);
-                        string text = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
-                        string[] res = text.Split("@");
-                        if (res[0] == version)
-                        {
-                            TextDialog.Show($"当前架构为最新版本：[ {version} ] > 无需更新\r\n{res[1]}");
-                        }
-                        else
-                        {
-                            mPath = E_Path.Custom;
-                            inputText = "https://github.com/pantyneko/MeowFramework";
-                            TextDialog.Show($"当前架构版本为：{version},最新版本为:{res[0]},请点击 >>> 打开路径 <<< 按钮访问最新版本\r\n{res[1]}");
-                        }
-                        IsAsync = false;
+                        TextDialog.Show($"当前架构为最新版本：[ {version} ] > 无需更新\r\n{res[1]}");
+                    }
+                    else
+                    {
+                        mPath = E_Path.UpdateFK;
+                        TextDialog.Show($"当前架构版本为：{version},最新版本为:{res[0]},请点击 >>> 打开路径 <<< 按钮访问最新版本\r\n{res[1]}");
                     }
                 }
-                catch (TaskCanceledException e)
-                {
-                    EditorKit.ShowTips(e.CancellationToken.IsCancellationRequested ? "请求被用户取消。" : "请求超时!");
-                    IsAsync = false;
-                }
-                catch (HttpRequestException e)
-                {
-                    EditorKit.ShowTips($"请求错误: {e.Message}");
-                    IsAsync = false;
-                }
+            }
+            catch (TaskCanceledException e)
+            {
+                EditorKit.ShowTips(e.CancellationToken.IsCancellationRequested ? "请求被用户取消。" : "请求超时!");
+            }
+            catch (HttpRequestException e)
+            {
+                EditorKit.ShowTips($"请求错误: {e.Message}");
+            }
+            finally
+            {
+                IsAsync = false;
             }
         }
         private bool CheckInputLegal()

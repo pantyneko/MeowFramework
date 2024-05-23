@@ -1,7 +1,6 @@
-﻿using System.Reflection;
+﻿using UnityEngine;
+using System.Reflection;
 using System;
-using UnityEngine;
-using System.Threading.Tasks;
 
 namespace Panty
 {
@@ -28,50 +27,33 @@ namespace Panty
     /// </summary>
     public abstract class MonoSingle<T> : MonoBehaviour where T : MonoSingle<T>
     {
-        private static T _instance;
-        protected static bool _applicationIsQuitting = false;
-
+        private static T ins;
         public static T GetIns()
         {
 #if UNITY_EDITOR
             // 防止编辑器意外创建 主要是 ExecuteInEditMode
-            if (!UnityEditor.EditorApplication.isPlaying) return _instance;
+            if (!UnityEditor.EditorApplication.isPlaying) return null;
 #endif
-            if (_instance == null && !_applicationIsQuitting)
+            if (ins == null)
             {
-                _instance = new GameObject(typeof(T).ToString()).AddComponent<T>();
-                _instance.Init();
-                DontDestroyOnLoad(_instance.gameObject);
+                if ((ins = FindObjectOfType<T>()) == null)
+                {
+                    var o = new GameObject(typeof(T).Name);
+                    GameObject.DontDestroyOnLoad(o);
+                    ins = o.AddComponent<T>();
+                }
             }
-            return _instance;
+            return ins;
         }
         private void Awake()
         {
-            if (_instance == null)
+            if (ins == null)
             {
-                _instance = this as T;
-                _instance.Init();
-                DontDestroyOnLoad(gameObject);
+                ins = this as T;
+                InitSingle();
             }
-            else if (_instance != this)
-            {
-                Destroy(gameObject);
-            }
+            else Destroy(gameObject);
         }
-        protected virtual void Init() { }
-        protected abstract void DeInit();
-        private async void OnDestroy()
-        {
-            if (_instance == this)
-            {
-                _applicationIsQuitting = true;
-                await Task.Yield();
-                _instance.DeInit();
-            }
-        }
-        private void OnApplicationQuit()
-        {
-            _applicationIsQuitting = true;
-        }
+        protected virtual void InitSingle() { }
     }
 }

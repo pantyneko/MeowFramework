@@ -48,15 +48,12 @@ namespace Panty
         }
         private void OnGUI()
         {
-            if (HelpBoxStyle == null)
+            if (mCanInit)
             {
                 HelpBoxStyle = new GUIStyle(EditorStyles.helpBox)
                 {
                     padding = new RectOffset(6, 6, 6, 6)
                 };
-            }
-            if (mCanInit)
-            {
                 btnInfos = InitBtnInfo();
                 var menu = RightClickMenu();
                 if (menu != null && menu.Length > 0)
@@ -133,7 +130,7 @@ namespace Panty
                 mDisabledInputBox = true;
                 mShowBaseInfo = false;
                 modes = Empty;
-                inputText = "状态已重置!";
+                inputText = "状态已重置";
             }
             else if (OnClick("打开路径"))
             {

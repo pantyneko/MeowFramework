@@ -26,6 +26,10 @@ namespace Panty
 {
     #region 命令接口
     /// <summary>
+    /// 用于分离命令中的具体执行逻辑 
+    /// </summary>
+    public interface IReceiver { }
+    /// <summary>
     /// 无参数的命令接口，用于执行不需要额外信息的操作
     /// </summary>
     public interface ICmd { void Do(IModuleHub hub); }
@@ -77,6 +81,7 @@ namespace Panty
         void ICanInit.PreInit(IModuleHub hub)
         {
             mHub = hub;
+            if (Inited) return;
             if (Preload)
             {
                 OnInit();
@@ -116,10 +121,11 @@ namespace Panty
     }
     #endregion
     #region 架构扩展
-    public static partial class ModuleHubTool
+    public static partial class HubTool
     {
-        public const string version = "1.0.7";
+        public static bool quitting = false;
 #if DEBUG
+        public const string version = "1.0.8";
         /// <summary>
         /// 在调试模式下 将对象信息输出到控制台 可支持多个平台。
         /// </summary>
@@ -129,6 +135,17 @@ namespace Panty
             UnityEngine.Debug.unityLogger.Log(o);
 #endif
             return o;
+        }
+        public static void DicLog<K, V>(this Dictionary<K, V> dic)
+        {
+            if (dic.Count == 0) "无数据".Log();
+            else
+            {
+                var builder = new System.Text.StringBuilder();
+                foreach (var pair in dic)
+                    builder.Append($"[key => {pair.Key}  |  value => {pair.Value}]\r\n");
+                $"{builder}".Log();
+            }
         }
 #endif
         /// <summary>
@@ -146,81 +163,29 @@ namespace Panty
             if (events.TryGetValue(type, out var methods))
             {
                 methods = Delegate.Remove(methods, evt);
-                if (methods == null || methods.Target == null)
-                    events.Remove(type);
+                if (methods == null) events.Remove(type);
                 else events[type] = methods;
             }
         }
     }
-    public static partial class ModuleHubEx
+    public static partial class HubEx
     {
-        /// <summary>
-        /// 获取已注册模块 
-        /// </summary>
         public static M Module<M>(this IPermissionProvider self) where M : class, IModule => self.Hub.Module<M>();
-        /// <summary>
-        /// 获取已注册工具
-        /// </summary>
         public static U Utility<U>(this IPermissionProvider self) where U : class, IUtility => self.Hub.Utility<U>();
-        /// <summary>
-        /// 添加一个事件监听
-        /// </summary>
         public static void AddEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct => self.Hub.AddEvent<E>(evt);
-        /// <summary>
-        /// 移除一个事件监听
-        /// </summary>
         public static void RmvEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct => self.Hub.RmvEvent<E>(evt);
-        /// <summary>
-        /// 发送一个事件 [外部传入]
-        /// </summary>
         public static void SendEvent<E>(this IPermissionProvider self, E e) where E : struct => self.Hub.SendEvent<E>(e);
-        /// <summary>
-        /// 发送一个事件 [内部构造]
-        /// </summary>
         public static void SendEvent<E>(this IPermissionProvider self) where E : struct => self.Hub.SendEvent<E>();
-        /// <summary>
-        /// 添加一个通知的监听
-        /// </summary>
         public static void AddNotify<N>(this IPermissionProvider self, Action evt) where N : struct => self.Hub.AddNotify<N>(evt);
-        /// <summary>
-        /// 移除一个通知的监听
-        /// </summary>
         public static void RmvNotify<N>(this IPermissionProvider self, Action evt) where N : struct => self.Hub.RmvNotify<N>(evt);
-        /// <summary>
-        /// 发送一个通知
-        /// </summary>
         public static void SendNotify<N>(this IPermissionProvider self) where N : struct => self.Hub.SendNotify<N>();
-        /// <summary>
-        /// 发送一条无参数命令 [外部传入]
-        /// </summary>
         public static void SendCmd<C>(this IPermissionProvider self, C cmd) where C : ICmd => self.Hub.SendCmd(cmd);
-        /// <summary>
-        /// 发送一条无参数命令 [内部构造]
-        /// </summary>
         public static void SendCmd<C>(this IPermissionProvider self) where C : struct, ICmd => self.Hub.SendCmd(new C());
-        /// <summary>
-        /// 发送一条带参数命令 [外部传入]
-        /// </summary>
         public static void SendCmd<C, P>(this IPermissionProvider self, C cmd, P info) where C : ICmd<P> => self.Hub.SendCmd(cmd, info);
-        /// <summary>
-        /// 发送一条带参数命令 [内部构造]
-        /// </summary>
         public static void SendCmd<C, P>(this IPermissionProvider self, P info) where C : struct, ICmd<P> => self.Hub.SendCmd(new C(), info);
-        /// <summary>
-        /// 发送一条无参数查询
-        /// </summary>
         public static R Query<Q, R>(this IPermissionProvider self) where Q : struct, IQuery<R> => self.Hub.Query<Q, R>();
-        /// <summary>
-        /// 发送一条带参数查询
-        /// </summary>
         public static R Query<Q, P, R>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, R> => self.Hub.Query<Q, P, R>(info);
-        /// <summary>
-        /// 发送一条返回自身类型的无参数查询
-        /// </summary>
         public static Q Query<Q>(this IPermissionProvider self) where Q : struct, IQuery<Q> => self.Hub.Query<Q>();
-        /// <summary>
-        /// 发送一条返回自身类型的带参数查询
-        /// </summary>
         public static Q Query<Q, P>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, Q> => self.Hub.Query<Q, P>(info);
     }
     #endregion
@@ -230,73 +195,22 @@ namespace Panty
     /// </summary>
     public partial interface IModuleHub
     {
-        /// <summary>
-        /// 获取已注册模块 
-        /// </summary>
         M Module<M>() where M : class, IModule;
-        /// <summary>
-        /// 获取已注册工具
-        /// </summary>
         U Utility<U>() where U : class, IUtility;
-        /// <summary>
-        /// 添加一个事件监听
-        /// </summary>
         void AddEvent<E>(Action<E> evt) where E : struct;
-        /// <summary>
-        /// 移除一个事件监听
-        /// </summary>
         void RmvEvent<E>(Action<E> evt) where E : struct;
-        /// <summary>
-        /// 发送一个事件 [外部传入]
-        /// </summary>
         void SendEvent<E>(E e) where E : struct;
-        /// <summary>
-        /// 发送一个事件 [内部构造]
-        /// </summary>
         void SendEvent<E>() where E : struct;
-        /// <summary>
-        /// 添加一个通知的监听
-        /// </summary>
         void AddNotify<N>(Action evt) where N : struct;
-        /// <summary>
-        /// 移除一个通知的监听
-        /// </summary>
         void RmvNotify<N>(Action evt) where N : struct;
-        /// <summary>
-        /// 发送一个通知
-        /// </summary>
         void SendNotify<N>() where N : struct;
-        /// <summary>
-        /// 发送一条无参数命令 [外部传入]
-        /// </summary>
         void SendCmd<C>(C cmd) where C : ICmd;
-        /// <summary>
-        /// 发送一条无参数命令 [内部构造]
-        /// </summary>
         void SendCmd<C>() where C : struct, ICmd;
-        /// <summary>
-        /// 发送一条带参数命令 [外部传入]
-        /// </summary>
         void SendCmd<C, P>(C cmd, P info) where C : ICmd<P>;
-        /// <summary>
-        /// 发送一条带参数命令 [内部构造]
-        /// </summary>
         void SendCmd<C, P>(P info) where C : struct, ICmd<P>;
-        /// <summary>
-        /// 发送一条无参数查询
-        /// </summary>
         R Query<Q, R>() where Q : struct, IQuery<R>;
-        /// <summary>
-        /// 发送一条带参数查询
-        /// </summary>
         R Query<Q, P, R>(P info) where Q : struct, IQuery<P, R>;
-        /// <summary>
-        /// 发送一条返回自身类型的无参数查询
-        /// </summary>
         Q Query<Q>() where Q : struct, IQuery<Q>;
-        /// <summary>
-        /// 发送一条返回自身类型的带参数查询
-        /// </summary>
         Q Query<Q, P>(P info) where Q : struct, IQuery<P, Q>;
     }
     #endregion
@@ -318,20 +232,15 @@ namespace Panty
         private Dictionary<Type, Delegate> mEvents = new Dictionary<Type, Delegate>();
         private Dictionary<Type, Delegate> mNotifies = new Dictionary<Type, Delegate>();
         /// <summary>
-        /// 对所有模块进行统一的构建和注册
+        /// 由子类重写实现所有模块和工具的构建与注册
         /// </summary>
         protected abstract void BuildModule();
-        /// <summary>
-        /// 往架构添加模块 当添加成功时 尝试预初始化
-        /// </summary>
+
         protected void AddModule<M>(M module) where M : IModule
         {
             if (mModules.TryAdd(typeof(M), module))
                 (module as ICanInit).PreInit(this);
         }
-        /// <summary>
-        /// 往架构添加工具
-        /// </summary>
         protected void AddUtility<U>(U utility) where U : IUtility
         {
             mUtilities[typeof(U)] = utility;
@@ -341,13 +250,16 @@ namespace Panty
         /// </summary>
         protected void Deinit()
         {
+#if DEBUG
+            mUtilities.DicLog();
+            mModules.DicLog();
+#endif
             if (mModules.Count > 0)
             {
                 foreach (var module in mModules.Values)
                     (module as ICanInit).Deinit();
-                mModules.Clear();
             }
-            mUtilities.Clear();
+            mHub = null;
         }
         M IModuleHub.Module<M>()
         {
@@ -416,15 +328,6 @@ namespace Panty
             $"{typeof(E)}通知未被注册".Log();
 #endif
         }
-        /// <summary>
-        /// 使用类型来移除事件监听
-        /// </summary>
-        public void RmvEvent(Type type, Delegate evt) => mEvents.Separate(type, evt);
-        /// <summary>
-        /// 使用类型来移除通知的监听
-        /// </summary>
-        public void RmvNotify(Type type, Delegate evt) => mNotifies.Separate(type, evt);
-
         void IModuleHub.RmvEvent<E>(Action<E> evt) => mEvents.Separate(typeof(E), evt);
         void IModuleHub.RmvNotify<E>(Action evt) => mNotifies.Separate(typeof(E), evt);
 

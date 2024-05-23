@@ -1,4 +1,17 @@
-1.0.7@
+1.0.8@
+【v1.0.8 更新】
+# 移除大部分无意义的注释
+# 简化Mono单例类的逻辑
+# 调整并简化架构对于Unity平台的内存释放流程
+# 增加字典结构的Log函数
+# 为一些必要状态添加Log信息
+# 调整MeowEditor的检查更新逻辑
+# 调整PnEditor 样式bug
+# 移除DeInit生命周期 转为内嵌
+# 优化事件系统中委托链的移除流程
+# 移除MonoKit.cs文件 整合内容到Unity架构扩展中
+# 更新的文件有MeowEditor、PnEditor、ModuleHub、UnityModuleHub、MonoKit、MonoSingle
+
 【v1.0.7 更新】
 # 统一整体的命名风格
 # 为架构增加详细的注释
