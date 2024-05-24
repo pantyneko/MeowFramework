@@ -9,7 +9,7 @@ namespace Panty
         private string savePath = "Assets/Resources/SO";
         private string fileName = "NewSO";
 
-        [MenuItem("PnTool/SoCreator")]
+        [MenuItem("PnTool/SoCreator &2")]
         private static void Create() =>
             GetWindow<SOCreateEditor>().Show();
         private void OnGUI()

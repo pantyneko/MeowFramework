@@ -1,4 +1,15 @@
-1.0.8@
+1.0.9@
+【v1.0.9 更新】
+# 调整编辑器部分布局 
+# 增加编辑器快捷键 Alt+1或Alt+2
+# 增加快速拉取 核心代码功能
+# 增加相对完整的架构流程调试信息
+# 调整部分方法的命名
+# 优化事件系统中委托链的移除流程
+# 调整MonoKit的初始化流程
+# 移除MonoSingle.cs文件 整合内容到UnityModuleHub中
+# 更新的文件有MeowEditor、PnEditor、ModuleHub、UnityModuleHub、EditorKit、SOCreateEditor
+
 【v1.0.8 更新】
 # 移除大部分无意义的注释
 # 简化Mono单例类的逻辑

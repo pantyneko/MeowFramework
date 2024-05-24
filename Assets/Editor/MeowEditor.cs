@@ -3,9 +3,6 @@ using System.IO;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Panty
 {
@@ -60,10 +57,9 @@ namespace Panty
     }
     public class MeowEditor : PnEditor<MeowEditor.E_Type>
     {
-        private bool IsAsync;
         public enum E_Type : byte { Empty, A }
         protected string NameSpace => "Panty.Test";
-        [MenuItem("PnTool/MeowEditor")]
+        [MenuItem("PnTool/MeowEditor &1")]
         public static void ShowWindow() => GetWindow<MeowEditor>("MeowEditor", true);
         protected override E_Type Empty => E_Type.Empty;
         protected override (string, Action)[] InitBtnInfo()
@@ -121,68 +117,47 @@ namespace Panty
                         CreatScript("Model", $"namespace {NameSpace}\r\n{{\r\n    public interface I@Model : IModel\r\n    {{\r\n\r\n    }}\r\n    public class @Model : AbstractModel, I@Model\r\n    {{\r\n        protected override void OnInit()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n}}");
                     }
                 }),
-                ("检查更新",CheckUpdate),
-            };
-        }
-        private async void CheckUpdate()
-        {
-            if (IsAsync) return;
-            try
-            {
-                using (var client = new HttpClient())
-                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8))) // 设置超时时间
+                ("检查更新",() =>
                 {
-                    IsAsync = true;
-                    inputText = "正在检查更新 请稍后...";
+                    if (IsAsync) return;
                     string url = "https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/VersionInfo.txt";
-                    var response = await client.GetAsync(url, cts.Token);
-                    string text = await response.EnsureSuccessStatusCode().Content.ReadAsStringAsync();
-                    string[] res = text.Split("@");
-                    string version = HubTool.version;
-                    if (res[0] == version)
+                    RequestInfo(url, "正在检查更新 请稍后...", txt =>
                     {
-                        TextDialog.Show($"当前架构为最新版本：[ {version} ] > 无需更新\r\n{res[1]}");
-                    }
-                    else
-                    {
-                        mPath = E_Path.UpdateFK;
-                        TextDialog.Show($"当前架构版本为：{version},最新版本为:{res[0]},请点击 >>> 打开路径 <<< 按钮访问最新版本\r\n{res[1]}");
-                    }
-                }
-            }
-            catch (TaskCanceledException e)
-            {
-                EditorKit.ShowTips(e.CancellationToken.IsCancellationRequested ? "请求被用户取消。" : "请求超时!");
-            }
-            catch (HttpRequestException e)
-            {
-                EditorKit.ShowTips($"请求错误: {e.Message}");
-            }
-            finally
-            {
-                IsAsync = false;
-            }
+                        string[] res = txt.Split("@");
+                        string version = HubTool.version;
+                        if (res[0] == version)
+                        {
+                            TextDialog.Show($"当前为最新版本：[ {version} ] > 无需更新\r\n{res[1]}");
+                        }
+                        else
+                        {
+                            mPath = E_Path.UpdateFK;
+                            TextDialog.Show($"当前版本：{version}\r\n最新版本：{res[0]}\r\n\r\n1：点击【打开路径按钮】= 访问最新版本\r\n2：右键【拉取核心代码】= 进行快速更新\r\n{res[1]}");
+                        }
+                    });
+                }),
+            };
         }
         private bool CheckInputLegal()
         {
-            if (EditorKit.ShowDialog("真的要这么做嘛？喵!!"))
+            if (EditorKit.Dialog("真的要这么做嘛？喵!!"))
             {
                 // 如果输入框锁住 不调用
                 if (mDisabledInputBox)
                 {
-                    EditorKit.ShowTips("输入框为锁定状态,解锁后重试");
+                    EditorKit.Tips("输入框为锁定状态,解锁后重试");
                     return false;
                 }
                 // 如果文本为空 不调用
                 if (string.IsNullOrEmpty(inputText))
                 {
-                    EditorKit.ShowTips("请在面板上正确输入类型名");
+                    EditorKit.Tips("请在面板上正确输入类型名");
                     return false;
                 }
                 int index = inputText.GetSpecialCharsCount();
                 if (index >= 0)
                 {
-                    EditorKit.ShowTips($"编辑器名字有特殊符号\"{inputText[index]}\"");
+                    EditorKit.Tips($"编辑器名字有特殊符号\"{inputText[index]}\"");
                     return false;
                 }
                 return true;
@@ -195,7 +170,7 @@ namespace Panty
             // 查找是否存在同名脚本 如果存在就跳出
             if (File.Exists(path))
             {
-                EditorKit.ShowTips("脚本已存在");
+                EditorKit.Tips("脚本已存在");
                 return;
             }
             File.WriteAllText(path, Regex.Replace(tmple, Regex.Escape("@"), inputText));

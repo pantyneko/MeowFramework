@@ -2,6 +2,9 @@ using UnityEngine;
 using UnityEditor;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Panty
 {
@@ -22,6 +25,7 @@ namespace Panty
         protected string inputText = "喵喵工具箱";
 
         protected T modes;
+        protected bool IsAsync;
         protected E_Path mPath;
         protected GUIStyle HelpBoxStyle;
         protected bool mIsShowBtn = true, mShowBaseInfo, mDisabledInputBox = true, mCanInit = true;
@@ -111,13 +115,23 @@ namespace Panty
                 }
                 menu.AddItem(new GUIContent("创建基础目录"), false, () =>
                 {
-                    string[] fileNames = { "ArtRes", "Editor", "Presets", "Resources", "Scenes", "Framework", "Project", "StreamingAssets" };
+                    string[] fileNames = { "ArtRes/Sprites", "Resources/Audios/Bgm", "Resources/Audios/Sound", "Resources/Prefabs", "Scripts/Framework", "Project/Game", "StreamingAssets/Csv" };
                     for (int i = 0; i < fileNames.Length; i++)
                     {
                         string path = Application.dataPath + "/" + fileNames[i];
                         FileKit.TryCreateDirectory(path);
                     }
                     AssetDatabase.Refresh();
+                });
+                menu.AddItem(new GUIContent("拉取核心代码"), false, () =>
+                {
+                    if (IsAsync) return;
+                    string url = "https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/FK/ModuleHub.cs";
+                    RequestInfo(url, "正在拉取最新代码 请稍后...", txt =>
+                    {
+                        string msg = "点击 Yes 代码将传入剪贴板 使用 Ctrl + V 替换原始架构";
+                        if (EditorKit.Dialog(msg)) GUIUtility.systemCopyBuffer = txt;
+                    });
                 });
                 // 显示右键菜单
                 menu.ShowAsContext();
@@ -163,13 +177,39 @@ namespace Panty
                 GUILayout.Label("动态按钮区域 重写InitBtnInfo进行添加 ↓", HelpBoxStyle);
                 ShowBtns(btnInfos);
             }
-
             ExtensionControl();
 
             if (mShowBaseInfo)
             {
                 GUILayout.Label("动态调试信息 重写ShowLogInfo进行添加 ↓", HelpBoxStyle);
                 ShowLogInfo();
+            }
+        }
+        protected async void RequestInfo(string url, string tips, Action<string> call)
+        {
+            try
+            {
+                using (var client = new HttpClient())
+                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8))) // 设置超时时间
+                {
+                    IsAsync = true;
+                    inputText = tips;
+                    var response = await client.GetAsync(url, cts.Token);
+                    var content = response.EnsureSuccessStatusCode().Content;
+                    call?.Invoke(await content.ReadAsStringAsync());
+                }
+            }
+            catch (TaskCanceledException e)
+            {
+                EditorKit.Tips(e.CancellationToken.IsCancellationRequested ? "请求被用户取消。" : "请求超时!");
+            }
+            catch (HttpRequestException e)
+            {
+                EditorKit.Tips($"请求错误: {e.Message}");
+            }
+            finally
+            {
+                IsAsync = false;
             }
         }
         protected virtual void ShowLogInfo()

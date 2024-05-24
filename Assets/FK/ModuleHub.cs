@@ -81,6 +81,7 @@ namespace Panty
         void ICanInit.PreInit(IModuleHub hub)
         {
             mHub = hub;
+
             if (Preload && !Inited)
             {
 #if DEBUG
@@ -129,7 +130,7 @@ namespace Panty
     public static partial class HubTool
     {
 #if DEBUG
-        public const string version = "1.0.8";
+        public const string version = "1.0.9";
         /// <summary>
         /// 在调试模式下 将对象信息输出到控制台 可支持多个平台。
         /// </summary>

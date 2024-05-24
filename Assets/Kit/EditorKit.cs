@@ -7,11 +7,11 @@ namespace Panty
 {
     public static class EditorKit
     {
-        public static bool ShowDialog(string msg)
+        public static bool Dialog(string msg)
         {
             return EditorUtility.DisplayDialog("让我来想想...喵~", msg, "Yes", "No");
         }
-        public static void ShowTips(string msg)
+        public static void Tips(string msg)
         {
             EditorUtility.DisplayDialog("让我来想想...喵~", msg, "晓得了");
         }
