@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -20,13 +19,21 @@ namespace Panty
     {
         private void OnDisable() => UnRegister();
     }
-    public class MonoKit : MonoSingle<MonoKit>
+    public class MonoKit : MonoBehaviour
     {
+        private static MonoKit mono;
+        public static MonoKit GetIns() => mono;
+
         public static event Action OnUpdate;
         public static event Action OnFixedUpdate;
         public static event Action OnLateUpdate;
         public static event Action OnGuiUpdate;
 
+        private void Awake()
+        {
+            if (mono == null) mono = this;
+            else Destroy(mono.gameObject);
+        }
         private void Update() => OnUpdate?.Invoke();
         private void FixedUpdate() => OnFixedUpdate?.Invoke();
         private void LateUpdate() => OnLateUpdate?.Invoke();
@@ -34,8 +41,8 @@ namespace Panty
     }
     public static partial class HubTool
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
-        public static void Initialize() => MonoKit.GetIns();
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void Initialize() => GameObject.DontDestroyOnLoad(new GameObject(nameof(MonoKit), typeof(MonoKit)));
         /// <summary>
         /// 尝试从一个物体身上获取脚本 如果获取不到就添加一个
         /// </summary>
@@ -140,7 +147,7 @@ namespace Panty
         public static void AddEvent_OnSceneUnload_UnRegister<E>(this IPermissionProvider self, Action<E> evt) where E : struct
         {
             self.Hub.AddEvent<E>(evt);
-            mWaitUninstEvents.Push(() => self.Hub.RmvEvent<E>(evt));
+            mWaitUninstActions += () => self.Hub.RmvEvent<E>(evt);
         }
         /// <summary>
         /// 添加通知的监听 并标记为场景卸载时注销
@@ -148,18 +155,18 @@ namespace Panty
         public static void AddNotify_OnSceneUnload_UnRegister<N>(this IPermissionProvider self, Action evt) where N : struct
         {
             self.Hub.AddNotify<N>(evt);
-            mWaitUninstEvents.Push(() => self.Hub.RmvNotify<N>(evt));
+            mWaitUninstActions += () => self.Hub.RmvNotify<N>(evt);
         }
         /// <summary>
         /// 用于当前场景卸载时 注销所有事件和通知
         /// </summary>
         public static void UnRegisterAllUnloadEvents()
         {
-            while (mWaitUninstEvents.Count > 0)
-                mWaitUninstEvents.Pop().Invoke();
+            mWaitUninstActions?.Invoke();
+            mWaitUninstActions = null;
         }
         // 用于存储所有当前场景卸载时 需要注销的事件和通知
-        private static Stack<Action> mWaitUninstEvents = new Stack<Action>();
+        private static Action mWaitUninstActions;
     }
     public abstract partial class ModuleHub<H>
     {

@@ -34,14 +34,11 @@ namespace Panty
             // 防止编辑器意外创建 主要是 ExecuteInEditMode
             if (!UnityEditor.EditorApplication.isPlaying) return null;
 #endif
-            if (ins == null)
+            if (ins == null && (ins = FindObjectOfType<T>()) == null)
             {
-                if ((ins = FindObjectOfType<T>()) == null)
-                {
-                    var o = new GameObject(typeof(T).Name);
-                    GameObject.DontDestroyOnLoad(o);
-                    ins = o.AddComponent<T>();
-                }
+                var o = new GameObject(typeof(T).Name);
+                GameObject.DontDestroyOnLoad(o);
+                ins = o.AddComponent<T>();
             }
             return ins;
         }
