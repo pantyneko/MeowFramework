@@ -10,8 +10,7 @@ namespace Panty
         private string fileName = "NewSO";
 
         [MenuItem("PnTool/SoCreator &2")]
-        private static void Create() =>
-            GetWindow<SOCreateEditor>().Show();
+        private static void Create() => GetWindow<SOCreateEditor>().Show();
         private void OnGUI()
         {
             GUILayout.Space(10);
