@@ -166,7 +166,7 @@ namespace Panty
         /// <summary>
         /// 添加事件的监听 并标记为物体被销毁时注销
         /// </summary>
-        public static void AddEvent_OnDestroyed_UnRegister<E>(this IPermissionProvider self, Action<E> evt, GameObject o) where E : struct
+        public static void AddEvent_OnDestroyed_UnRegister<E>(this IPermissionProvider self, GameObject o, Action<E> evt) where E : struct
         {
             self.Hub.AddEvent<E>(evt);
             o.GetOrAddComponent<UnRegisterOnDestroyTrigger>().Add(() => self.Hub.RmvEvent<E>(evt));
@@ -174,7 +174,7 @@ namespace Panty
         /// <summary>
         /// 添加通知的监听 并标记为物体被销毁时注销
         /// </summary>
-        public static void AddNotify_OnDestroyed_UnRegister<E>(this IPermissionProvider self, Action evt, GameObject o) where E : struct
+        public static void AddNotify_OnDestroyed_UnRegister<E>(this IPermissionProvider self, GameObject o, Action evt) where E : struct
         {
             self.Hub.AddNotify<E>(evt);
             o.GetOrAddComponent<UnRegisterOnDestroyTrigger>().Add(() => self.Hub.RmvNotify<E>(evt));
@@ -182,7 +182,7 @@ namespace Panty
         /// <summary>
         /// 添加事件的监听 并标记为物体失活时注销
         /// </summary>
-        public static void AddEvent_OnDisabled_UnRegister<E>(this IPermissionProvider self, Action<E> evt, GameObject o) where E : struct
+        public static void AddEvent_OnDisabled_UnRegister<E>(this IPermissionProvider self, GameObject o, Action<E> evt) where E : struct
         {
             self.Hub.AddEvent<E>(evt);
             o.GetOrAddComponent<UnRegisterOnDisableTrigger>().Add(() => self.Hub.RmvEvent<E>(evt));
@@ -190,7 +190,7 @@ namespace Panty
         /// <summary>
         /// 添加通知的监听 并标记为物体失活时注销
         /// </summary>
-        public static void AddNotify_OnDisabled_UnRegister<E>(this IPermissionProvider self, Action evt, GameObject o) where E : struct
+        public static void AddNotify_OnDisabled_UnRegister<E>(this IPermissionProvider self, GameObject o, Action evt) where E : struct
         {
             self.Hub.AddNotify<E>(evt);
             o.GetOrAddComponent<UnRegisterOnDisableTrigger>().Add(() => self.Hub.RmvNotify<E>(evt));
