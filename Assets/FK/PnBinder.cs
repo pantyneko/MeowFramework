@@ -28,11 +28,15 @@ namespace Panty
     }
     public class ValueBinder<V> : PnBinder<V> where V : struct, IEquatable<V>
     {
-        public void SetValue(V value)
+        public V Value
         {
-            if (mValue.Equals(value)) return;
-            mValue = value;
-            mCallBack?.Invoke(value);
+            get => mValue;
+            set
+            {
+                if (mValue.Equals(value)) return;
+                mValue = value;
+                mCallBack?.Invoke(value);
+            }
         }
         public ValueBinder(V value = default) => mValue = value;
         public static bool operator ==(ValueBinder<V> binder, V value) => binder.mValue.Equals(value);
@@ -49,11 +53,15 @@ namespace Panty
     }
     public class StringBinder : PnBinder<string>
     {
-        public void SetValue(string value)
+        public string Value
         {
-            if (mValue == value) return;
-            mValue = value;
-            mCallBack?.Invoke(value);
+            get => mValue;
+            set
+            {
+                if (mValue == value) return;
+                mValue = value;
+                mCallBack?.Invoke(value);
+            }
         }
         public StringBinder(string value = default) => mValue = value;
         public static bool operator ==(StringBinder binder, string value) => binder.mValue == value;

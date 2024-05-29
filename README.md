@@ -1,1004 +1,1016 @@
-# MeowFramework 1.1.1 用户手册
+# MeowFramework<精简版QF> 文档
 
-## 框架概述
+## 项目概述
 
-MeowFramework是一套基于QF架构改良的高性能框架，适合追求自定义和轻量级设计的开发者。架构支持模块化和灵活的系统设计，实现了命令/查询处理模式和事件处理模式。
+**项目名称:** MeowFramework<精简版QF>  
+**作者:** [PantyNeko](https://gitee.com/PantyNeko)  
+**创建日期:** 2024-05-09  
+**描述:** 这是一个基于QF架构的高性能框架，提供了高度开放的扩展权限，适合喜欢自定义、追求极限轻量的开发者。架构旨在支持高度模块化和灵活的系统设计，实现了单例模式、命令/查询处理模式和事件处理等功能。框架的设计理念是简化开发流程，提供高效、可扩展的解决方案，适用于各种规模的项目。
 
-(注：该架构会自动提示更新 如运行后提示更新 请及时前往Github 获取最新版本)
+---
 
-## 环境要求
+## 命名空间和接口
 
-建议使用 C# 8.0 - Unity 2021及以上版本
+### 命名空间: Panty
 
-## 核心组件
-
-### IModule  接口
-
-- 架构模块接口 通常用来统一<**模块层**>的基接口
-
-- ```c#
-  public interface IBaseModule : IModule
+#### 接口 IReceiver
+- **用途:** 用于分离命令中的具体执行逻辑。
+- **示例:**
+  ```csharp
+  public class MyReceiver : IReceiver
   {
-  	// 这里定义模块接口方法
-  }
-  public class BaseModule : IBaseModule
-  {
-      public void TryInit()
-      {
-          // 尝试初始化模块，如果已经初始化，则不重复进行
-      }
+      // 实现细节
   }
   ```
 
-### AbsModule 抽象类
-
-- 架构抽象模块基类 用于拓展模块的初始化规则 提供了初始化和逆初始化的状态变更
-
-- ```c#
-  public class MyModule : AbsModule, IMyModule
-  {
-      // 对于特殊情况 可将 Preload 重写为true 以提前加载该模块
-      public override bool Preload => true;
-      // 初始化阶段
-      protected override void OnInit(){}
-      // 销毁阶段
-      protected override void OnDeInit(){}
-      void IMyModule.Say() => "Say".Log();
-      void IMyModule.Say(string msg) => msg.Log();
-      string IMyModule.Get(int id) => id.ToString();
-      string IMyModule.Msg => "说话呀！";
-  }
-  ```
-
-### IUtility 接口
-
-- 架构工具接口 通常用来统一<**工具层**>的基接口
-
-- ```c#
-  public interface IMyUtility : IUtility
-  {
-      void Use();
-  }
-  public class MyUtility : IMyUtility
-  {
-      void IMyUtility.Use() => "Use".Log();
-  }
-  ```
-
-### ICanInit 接口
-
-- 架构可初始化接口 通常用来统一初始化动作 
-
-- ```c#
-  // 这里将接口作为模块的子类 外部调用涉及IModule接口时 初始化方法不至于被错误的调用
-  public interface ICanInit : IModule
-  {
-      bool Preload { get; }
-      void PreInit(IModuleHub hub);
-      void Deinit();
-  }
-  ```
-
-### IPermissionProvider 接口
-
-- 架构权限接口 通常用来给表现层对象或特殊对象提供架构的访问权限
-
-- ```c#
-  public class FK_Example : MonoBehaviour, IPermissionProvider
-  {
-      IModuleHub IPermissionProvider.Hub => ExampleHub.GetIns();
-  }
-  ```
-
-### ICmd  接口
-
-- 架构命令接口 通常用来统一所有<**无**>参数命令的执行
-
-- ```c#
-  public struct ExampleCmd : ICmd
+#### 接口 ICmd
+- **用途:** 无参数的命令接口，用于执行不需要额外信息的操作。
+- **方法:**
+  
+  - `void Do(IModuleHub hub);`
+- **示例:**
+  ```csharp
+  public class SimpleCommand : ICmd
   {
       public void Do(IModuleHub hub)
       {
-          // 执行命令逻辑 hub 可以在命令中调用架构权限 例如
-          hub.Module<IMyModule>().Say();
+          // 命令逻辑
       }
   }
   ```
 
-### ICmd< P>  接口
-
-- 架构命令接口 通常用来统一所有<**有**>参数命令的执行
-
-- ```c#
-  public struct ExampleDataCmd : ICmd<string>
+#### 接口 ICmd<P>
+- **用途:** 带参数的命令接口，用于执行需要额外信息的操作。
+- **方法:**
+  
+  - `void Do(IModuleHub hub, P info);`
+- **示例:**
+  ```csharp
+  public class ParameterizedCommand : ICmd<string>
   {
-      public void Do(IModuleHub hub, string msg)
+      public void Do(IModuleHub hub, string info)
       {
-          // 执行命令逻辑 hub 可以在命令中调用架构权限 例如
-          hub.Module<IMyModule>().Say(msg);
+          // 命令逻辑
       }
   }
   ```
 
-### IQuery< R >  接口
-
-- 架构查询接口 通常用来统一所有<**无**>参数查询的执行
-
-- ```c#
-  public struct ExampleQuery : IQuery<string>
+#### 接口 IQuery<R>
+- **用途:** 仅返回结果的无参数查询接口。
+- **方法:**
+  
+  - `R Do(IModuleHub hub);`
+- **示例:**
+  ```csharp
+  public class SimpleQuery : IQuery<int>
   {
-      public string Do(IModuleHub hub)
+      public int Do(IModuleHub hub)
       {
-          return hub.Module<IMyModule>().Msg;
+          // 查询逻辑
+          return 42;
       }
   }
   ```
 
-### IQuery<P, R>  接口
-
-- 架构查询接口 通常用来统一所有<**有**>参数查询的执行
-
-- ```c#
-  public struct ExampleDataQuery : IQuery<int, string>
+#### 接口 IQuery<P, R>
+- **用途:** 带参数且返回结果的查询接口。
+- **方法:**
+  
+  - `R Do(IModuleHub hub, P info);`
+- **示例:**
+  ```csharp
+  public class ParameterizedQuery : IQuery<string, int>
   {
-      public string Do(IModuleHub hub, int num)
+      public int Do(IModuleHub hub, string info)
       {
-          return hub.Module<IMyModule>().Get(10);
+          // 查询逻辑
+          return info.Length;
       }
   }
   ```
 
-### ModuleHub 抽象类
-- 框架的核心基类，负责管理框架中的所有模块和工具以及提供所有内嵌功能函数的具体实现
+#### 接口 IPermissionProvider
+- **用途:** 权限提供者接口，为对象赋予访问架构的能力。
+- **属性:**
+  
+  - `IModuleHub Hub { get; }`
+- **示例:**
+  ```csharp
+  public class MyPermissionProvider : IPermissionProvider
+  {
+      public IModuleHub Hub { get; private set; }
 
-#### GetIns()
+      public MyPermissionProvider(IModuleHub hub)
+      {
+          Hub = hub;
+      }
+  }
+  ```
 
-- 获取当前架构的单例对象实例 <懒汉式>。
+#### 接口 IModule
+- **用途:** 模块接口，标识该对象为带状态模块。
+- **方法:**
+  
+  - `void TryInit();`
+- **示例:**
+  ```csharp
+  public class MyModule : IModule
+  {
+      public void TryInit()
+      {
+          // 初始化逻辑
+      }
+  }
+  ```
 
+#### 接口 IUtility
+- **用途:** 工具接口，标识对象为无状态工具。
+- **示例:**
+  ```csharp
+  public class MyUtility : IUtility
+  {
+      // 工具逻辑
+  }
+  ```
 
-```c#
-var ins = ExampleHub.GetIns()
-// CheckUpdate() 用于检查更新的函数 <架构会主动调用 不要去动它> 已移动到编辑器
-```
-
-#### DEBUG 宏
-
-- 定义某些操作仅用于调试
-
-#### BuildModule()
-
-- 用于让子类重写注册模块的顺序和逻辑 <架构会主动调用 不要去动它>
-
-### IModuleHub 接口
-
-- 框架的核心接口，负责提供架构中所有的对外功能函数。主要方法如下：
-
-#### 模块
-
-##### Module< M>() 
-
-- 获取一个已注册的模块实例 通常会在命令或查询等特殊情况使用。
-
-
-```c#
-var myModule = hub.Module<MyModule>();
-```
-
-##### Utility< U>() 
-
-获取一个已注册的工具实例 通常会在命令或查询等特殊情况使用。
-
-```c#
-var myUtility = hub.Utility<MyUtility>();
-```
-
-#### 事件
-
-##### => Define Event 
-
-```c#
-public struct MyEvent
-{
-    public string Message;
-}
-```
-
-##### AddEvent< E>(Action< E> call)
-
-注册一个携带自身类型的事件监听器 注意不要注册到一些不可控的对象中。
-
-```c#
-hub.AddEvent<MyEvent>(eventHandler);
-```
-
-##### RmvEvent< E>(Action< E> call)
-
-移除一个携带自身类型的事件监听器 与注册同理 。
-
-```c#
-hub.RmvEvent<MyEvent>(eventHandler);
-```
-
-##### SendEvent< E>(E e)
-
-触发一个携带自身类型的事件 <外部赋值> 通常会在命令或查询等特殊情况使用。
-
-```c#
-hub.SendEvent(new MyEvent { Message = "Hello World" });
-```
-
-##### SendEvent< E>()
-
-触发一个携带自身类型的事件 <内部赋值> 通常会在命令或查询等特殊情况使用。
-
-```c#
-hub.SendEvent<MyEvent>();
-```
-
-#### 通知
-
-##### => Define Notify
-
-```c#
-public struct MyNotify{}
-```
-
-##### AddNotify< N>(Action call)
-
-注册一个仅通知的事件监听器 注意不要注册到一些不可控的对象中。
-
-```c#
-hub.AddNotify<MyNotify>(notifyHandler);
-```
-
-##### RmvNotify< N>(Action call)
-
-移除一个仅通知的事件监听器 与注册同理。
-
-```c#
-hub.RmvNotify<MyNotify>(notifyHandler);
-```
-
-##### SendNotify< N>()
-
-触发一个仅通知的事件 通常会在命令或查询等特殊情况使用。
-
-```c#
-hub.SendNotify<MyNotify>();
-```
-
-#### 命令
-
-##### SendCmd< C>(C cmd)
-
-发送一条无参数命令 <外部赋值> 通常会在命令或查询等特殊情况使用。
-
-```c#
-public struct ExampleCmd : ICmd
-{
-    public void Do(IModuleHub hub)
-    {
-        // 执行命令逻辑 hub 可以在命令中调用架构权限 例如
-        hub.Module<IMyModule>().Say();
+#### 接口 ICanInit
+- **用途:** 可初始化接口，用于对外隐藏模块的初始化方法。
+- **继承:** 继承自 IModule
+- **属性和方法:**
+  - `bool Preload { get; }`
+  - `void PreInit(IModuleHub hub);`
+  - `void Deinit();`
+- **示例:**
+  
+  ```csharp
+  public class MyInitModule : ICanInit
+  {
+    public bool Preload => true;
+  
+      public void PreInit(IModuleHub hub)
+      {
+          // 预初始化逻辑
     }
-}
-hub.SendCmd(new ExampleCmd());
-```
-
-##### SendCmd<C, P>(C cmd, P info)
-
-发送一条有参数命令 <外部赋值> 通常会在命令或查询等特殊情况使用。
-
-```c#
-public struct ExampleDataCmd : ICmd<string>
-{
-    public void Do(IModuleHub hub, string msg)
-    {
-        // 执行命令逻辑 hub 可以在命令中调用架构权限 例如
-        hub.Module<IMyModule>().Say(msg);
+  
+      public void Deinit()
+      {
+          // 逆初始化逻辑
     }
-}
-hub.SendCmd(new ExampleDataCmd(), "消息");
-```
-
-##### SendCmd< C>()
-
-发送一条无参数命令 <内部赋值> 通常会在命令或查询等特殊情况使用。
-
-```c#
-public struct ExampleCmd : ICmd
-{
-    public void Do(IModuleHub hub)
-    {
-        // 执行命令逻辑 hub 可以在命令中调用架构权限 例如
-        hub.Module<IMyModule>().Say();
-    }
-}
-hub.SendCmd<ExampleCmd>();
-```
-
-##### SendCmd<C, P>(P info)
-
-发送一条有参数命令 <内部赋值> 通常会在命令或查询等特殊情况使用。
-
-```c#
-public struct ExampleDataCmd : ICmd<string>
-{
-    public void Do(IModuleHub hub, string msg)
-    {
-        // 执行命令逻辑 hub 可以在命令中调用架构权限 例如
-        hub.Module<IMyModule>().Say(msg);
-    }
-}
-hub.SendCmd<ExampleDataCmd, string>("消息");
-```
-
-#### 查询
-
-##### Query<Q, R>()
-
-发送一条无参数的查询 通常会在命令或查询等特殊情况使用
-
-```c#
-public struct ExampleQuery : IQuery<string>
-{
-    public string Do(IModuleHub hub)
-    {
-        return hub.Module<IMyModule>().Msg;
-    }
-}
-var str = hub.Query<ExampleQuery, string>();
-```
-
-##### Query<Q, P, R>(P info)
-
-发送一条有参数的查询 通常会在命令或查询等特殊情况使用
-
-```c#
-public struct ExampleDataQuery : IQuery<int, string>
-{
-    public string Do(IModuleHub hub, int num)
-    {
-        return hub.Module<IMyModule>().Get(num);
-    }
-}
-var str = hub.Query<ExampleDataQuery, int, string>(10);
-```
-
-##### Query< Q>()
-
-发送一条无参数且返回自身的查询 通常会在命令或查询等特殊情况使用
-
-```c#
-public struct ExampleSelfQuery : IQuery<ExampleSelfQuery>
-{
-    public ExampleSelfQuery Do(IModuleHub hub)
-    {
-        return this;
-    }
-}
-var q = hub.Query<ExampleSelfQuery>();
-```
-
-##### Query<Q, P>(P info)
-
-发送一条有参数且返回自身的查询 通常会在命令或查询等特殊情况使用
-
-```c#
-public struct ExampleSelfDataQuery : IQuery<int, ExampleSelfDataQuery>
-{
-    public ExampleSelfDataQuery Do(IModuleHub hub, int num)
-    {
-        return this;
-    }
-}
-var q = hub.Query<ExampleSelfDataQuery, int>(10);
-```
-
-### ModuleHubEx 静态类
-
-- 架构权限的静态扩展类 用于给 IPermissionProvider 接口 提供静态扩展方法 主要功能如下：
-
-#### 模块
-
-##### Module< M>() 
-
-- 获取一个已注册的模块实例 。
-
-```c#
-var myModule = this.Module<MyModule>();
-```
-
-##### Utility< U>() 
-
-获取一个已注册的工具实例 。
-
-```c#
-var myUtility = this.Utility<MyUtility>();
-```
-
-#### 事件
-
-##### => Define Event
-
-```c#
-public struct MyEvent
-{
-    public string Message;
-}
-```
-
-##### AddEvent< E>(Action< E> call)
-
-注册一个携带自身类型的事件监听器 。
-
-```c#
-this.AddEvent<MyEvent>(eventHandler);
-```
-
-##### RmvEvent< E>(Action< E> call)
-
-移除一个携带自身类型的事件监听器 记得注销 。
-
-```c#
-this.RmvEvent<MyEvent>(eventHandler);
-```
-
-##### SendEvent< E>(E e)
-
-触发一个携带自身类型的事件 <外部赋值> 。
-
-```c#
-this.SendEvent(new MyEvent { Message = "Hello World" });
-```
-
-##### SendEvent< E>()
-
-触发一个携带自身类型的事件 <内部赋值> 。
-
-```c#
-this.SendEvent<MyEvent>();
-```
-
-#### 通知
-
-##### => Define Notify
-
-```c#
-public struct MyNotify{}
-```
-
-##### AddNotify< N>(Action call)
-
-注册一个仅通知的事件监听器 。
-
-```c#
-this.AddNotify<MyNotify>(notifyHandler);
-```
-
-##### RmvNotify< N>(Action call)
-
-移除一个仅通知的事件监听器 。
-
-```c#
-this.RmvNotify<MyNotify>(notifyHandler);
-```
-
-##### SendNotify< N>()
-
-触发一个仅通知的事件 。
-
-```c#
-this.SendNotify<MyNotify>();
-```
-
-#### 命令
-
-##### SendCmd< C>(C cmd)
-
-发送一条无参数命令 <外部赋值> 。
-
-```c#
-public struct ExampleCmd : ICmd
-{
-    public void Do(IModuleHub hub)
-    {
-        // 执行命令逻辑 hub 可以在命令中调用架构权限 例如
-        hub.Module<IMyModule>().Say();
-    }
-}
-this.SendCmd(new ExampleCmd());
-```
-
-##### SendCmd<C, P>(C cmd, P info)
-
-发送一条有参数命令 <外部赋值> 。
-
-```c#
-public struct ExampleDataCmd : ICmd<string>
-{
-    public void Do(IModuleHub hub, string msg)
-    {
-        // 执行命令逻辑 hub 可以在命令中调用架构权限 例如
-        hub.Module<IMyModule>().Say(msg);
-    }
-}
-this.SendCmd(new ExampleDataCmd(), "消息");
-```
-
-##### SendCmd< C>()
-
-发送一条无参数命令 <内部赋值> 。
-
-```c#
-public struct ExampleCmd : ICmd
-{
-    public void Do(IModuleHub hub)
-    {
-        // 执行命令逻辑 hub 可以在命令中调用架构权限 例如
-        hub.Module<IMyModule>().Say();
-    }
-}
-this.SendCmd<ExampleCmd>();
-```
-
-##### SendCmd<C, P>(P info)
-
-发送一条有参数命令 <内部赋值> 。
-
-```c#
-public struct ExampleDataCmd : ICmd<string>
-{
-    public void Do(IModuleHub hub, string msg)
-    {
-        // 执行命令逻辑 hub 可以在命令中调用架构权限 例如
-        hub.Module<IMyModule>().Say(msg);
-    }
-}
-this.SendCmd<ExampleDataCmd, string>("消息");
-```
-
-#### 查询
-
-##### Query<Q, R>()
-
-发送一条无参数的查询 
-
-```c#
-public struct ExampleQuery : IQuery<string>
-{
-    public string Do(IModuleHub hub)
-    {
-        return hub.Module<IMyModule>().Msg;
-    }
-}
-var str = this.Query<ExampleQuery, string>();
-```
-
-##### Query<Q, P, R>(P info)
-
-发送一条有参数的查询 
-
-```c#
-public struct ExampleDataQuery : IQuery<int, string>
-{
-    public string Do(IModuleHub hub, int num)
-    {
-        return hub.Module<IMyModule>().Get(num);
-    }
-}
-var str = this.Query<ExampleDataQuery, int, string>(10);
-```
-
-##### Query< Q>()
-
-发送一条无参数且返回自身的查询 
-
-```c#
-public struct ExampleSelfQuery : IQuery<ExampleSelfQuery>
-{
-    public ExampleSelfQuery Do(IModuleHub hub)
-    {
-        return this;
-    }
-}
-var q = this.Query<ExampleSelfQuery>();
-```
-
-##### Query<Q, P>(P info)
-
-发送一条有参数且返回自身的查询 
-
-```c#
-public struct ExampleSelfDataQuery : IQuery<int, ExampleSelfDataQuery>
-{
-    public ExampleSelfDataQuery Do(IModuleHub hub, int num)
-    {
-        return this;
-    }
-}
-var q = this.Query<ExampleSelfDataQuery, int>(10);
-```
-
-### UnityModuleHub
-
-```c#
-// 导入拓展后 自动注册场景卸载事件
-public abstract partial class ModuleHub<H>
-{
-    protected ModuleHub()
-    {
-        SceneManager.sceneUnloaded += op => this.ExecuteSceneUnloadEvent();
-        MonoKit.GetIns().OnDeInit += Deinit;
-    }
-}
-```
-
-##### GetModel< D>() 
-
-- 获取一个已注册的模块实例 是 Module 的别名 用于在视觉上将模块定义为<**数据**>。
-
-```c#
-var myModule = this.GetModel<MyModule>();
-```
-
-##### GetSystem< S>() 
-
-- 获取一个已注册的模块实例 是 Module 的别名 用于在视觉上将模块定义为<**系统**>。
-
-```c#
-var myModule = this.GetSystem<MyModule>();
-```
-
-##### AddEventAndUnregisterOnUnload< E>
-
-- 注册一个由当前场景卸载为注销时机的有参数事件
-
-```c#
-this.AddEventAndUnregisterOnUnload(MyEvent);
-```
-
-##### AddNotifyAndUnregisterOnUnload< N>
-
-- 注册一个由当前场景卸载为注销时机的无参数事件通知
-
-```c#
-this.AddNotifyAndUnregisterOnUnload(MyNotify);
-```
-
-ExecuteSceneUnloadEvent< H>
-
-- 手动提前执行所有场景事件和通知
-
-```c#
-this.ExecuteSceneUnloadEvent();
-```
-
-## 编辑器部分
-
-### PnEditor
-
-```c#
-//一个用于Unity编辑器的基类，它提供了一套框架和界面元素，使得开发者可以通过继承这个类来快速创建具有特定功能的自定义编辑器窗口。子类需要实现一些抽象或虚拟方法来定制窗口的行为和外观
-```
-
-### MeowEditor
-
-```c#
-// 提供了一系列的功能按钮，用于快速创建不同类型的Unity脚本或文件，比如创建脚本、创建编辑器、创建Hub类、创建模块、创建架构、创建系统、创建数据模型以及检查更新
-```
-
-### TextDialog
-
-```c#
-//提供了一个方便的方式来在 Unity 编辑器中显示一个带有确认和取消按钮的消息对话框，开发者可以在自己的编辑器扩展中使用这个对话框来提示用户或者收集用户的输入。
-```
-
-### SOCreateEditor
-
-```c#
-// 用于快速创建ScriptableObject资产。它通过一个自定义窗口提供拖放功能，允许开发者直接拖入脚本文件来自动创建对应的ScriptableObject。此外，还提供了设置保存路径和文件名的选项，并通过简单的“Create”按钮完成资产的生成和导入
-```
-
-## 快速搭建
-
-可以使用架构中带的 MeowEditor 来快速生成模板代码 
-
-首先从GitHub中拿到框架后 会拿到一个名字叫 MeowEditor 的编辑器 我们使用在顶部菜单 ”PnTool“中 点击打开 MeowEditor 会弹出一个编辑窗口
-
-![](https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/Doc/img1.png)
-
-弹出编辑器窗口后 按照下图进行设置 文本框中设置的是当前项目的架构名 设置完成 点击创建Hub类 会自动创建一个脚本文件 如下
-
-![](https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/Doc/img2.png)
-
-```c#
+  
+      public void TryInit()
+      {
+          // 尝试初始化逻辑
+      }
+  }
+  ```
+
+#### 抽象类 AbsModule
+- **用途:** 抽象模块基类，实现基本生命周期和权限提供。
+- **实现的接口:** ICanInit, IPermissionProvider
+- **属性和方法:**
+  - `bool Inited`: 模块是否已初始化。
+  - `IModuleHub mHub`: 模块中心实例。
+  - `void ICanInit.PreInit(IModuleHub hub)`: 预初始化方法。
+  - `void IModule.TryInit()`: 尝试初始化方法。
+  - `void ICanInit.Deinit()`: 逆初始化方法。
+  - `protected abstract void OnInit()`: 抽象的初始化方法，由具体模块实现其初始化逻辑。
+  - `protected virtual void OnDeInit()`: 可重写的逆初始化方法，供具体模块实现其资源释放逻辑。
+  - `public virtual bool Preload => false`: 可重写的预初始化属性，用来指示是否提前初始化。
+  - `IModuleHub IPermissionProvider.Hub => mHub`: 实现IPermissionProvider接口，提供模块的访问能力。
+- **示例:**
+  ```csharp
+  public class MyModule : AbsModule
+  {
+      protected override void OnInit()
+      {
+          // 初始化逻辑
+      }
+
+      protected override void OnDeInit()
+      {
+          // 逆初始化逻辑
+      }
+  }
+  ```
+
+---
+
+## 架构扩展工具类
+
+### 静态类 HubTool
+- **用途:** 提供扩展方法和工具函数。
+- **版本:** "1.1.1"（调试模式下）
+- **方法和示例:**
+  - `public static T Log<T>(this T o)`: 在调试模式下将对象信息输出到控制台。
+    ```csharp
+    "调试信息".Log();
+    ```
+  - `public static void DicLog<K, V>(this Dictionary<K, V> dic, string dicName, string prefix)`: 输出字典信息到控制台。
+    ```csharp
+    var myDic = new Dictionary<string, int>();
+    myDic.DicLog("myDic", "前缀信息");
+    ```
+  - `public static void Combine(this Dictionary<Type, Delegate> events, Type type, Delegate evt)`: 将委托添加到字典中。
+    ```csharp
+    var events = new Dictionary<Type, Delegate>();
+    events.Combine(typeof(MyEvent), new Action<MyEvent>(e => { /* 事件逻辑 */ }));
+    ```
+  - `public static void Separate(this Dictionary<Type, Delegate> events, Type type, Delegate evt)`: 将委托从字典中移除。
+    ```csharp
+    var events = new Dictionary<Type, Delegate>();
+    events.Separate(typeof(MyEvent), new Action<MyEvent>(e => { /* 事件逻辑 */ }));
+    ```
+  - `public static T GetOrAdd<T>(this Component o) where T : Component`: 从组件获取脚本，如果获取不到就添加一个。
+    ```csharp
+    var component = this.GetOrAdd<MyComponent>();
+    ```
+  - `public static void FindComponents(this Component mono)`: 查找所有带标记的组件。
+    ```csharp
+    this.FindComponents();
+    ```
+  - `public static void FindChildrenControl<T>(this Component mono, Action<string, T> callback) where T : Component`: 找到面板父节点下所有对应控件。
+    ```csharp
+    this.FindChildrenControl<MyComponent>((name, component) => {
+        // 控件逻辑
+    });
+    ```
+
+### 静态类 HubEx
+- **用途:** 提供对模块、工具、事件和命令的扩展方法。
+- **方法和示例:**
+  - `public static M Module<M>(this IPermissionProvider self) where M : class, IModule`
+    ```csharp
+    var myModule = this.Module<MyModule>();
+    ```
+  - `public static U Utility<U>(this IPermissionProvider self) where U : class, IUtility`
+    ```csharp
+    var myUtility = this.Utility<MyUtility>();
+    ```
+  - `public static IRmv AddEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct`
+    ```csharp
+    IRmv removal = this.AddEvent<MyEvent>(e => { /* 事件处理逻辑 */ });
+    ```
+  - `public static void RmvEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct`
+    ```csharp
+    this.RmvEvent<MyEvent>(myEventHandler);
+    ```
+  - `public static void SendEvent<E>(this IPermissionProvider self, E e) where E : struct`
+    ```csharp
+    this.SendEvent
+    ```
+
+(new MyEvent());
+    ```
+  - `public static void SendEvent<E>(this IPermissionProvider self) where E : struct`
+    ```csharp
+    this.SendEvent<MyEvent>();
+    ```
+  - `public static IRmv AddNotify<N>(this IPermissionProvider self, Action evt) where N : struct`
+    ```csharp
+    IRmv notifyRemoval = this.AddNotify<MyNotification>(() => { /* 通知处理逻辑 */ });
+    ```
+  - `public static void RmvNotify<N>(this IPermissionProvider self, Action evt) where N : struct`
+    ```csharp
+    this.RmvNotify<MyNotification>(myNotifyHandler);
+    ```
+  - `public static void SendNotify<N>(this IPermissionProvider self) where N : struct`
+    ```csharp
+    this.SendNotify<MyNotification>();
+    ```
+  - `public static void SendCmd<C>(this IPermissionProvider self, C cmd) where C : ICmd`
+    ```csharp
+    this.SendCmd(new MyCommand());
+    ```
+  - `public static void SendCmd<C>(this IPermissionProvider self) where C : struct, ICmd`
+    ```csharp
+    this.SendCmd<MyCommand>();
+    ```
+  - `public static void SendCmd<C, P>(this IPermissionProvider self, C cmd, P info) where C : ICmd<P>`
+    ```csharp
+    this.SendCmd(new MyParameterizedCommand(), "参数信息");
+    ```
+  - `public static void SendCmd<C, P>(this IPermissionProvider self, P info) where C : struct, ICmd<P>`
+    ```csharp
+    this.SendCmd<MyParameterizedCommand, string>("参数信息");
+    ```
+  - `public static R Query<Q, R>(this IPermissionProvider self) where Q : struct, IQuery<R>`
+    ```csharp
+    var result = this.Query<MyQuery, int>();
+    ```
+  - `public static R Query<Q, P, R>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, R>`
+    ```csharp
+    var result = this.Query<MyParameterizedQuery, string, int>("参数信息");
+    ```
+  - `public static Q Query<Q>(this IPermissionProvider self) where Q : struct, IQuery<Q>`
+    ```csharp
+    var result = this.Query<MyQuery>();
+    ```
+  - `public static Q Query<Q, P>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, Q>`
+    ```csharp
+    var result = this.Query<MyParameterizedQuery, string>("参数信息");
+    ```
+
+---
+
+## 架构接口
+
+### 接口 IModuleHub
+- **用途:** 定义模块中心的接口，负责管理模块、工具、事件、通知、命令和查询。
+- **方法:**
+  - `M Module<M>() where M : class, IModule;`
+  - `U Utility<U>() where U : class, IUtility;`
+  - `IRmv AddEvent<E>(Action<E> evt) where E : struct;`
+  - `void RmvEvent<E>(Action<E> evt) where E : struct;`
+  - `void SendEvent<E>(E e) where E : struct;`
+  - `void SendEvent<E>() where E : struct;`
+  - `IRmv AddNotify<N>(Action evt) where N : struct;`
+  - `void RmvNotify<N>(Action evt) where N : struct;`
+  - `void SendNotify<N>() where N : struct;`
+  - `void SendCmd<C>(C cmd) where C : ICmd;`
+  - `void SendCmd<C>() where C : struct, ICmd;`
+  - `void SendCmd<C, P>(C cmd, P info) where C : ICmd<P>;`
+  - `void SendCmd<C, P>(P info) where C : struct, ICmd<P>;`
+  - `R Query<Q, R>() where Q : struct, IQuery<R>;`
+  - `R Query<Q, P, R>(P info) where Q : struct, IQuery<P, R>;`
+  - `Q Query<Q>() where Q : struct, IQuery<Q>;`
+  - `Q Query<Q, P>(P info) where Q : struct, IQuery<P, Q>;`
+- **示例:**
+  ```csharp
+  public class MyModuleHub : ModuleHub<MyModuleHub>
+  {
+      protected override void BuildModule()
+      {
+          // 构建模块和工具
+          AddModule(new MyModule());
+          AddUtility(new MyUtility());
+      }
+  }
+
+  // 使用示例
+  var hub = MyModuleHub.GetIns();
+  var module = hub.Module<MyModule>();
+  var utility = hub.Utility<MyUtility>();
+  hub.SendCmd(new MyCommand());
+  var result = hub.Query<MyQuery, int>();
+  ```
+
+---
+
+## 架构基类
+
+### 类 CustomRmv
+- **用途:** 实现自身移除委托。
+- **方法:**
+  
+  - `void Do()`
+- **示例:**
+  ```csharp
+  public class CustomRmv : IRmv
+  {
+      private Action call;
+      public CustomRmv(Action call) => this.call = call;
+      void IRmv.Do() => call?.Invoke();
+  }
+
+  // 使用示例
+  IRmv rmv = new CustomRmv(() => { /* 移除逻辑 */ });
+  rmv.Do();
+  ```
+
+### 类 DelegateDicRmv<T>
+- **用途:** 实现字典中移除委托。
+- **方法:**
+  
+  - `void Do()`
+- **示例:**
+  ```csharp
+  public class DelegateDicRmv<T> : IRmv where T : struct
+  {
+      private Dictionary<Type, Delegate> mEvents;
+      private Delegate call;
+      void IRmv.Do() => mEvents.Separate(typeof(T), call);
+      public DelegateDicRmv(Dictionary<Type, Delegate> events, Delegate e)
+      {
+          mEvents = events;
+          call = e;
+      }
+  }
+
+  // 使用示例
+  var events = new Dictionary<Type, Delegate>();
+  var handler = new Action<MyEvent>(e => { /* 事件逻辑 */ });
+  events.Combine(typeof(MyEvent), handler);
+  IRmv rmv = new DelegateDicRmv<MyEvent>(events, handler);
+  rmv.Do();
+  ```
+
+### 抽象类 ModuleHub<H>
+- **用途:** 模块中心抽象类，负责模块和工具的管理。
+- **方法和属性:**
+  - `public static IModuleHub GetIns()`: 获取单例实例。
+  - `protected abstract void BuildModule()`: 构建模块和工具。
+  - `protected void AddModule<M>(M module) where M : IModule`: 添加模块并尝试预初始化。
+  - `protected void AddUtility<U>(U utility) where U : IUtility`: 添加工具。
+  - `protected void Dispose()`: 释放所有已初始化模块的状态信息。
+- **示例:**
+  ```csharp
+  public abstract class MyModuleHub : ModuleHub<MyModuleHub>
+  {
+      protected override void BuildModule()
+      {
+          // 构建模块和工具
+          AddModule(new MyModule());
+          AddUtility(new MyUtility());
+      }
+  }
+
+  // 使用示例
+  var hub = MyModuleHub.GetIns();
+  var module = hub.Module<MyModule>();
+  var utility = hub.Utility<MyUtility>();
+  hub.SendCmd(new MyCommand());
+  var result = hub.Query<MyQuery, int>();
+  ```
+
+---
+
+## 单例模式
+
+### 接口 ISingleton
+- **用途:** 单例接口。
+- **方法:**
+  
+  - `void Init();`
+- **示例:**
+  ```csharp
+  public class MySingleton : ISingleton
+  {
+      public void Init()
+      {
+          // 初始化逻辑
+      }
+  }
+  ```
+
+### 抽象类 Singleton<S>
+- **用途:** 单例基类。
+- **属性和方法:**
+  
+  - `public static S GetIns()`: 获取单例实例。
+- **示例:**
+  ```csharp
+  public class MySingleton : Singleton<MySingleton>, ISingleton
+  {
+      private MySingleton() { }
+
+      public void Init()
+      {
+          // 初始化逻辑
+      }
+  }
+
+  // 使用示例
+  var instance = MySingleton.GetIns();
+  instance.Init();
+  ```
+
+### 抽象类 MonoSingle<T>
+- **用途:** Unity的Mono单例基类。
+- **属性和方法:**
+  - `public static T GetIns()`: 获取单例实例。
+  - `protected virtual void InitSingle()`: 初始化单例。
+- **示例:**
+  ```csharp
+  public class MyMonoSingle : MonoSingle<MyMonoSingle>
+  {
+      protected override void InitSingle()
+      {
+          // 初始化逻辑
+      }
+  }
+
+  // 使用示例
+  var instance = MyMonoSingle.GetIns();
+  ```
+
+### 属性 FindComponentAttribute
+- **用途:** 查找游戏物体组件的特性。
+- **构造函数参数:**
+  - `string GoName`: 游戏物体名字。
+  - `bool GetChild`: 是否查找对应名字对象的下一级子物体。
+- **示例:**
+  ```csharp
+  public class MyComponent : MonoBehaviour
+  {
+      [FindComponent("ChildObject", true)]
+      public ChildComponent childComponent;
+  }
+  ```
+
+### 抽象类 RmvTrigger
+- **用途:** 用于在特定条件下移除事件和通知
+
+。
+- **方法:**
+  - `public void Add(IRmv rmv)`: 添加需要移除的事件或通知。
+  - `protected void RmvAll()`: 移除所有事件和通知。
+- **示例:**
+  ```csharp
+  public class MyRmvTrigger : RmvTrigger
+  {
+      // 触发器逻辑
+  }
+
+  // 使用示例
+  var trigger = gameObject.AddComponent<MyRmvTrigger>();
+  trigger.Add(new CustomRmv(() => { /* 移除逻辑 */ }));
+  trigger.RmvAll();
+  ```
+
+### 类 RmvOnDestroyTrigger
+- **用途:** 在对象销毁时移除所有事件和通知。
+- **方法:**
+  
+  - `private void OnDestroy()`: 触发移除逻辑。
+- **示例:**
+  ```csharp
+  public class MyRmvOnDestroyTrigger : RmvOnDestroyTrigger
+  {
+      // 销毁逻辑
+  }
+
+  // 使用示例
+  var trigger = gameObject.AddComponent<MyRmvOnDestroyTrigger>();
+  trigger.Add(new CustomRmv(() => { /* 移除逻辑 */ }));
+  // 当对象销毁时，自动调用 trigger.OnDestroy();
+  ```
+
+### 类 RmvOnDisableTrigger
+- **用途:** 在对象失活时移除所有事件和通知。
+- **方法:**
+  
+  - `private void OnDisable()`: 触发移除逻辑。
+- **示例:**
+  ```csharp
+  public class MyRmvOnDisableTrigger : RmvOnDisableTrigger
+  {
+      // 失活逻辑
+  }
+
+  // 使用示例
+  var trigger = gameObject.AddComponent<MyRmvOnDisableTrigger>();
+  trigger.Add(new CustomRmv(() => { /* 移除逻辑 */ }));
+  // 当对象失活时，自动调用 trigger.OnDisable();
+  ```
+
+### 类 MonoKit
+- **用途:** 提供Unity生命周期事件。
+- **事件:**
+  - `public static event Action OnUpdate;`
+  - `public static event Action OnFixedUpdate;`
+  - `public static event Action OnLateUpdate;`
+  - `public static event Action OnGuiUpdate;`
+- **方法:**
+  - `private void Awake()`: 初始化逻辑。
+  - `private void Update()`: 更新逻辑。
+  - `private void FixedUpdate()`: 固定更新逻辑。
+  - `private void LateUpdate()`: 延迟更新逻辑。
+  - `private void OnGUI()`: GUI更新逻辑。
+- **示例:**
+  ```csharp
+  public class MyMonoKit : MonoKit
+  {
+      // MonoKit逻辑
+  }
+
+  // 使用示例
+  MonoKit.OnUpdate += () => { /* 更新逻辑 */ };
+  MonoKit.OnFixedUpdate += () => { /* 固定更新逻辑 */ };
+  MonoKit.OnLateUpdate += () => { /* 延迟更新逻辑 */ };
+  MonoKit.OnGuiUpdate += () => { /* GUI更新逻辑 */ };
+  ```
+
+---
+
+## 数据绑定
+
+### 抽象类 PnBinder<V>
+- **用途:** 数据绑定基类。
+- **属性和方法:**
+  - `protected Action<V> mCallBack`: 绑定的回调函数。
+  - `protected V mValue`: 绑定的值。
+  - `public static implicit operator V(PnBinder<V> binder)`: 隐式转换为绑定的值。
+  - `public IRmv RegisterWithInitValue(Action<V> onValueChanged)`: 注册回调并立即调用。
+  - `public IRmv Register(Action<V> onValueChanged)`: 注册回调。
+  - `public void Unregister(Action<V> onValueChanged)`: 注销回调。
+  - `public void SetOnly(V value)`: 仅设置值不触发回调。
+- **示例:**
+  ```csharp
+  var binder = new PnBinder<int>();
+  binder.Register(value => { /* 值变化处理逻辑 */ });
+  binder.SetOnly(42);
+  int value = binder; // 隐式转换
+  ```
+
+### 类 ValueBinder<V>
+- **用途:** 值类型的绑定类。
+- **继承:** 继承自 PnBinder<V>
+- **方法:**
+  - `public void SetValue(V value)`: 设置值并触发回调。
+  - `public static implicit operator ValueBinder<V>(V value)`: 隐式转换为绑定类实例。
+  - `public static bool operator ==(ValueBinder<V> binder, V value)`: 判断绑定的值是否相等。
+  - `public static bool operator !=(ValueBinder<V> binder, V value)`: 判断绑定的值是否不等。
+- **示例:**
+  ```csharp
+  var valueBinder = new ValueBinder<int>(42);
+  valueBinder.Register(value => { /* 值变化处理逻辑 */ });
+  valueBinder.SetValue(42);
+  int value = valueBinder; // 隐式转换
+  ```
+
+### 类 StringBinder
+- **用途:** 字符串类型的绑定类。
+- **继承:** 继承自 PnBinder<string>
+- **方法:**
+  - `public void SetValue(string value)`: 设置值并触发回调。
+  - `public static implicit operator StringBinder(string value)`: 隐式转换为绑定类实例。
+  - `public static bool operator ==(StringBinder binder, string value)`: 判断绑定的值是否相等。
+  - `public static bool operator !=(StringBinder binder, string value)`: 判断绑定的值是否不等。
+- **示例:**
+  ```csharp
+  var stringBinder = new StringBinder("Hello");
+  stringBinder.Register(value => { /* 值变化处理逻辑 */ });
+  stringBinder.SetValue("Hello");
+  string value = stringBinder; // 隐式转换
+  ```
+
+### 类 ObjectBinder<O>
+- **用途:** 引用类型的绑定类。
+- **继承:** 继承自 PnBinder<O>
+- **方法:**
+  - `public void Modify<D>(D newValue, string fieldOrPropName)`: 修改对象的字段或属性。
+  - `public void Modify<D>(D newValue, Func<O, D> oldValue, Action<O, D> modifyAction)`: 修改对象的属性或字段。
+  - `public static implicit operator ObjectBinder<O>(O value)`: 隐式转换为绑定类实例。
+- **示例:**
+  ```csharp
+  public class MyObject
+  {
+      public int Value;
+  }
+
+  var obj = new MyObject { Value = 10 };
+  var objectBinder = new ObjectBinder<MyObject>(obj);
+  objectBinder.Register(value => { /* 对象变化处理逻辑 */ });
+  objectBinder.Modify(20, "Value");
+  objectBinder.Modify(30, o => o.Value, (o, newValue) => o.Value = newValue);
+  MyObject value = objectBinder; // 隐式转换
+  ```
+
+---
+
+## 容器类
+
+### 类 PArray<T>
+- **用途:** 可自动扩容的动态数组，需要手动释放未使用的结构。
+- **属性和方法:**
+  - `public int Count { get; }`: 获取元素数量。
+  - `public int Capacity { get; }`: 获取数组容量。
+  - `public bool IsEmpty { get; }`: 判断数组是否为空。
+  - `public T First { get; }`: 获取第一个元素。
+  - `public T Last { get; }`: 获取最后一个元素。
+  - `public T this[int index] { get; set; }`: 索引器，获取或设置指定位置的元素。
+  - `public PArray(int capacity = 4, bool isFill = false)`: 构造函数，初始化数组容量。
+  - `public PArray(IEnumerable<T> items)`: 构造函数，从集合初始化数组。
+  - `public PArray<T> Clone()`: 克隆数组。
+  - `public void Push(T e)`: 添加元素到数组末尾。
+  - `public void AddLast(T e)`: 添加元素到数组末尾。
+  - `public void RmvLast()`: 移除最后一个元素。
+  - `public T Pop()`: 移除并返回最后一个元素。
+  - `public void RmvAt(int index)`: 交换式移除指定位置的元素。
+  - `public void Sort(IComparer<T> comparer)`: 对数组进行排序。
+  - `public bool Find(Predicate<T> match, out T r)`: 查找符合条件的元素。
+  - `public bool Contains(T e)`: 判断数组是否包含指定元素。
+  - `public int IndexOf(T e)`: 获取指定元素的索引。
+  - `public void Shrinkage()`: 缩减数组容量。
+  - `public void Clear()`: 清空数组元素。
+  - `private void Resize(int newSize)`: 调整数组大小。
+  - `public void ResizeToN()`: 将容量重置为当前元素数量。
+  - `public void ResizeToDefault()`: 将容量重置为默认值。
+  - `public void ResetToNoCopy(int count)`: 重置容量但不复制数据。
+  - `public void ToFirst()`: 重置游标。
+  - `public void ToLast()`: 将游标移动到数组末端。
+  - `public IEnumerator<T> GetEnumerator()`: 获取迭代器
+
+。
+  - `IEnumerator IEnumerable.GetEnumerator()`: 获取迭代器。
+- **示例:**
+  ```csharp
+  var pArray = new PArray<int>(10);
+  pArray.Push(1);
+  pArray.Push(2);
+  pArray.Push(3);
+
+  Debug.Log(pArray.First);  // 输出: 1
+  Debug.Log(pArray.Last);   // 输出: 3
+
+  pArray.Sort(Comparer<int>.Default);
+  foreach (var item in pArray)
+  {
+      Debug.Log(item);
+  }
+
+  if (pArray.Contains(2))
+  {
+      Debug.Log("包含元素2");
+  }
+
+  int index = pArray.IndexOf(3);
+  Debug.Log($"元素3的索引: {index}");
+
+  pArray.RmvAt(1);
+  Debug.Log(pArray.Count);  // 输出: 2
+
+  pArray.Clear();
+  Debug.Log(pArray.IsEmpty);  // 输出: true
+  ```
+
+---
+
+## UI 基类
+
+### 类 UIPanel
+- **用途:** UI基类，封装找组件功能以及注册委托简化使用，提供显示或隐藏的行为。
+- **属性和方法:**
+  
+  - `public enum Layer { Top, Mid, Bot, Sys }`: UI层级枚举。
+  - `public virtual void OnShow()`: 显示面板时的逻辑。
+  - `public virtual void OnHide()`: 隐藏面板时的逻辑。
+  - `public virtual void Activate(bool active)`: 显示或隐藏面板。
+  - `protected virtual void OnClick(string btnName)`: 按钮点击时的逻辑。
+  - `public virtual bool IsOpen { get; }`: 判断面板是否打开。
+  - `protected virtual void Awake()`: 初始化逻辑，注册所有子对象的按钮。
+- **示例:**
+  ```csharp
+  public class MyUIPanel : UIPanel
+  {
+      protected override void OnClick(string btnName)
+      {
+          Debug.Log($"{btnName} clicked");
+      }
+  }
+
+  // 使用示例
+  var panel = gameObject.AddComponent<MyUIPanel>();
+  panel.Activate(true);
+  ```
+
+---
+
+## 完整示例
+
+```csharp
 using UnityEngine;
 
 namespace Panty.Test
 {
-    public class CounterHub : ModuleHub<CounterHub>
+    // 定义模块中心 CalcHub，负责注册模块 ICalcModel 和 IOpSystem
+    public class CalcHub : ModuleHub<CalcHub>
     {
+        // 构建模块，在这里注册所有需要的模块
         protected override void BuildModule()
         {
-            // 这里记得注册模块进去
-            AddModule<ICounterModel>(new CounterModel());
+            // 注册计算模型模块
+            AddModule<ICalcModel>(new CalcModel());
+            // 注册操作符系统模块
+            AddModule<IOpSystem>(new OpSystem());
         }
     }
-    public class CounterGame : MonoBehaviour, IPermissionProvider
+
+    // 定义 CalcGame 类，作为权限提供者，允许访问 CalcHub 中的模块
+    public class CalcGame : MonoBehaviour, IPermissionProvider
     {
-        IModuleHub IPermissionProvider.Hub => CounterHub.GetIns();
+        // 实现 IPermissionProvider 接口，返回模块中心实例
+        IModuleHub IPermissionProvider.Hub => CalcHub.GetIns();
     }
-    public class CounterUI : UIPanel, IPermissionProvider
+
+    // 定义 CalcUI 类，继承自 UIPanel 并实现权限提供者接口
+    public class CalcUI : UIPanel, IPermissionProvider
     {
-        IModuleHub IPermissionProvider.Hub => CounterHub.GetIns();
+        // 实现 IPermissionProvider 接口，返回模块中心实例
+        IModuleHub IPermissionProvider.Hub => CalcHub.GetIns();
     }
 }
-```
 
-也可以通过手动定义来搭建架构环境 样板代码如下：
-
-```c#
 using UnityEngine;
 
 namespace Panty.Test
 {
-    public class ExampleHub : ModuleHub<ExampleHub>
+    // 定义 CalcResultQuery 结构体，实现查询接口，返回计算结果
+    public struct CalcResultQuery : IQuery<float>
     {
-        protected override void BuildModule()
+        // 实现 Do 方法，执行查询操作，返回计算结果
+        public float Do(IModuleHub hub)
         {
-            // 推荐使用 MonoKit 的 OnDeInit事件 来进行销毁
-            // 1.0.6 版本 如果是Unity 环境 将不再需要下方步骤
-            MonoKit.GetIns().OnDeInit += Deinit;
-        }
-    }
-    public class ExampleGame : MonoBehaviour, IPermissionProvider
-    {
-        IModuleHub IPermissionProvider.Hub => ExampleHub.GetIns();
-    }
-    public class ExampleUI : UIPanel, IPermissionProvider
-    {
-        IModuleHub IPermissionProvider.Hub => ExampleHub.GetIns();
-    }
-}
-```
-
-## 演示项目
-
-```c#
-using System;
-using UnityEngine;
-
-namespace Panty.Test
-{
-    public interface ICounterModel : IModule
-    {
-        ValueBinder<float> A { get; }
-        ValueBinder<float> B { get; }
-        string GetOpIcon(int id);
-        string[] GetItems();
-    }
-    public class CounterModel : AbsModule, ICounterModel
-    {
-        ValueBinder<float> ICounterModel.A { get; } = new ValueBinder<float>();
-        ValueBinder<float> ICounterModel.B { get; } = new ValueBinder<float>();
-
-        private string[] Items;
-
-        protected override void OnInit()
-        {
-            "第一次调用 该模块 时 执行".Log();
-            Items = new string[] { "+", "-", "*", "/" };
-        }
-        protected override void OnDeInit()
-        {
-            "当应用或编辑器退出 时 执行".Log();
-        }
-        string ICounterModel.GetOpIcon(int id)
-        {
-            return Items[id];
-        }
-        string[] ICounterModel.GetItems()
-        {
-            return Items;
-        }
-    }
-    public struct ChangeOpCmd : ICmd<int>
-    {
-        public void Do(IModuleHub hub, int id)
-        {
-            var model = hub.Module<ICounterModel>();
-            hub.SendEvent(new ChangeOpIconEvent() { icon = model.GetOpIcon(id) });
-            hub.SendNotify<OperationSuccessfulNotify>();
-        }
-    }
-    public struct RandomValueCmd : ICmd
-    {
-        public void Do(IModuleHub hub)
-        {
-            var model = hub.Module<ICounterModel>();
-            model.A.Value = UnityEngine.Random.Range(1, 100);
-            model.B.Value = UnityEngine.Random.Range(1, 100);
-        }
-    }
-    public struct ResultQuery : IQuery<CounterApp.Op, float>
-    {
-        public float Do(IModuleHub hub, CounterApp.Op op)
-        {
-            var model = hub.Module<ICounterModel>();
-            float a = model.A.Value;
-            float b = model.B.Value;
+            // 获取计算模型模块
+            var model = hub.Module<ICalcModel>();
+            // 获取当前操作符
+            string op = hub.Module<IOpSystem>().Op;
+            // 获取两个操作数
+            int a = model.NumA;
+            int b = model.NumB;
+            // 根据操作符执行相应的计算
             return op switch
             {
-                CounterApp.Op.Add => a + b,
-                CounterApp.Op.Sub => a - b,
-                CounterApp.Op.Mul => a * b,
-                CounterApp.Op.Div => a / b,
-                _ => throw new Exception("未识别运算符"),
+                "+" => a + b,
+                "-" => a - b,
+                "*" => (float)a * b,
+                "/" => (float)a / b,
+                _ => int.MaxValue,
             };
         }
     }
-    public struct ChangeOpIconEvent
-    {
-        public string icon;
-    }
-    public struct OperationSuccessfulNotify { }
-    public struct OperationFailedNotify { }
 
-    public class CounterApp : CounterGame
+    // 定义 NextOpIndexCmd 结构体，实现命令接口，用于切换操作符
+    public struct NextOpIndexCmd : ICmd
     {
-        public enum Op : byte
+        // 实现 Do 方法，执行命令操作，切换操作符索引并发送计算命令
+        public void Do(IModuleHub hub)
         {
-            Add, Sub, Mul, Div
+            // 获取操作符系统模块
+            hub.Module<IOpSystem>().NextOpIndex();
+            // 发送计算命令
+            hub.SendCmd<CalcCmd>();
         }
-        private float startW, startH;
-        private GUIStyle style, btnStyle, inputStyle;
-        private string A, B, R;
-        private string opText = "+";
+    }
 
-        private int mSelect;
-        private bool ShowList;
+    // 定义 RandomCalcCmd 结构体，实现命令接口，用于生成随机数并发送计算命令
+    public struct RandomCalcCmd : ICmd
+    {
+        // 实现 Do 方法，执行命令操作，生成随机数并发送计算命令
+        public void Do(IModuleHub hub)
+        {
+            // 获取计算模型模块
+            var model = hub.Module<ICalcModel>();
+            // 生成随机数并赋值给操作数A和B
+            model.NumA.Value = Random.Range(1, 100);
+            model.NumB.Value = Random.Range(1, 100);
+            // 发送计算命令
+            hub.SendCmd<CalcCmd>();
+        }
+    }
 
-        private ICounterModel model;
+    // 定义 CalcCmd 结构体，实现命令接口，用于执行计算并发送事件
+    public struct CalcCmd : ICmd
+    {
+        // 实现 Do 方法，执行计算命令，查询计算结果并发送计算事件
+        public void Do(IModuleHub hub)
+        {
+            // 查询计算结果
+            var result = hub.Query<CalcResultQuery, float>();
+            // 发送计算结果事件
+            hub.SendEvent(new CalcEvent() { result = result });
+        }
+    }
 
+    // 定义 OpChangeEvent 结构体，用于表示操作符变化事件
+    public struct OpChangeEvent
+    {
+        // 表示当前操作符
+        public string op;
+    }
+
+    // 定义 CalcEvent 结构体，用于表示计算结果事件
+    public struct CalcEvent
+    {
+        // 表示计算结果
+        public float result;
+    }
+
+    // 定义 IOpSystem 接口，用于表示操作符系统
+    public interface IOpSystem : IModule
+    {
+        // 获取当前操作符
+        string Op { get; }
+        // 切换到下一个操作符
+        void NextOpIndex();
+    }
+
+    // 定义 OpSystem 类，实现操作符系统
+    public class OpSystem : AbsModule, IOpSystem
+    {
+        // 操作符索引
+        private int opIndex;
+        // 操作符数组
+        private string[] ops;
+
+        // 获取当前操作符
+        public string Op => ops[opIndex];
+
+        // 实现模块初始化方法，初始化操作符数组和索引
+        protected override void OnInit()
+        {
+            ops = new string[4] { "+", "-", "*", "/" };
+            opIndex = 0;
+        }
+
+        // 切换到下一个操作符
+        public void NextOpIndex()
+        {
+            opIndex = (opIndex + 1) % ops.Length;
+            // 发送操作符变化事件
+            this.SendEvent(new OpChangeEvent() { op = ops[opIndex] });
+        }
+    }
+
+    // 定义 ICalcModel 接口，用于表示计算模型
+    public interface ICalcModel : IModule
+    {
+        // 操作数A
+        ValueBinder<int> NumA { get; }
+        // 操作数B
+        ValueBinder<int> NumB { get; }
+    }
+
+    // 定义 CalcModel 类，实现计算模型
+    public class CalcModel : AbsModule, ICalcModel
+    {
+        // 初始化操作数A和B的绑定器
+        public ValueBinder<int> NumA { get; } = new ValueBinder<int>(1);
+        public ValueBinder<int> NumB { get; } = new ValueBinder<int>(2);
+
+        // 实现模块初始化方法
+        protected override void OnInit() { }
+    }
+}
+
+using UnityEngine.UI;
+
+namespace Panty.Test
+{
+    // 定义 CalcPanel 类，继承自 CalcUI，负责管理 UI 逻辑
+    public class CalcPanel : CalcUI
+    {
+        // 查找并绑定 UI 组件
+        [FindComponent("Op")] private Text mOPText;
+        [FindComponent("Result")] private Text mResultText;
+        [FindComponent("InputA")] private Text mInputA;
+        [FindComponent("InputB")] private Text mInputB;
+
+        // 存储计算模型模块实例
+        private ICalcModel mModel;
+
+        // 初始化方法，在 Start 中注册操作数和事件的回调
         private void Start()
         {
-            startW = Screen.width >> 1;
-            startH = Screen.height >> 1;
+            // 获取计算模型模块
+            mModel = this.Module<ICalcModel>();
 
-            model = this.Model<ICounterModel>();
-            model.A.RegisterWithInitValue(OnAChange);
-            model.B.RegisterWithInitValue(OnBChange);
+            // 注册操作数A和B的值变化回调，并在销毁时移除
+            mModel.NumA.RegisterWithInitValue(v => mInputA.text = v.ToString()).RmvOnDestroy(this);
+            mModel.NumB.RegisterWithInitValue(v => mInputB.text = v.ToString()).RmvOnDestroy(this);
 
-            this.AddEvent<ChangeOpIconEvent>(OnChangeOp);
-            this.AddNotify<OperationSuccessfulNotify>(OnOperationSuccessful);
-            this.AddNotify<OperationFailedNotify>(OnOperationFailed);
+            // 注册计算结果事件的回调，并在销毁时移除
+            this.AddEvent<CalcEvent>(e => mResultText.text = e.result.ToString()).RmvOnDestroy(this);
+            // 注册操作符变化事件的回调，并在销毁时移除
+            this.AddEvent<OpChangeEvent>(e => mOPText.text = e.op).RmvOnDestroy(this);
         }
-        private void OnOperationSuccessful()
-        {
-            "操作成功".Log();
-        }
-        private void OnOperationFailed()
-        {
-            "操作失败".Log();
-        }
-        private void OnChangeOp(ChangeOpIconEvent e)
-        {
-            opText = e.icon;
-        }
-        private void OnDestroy()
-        {
-            var model = this.Model<ICounterModel>();
-            model.A.UnRegister(OnAChange);
-            model.B.UnRegister(OnBChange);
 
-            this.RmvEvent<ChangeOpIconEvent>(OnChangeOp);
-            this.RmvNotify<OperationSuccessfulNotify>(OnOperationSuccessful);
-            this.RmvNotify<OperationFailedNotify>(OnOperationFailed);
-        }
-        private void OnAChange(float a)
+        // 处理按钮点击事件
+        protected override void OnClick(string btnName)
         {
-            A = a.ToString();
-        }
-        private void OnBChange(float b)
-        {
-            B = b.ToString();
-        }
-        private void OnGUI()
-        {
-            if (style == null)
+            // 根据按钮名称执行不同的命令
+            switch (btnName)
             {
-                style = GUI.skin.label;
-                style.fontSize = 30;
-                style.alignment = TextAnchor.MiddleCenter;
-                style.normal.textColor = Color.white;
-
-                btnStyle = GUI.skin.button;
-                btnStyle.fontSize = style.fontSize;
-                btnStyle.alignment = TextAnchor.MiddleCenter;
-
-                inputStyle = GUI.skin.textField;
-                inputStyle.fontSize = style.fontSize;
-                inputStyle.alignment = TextAnchor.MiddleCenter;
-            }
-            float size = 50f;
-            var startX = startW - size * 4f;
-            var rect = new Rect(startX, startH - size, size * 6f, size);
-            if (GUI.Button(rect, "RandomNum", btnStyle))
-            {
-                this.SendCmd<RandomValueCmd>();
-            }
-            rect = new Rect(startX, startH, size, size);
-            string a = GUI.TextField(rect, A, inputStyle);
-            if (a != A)
-            {
-                if (int.TryParse(a, out int r))
-                {
-                    A = a;
-                    model.A.Value = r;
-                }
-                else
-                {
-                    this.SendNotify<OperationFailedNotify>();
-                }
-            }
-            rect.x += size;
-            GUI.Label(rect, opText, style);
-            rect.x += size;
-            string b = GUI.TextField(rect, B, inputStyle);
-            if (b != B)
-            {
-                if (int.TryParse(b, out int r))
-                {
-                    B = b;
-                    model.B.Value = r;
-                }
-                else
-                {
-                    this.SendNotify<OperationFailedNotify>();
-                }
-            }
-            rect.x += size;
-            GUI.Label(rect, "=", style);
-            rect.x += size;
-            rect.width = size * 2f;
-            GUI.Label(rect, R, inputStyle);
-            rect.y += size;
-            rect.x = startW - size;
-            rect.width = size * 3f;
-            if (GUI.Button(rect, "Calc", btnStyle))
-            {
-                var op = (Op)mSelect;
-                float r = this.Query<ResultQuery, Op, float>(op);
-                R = op == Op.Div ? r.ToString("F2") : r.ToString();
-                this.SendNotify<OperationSuccessfulNotify>();
-            }
-            rect.x = startX;
-            if (GUI.Button(rect, "Operator", btnStyle))
-            {
-                ShowList = !ShowList;
-            }
-            if (ShowList)
-            {
-                rect.height = size * 3f;
-                rect.y += size;
-                var sel = GUI.SelectionGrid(rect, mSelect, Enum.GetNames(typeof(Op)), 1);
-                if (mSelect == sel) return;
-                mSelect = sel;
-                this.SendCmd<ChangeOpCmd, int>(sel);
-                ShowList = false;
+                case "Op":
+                    // 切换操作符
+                    this.SendCmd<NextOpIndexCmd>();
+                    break;
+                case "Eq":
+                    // 执行计算
+                    this.SendCmd<CalcCmd>();
+                    break;
+                case "Add_NumA":
+                    // 增加操作数A
+                    mModel.NumA.Value++;
+                    break;
+                case "Add_NumB":
+                    // 增加操作数B
+                    mModel.NumB.Value++;
+                    break;
+                case "Sub_NumA":
+                    // 减少操作数A
+                    mModel.NumA.Value--;
+                    break;
+                case "Sub_NumB":
+                    // 减少操作数B
+                    mModel.NumB.Value--;
+                    break;
+                case "Random":
+                    // 生成随机数并执行计算
+                    this.SendCmd<RandomCalcCmd>();
+                    break;
             }
         }
     }
 }
 ```
-
-## 版本更新
-
-- **1.0.7 (2024-05-19)**: 统一整体的命名风格 为架构增加详细的注释 将查找所有组件方法移到了架构扩展类中 增加2个事件注册扩展和2个通知注册扩展 将架构版本号集成进架构本体 更新的文件有 ModuleHub、UnityModuleHub、MeowEditor、MonoKit
-- **1.0.6 (2024-05-18)**: 对架构底层和编辑器布局进行一些必要调整 新增了架构的拓展分布类 将检查更新移到了编辑器部分 修复事件系统无法移除key的bug  将MonoKit中的 Log 方法集成到架构中。
-- **1.0.5 (2024-05-13)**: 增加示例单元 增加文档。
-- **1.0.4 (2024-05-13)**: 修复语法错误，增加对 Deinit 的状态变更，避免重复调用。
-- **1.0.3 (2024-05-12)**: 移除反射机制，增加延迟初始化。
-- **1.0.2 (2024-05-11)**: 调整架构生命周期，避免重复初始化。
-- **1.0.1 (2024-05-09)**: 区分有参数和无参数事件API。

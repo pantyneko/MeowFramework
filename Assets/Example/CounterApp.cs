@@ -12,8 +12,8 @@ namespace Panty.Test
     }
     public class CounterModel : AbsModule, ICounterModel
     {
-        ValueBinder<float> ICounterModel.A { get; } = new ValueBinder<float>();
-        ValueBinder<float> ICounterModel.B { get; } = new ValueBinder<float>();
+        ValueBinder<float> ICounterModel.A { get; } = 0f;
+        ValueBinder<float> ICounterModel.B { get; } = 0f;
 
         private string[] Items;
 
@@ -58,8 +58,8 @@ namespace Panty.Test
         public float Do(IModuleHub hub, CounterApp.Op op)
         {
             var model = hub.Module<ICounterModel>();
-            float a = model.A.Value;
-            float b = model.B.Value;
+            float a = model.A;
+            float b = model.B;
             return op switch
             {
                 CounterApp.Op.Add => a + b,
@@ -121,8 +121,8 @@ namespace Panty.Test
         private void OnDestroy()
         {
             var model = this.Module<ICounterModel>();
-            model.A.UnRegister(OnAChange);
-            model.B.UnRegister(OnBChange);
+            model.A.Unregister(OnAChange);
+            model.B.Unregister(OnBChange);
 
             this.RmvEvent<ChangeOpIconEvent>(OnChangeOp);
             this.RmvNotify<OperationSuccessfulNotify>(OnOperationSuccessful);
