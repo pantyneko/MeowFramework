@@ -15,7 +15,7 @@ namespace Panty
 
         public static void Show(string msg, Action succeed = null, Action fail = null)
         {
-            var wd = GetWindow<TextDialog>("喵喵提示器").Init(msg);
+            var wd = GetWindow<TextDialog>("喵喵提示器",true).Init(msg);
             wd.succeed = succeed;
             wd.fail = fail;
         }
@@ -60,7 +60,7 @@ namespace Panty
         public enum E_Type : byte { Empty, A }
         protected string NameSpace => "Panty.Test";
         [MenuItem("PnTool/MeowEditor &1")]
-        public static void ShowWindow() => GetWindow<MeowEditor>("MeowEditor", true);
+        private static void OpenSelf() => GetWindow<MeowEditor>("MeowEditor", true);
         protected override E_Type Empty => E_Type.Empty;
         protected override (string, Action)[] InitBtnInfo()
         {
@@ -154,10 +154,9 @@ namespace Panty
                     EditorKit.Tips("请在面板上正确输入类型名");
                     return false;
                 }
-                int index = inputText.GetSpecialCharsCount();
-                if (index >= 0)
+                if (inputText.AsSpan().ContainsSpecialSymbols())
                 {
-                    EditorKit.Tips($"编辑器名字有特殊符号\"{inputText[index]}\"");
+                    EditorKit.Tips($"编辑器名字有特殊符号");
                     return false;
                 }
                 return true;

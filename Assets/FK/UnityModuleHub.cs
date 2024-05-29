@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -55,19 +56,41 @@ namespace Panty
         }
         protected virtual void InitSingle() { }
     }
-    public abstract class UnRegisterTrigger : MonoBehaviour
+    [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
+    public class FindComponentAttribute : Attribute
     {
-        private Action mUnRegisterAction;
-        public void Add(Action e) => mUnRegisterAction += e;
-        protected void UnRegister() => mUnRegisterAction?.Invoke();
+        public string GoName;
+        public bool GetChild;
+        /// <summary>
+        /// 查找游戏物体组件的特性
+        /// </summary>
+        /// <param name="goName">游戏物体名字</param>
+        /// <param name="getChild">
+        /// true => 查找对应名字对象的下一级子物体 通常名字为父物体名字 类型为子物体
+        /// false => 查找对应名字的对象 通常会将类型和名字对应</param>
+        public FindComponentAttribute(string goName, bool getChild = true)
+        {
+            GoName = goName;
+            GetChild = getChild;
+        }
     }
-    public class UnRegisterOnDestroyTrigger : UnRegisterTrigger
+    public abstract class RmvTrigger : MonoBehaviour
     {
-        private void OnDestroy() => UnRegister();
+        private readonly HashSet<IRmv> rmvs = new HashSet<IRmv>();
+        public void Add(IRmv rmv) => rmvs.Add(rmv);
+        protected void RmvAll()
+        {
+            foreach (var item in rmvs) item.Do();
+            rmvs.Clear();
+        }
     }
-    public class UnRegisterOnDisableTrigger : UnRegisterTrigger
+    public class RmvOnDestroyTrigger : RmvTrigger
     {
-        private void OnDisable() => UnRegister();
+        private void OnDestroy() => RmvAll();
+    }
+    public class RmvOnDisableTrigger : RmvTrigger
+    {
+        private void OnDisable() => RmvAll();
     }
     public class MonoKit : MonoBehaviour
     {
@@ -100,11 +123,59 @@ namespace Panty
         /// <summary>
         /// 尝试从一个物体身上获取脚本 如果获取不到就添加一个
         /// </summary>
-        public static T GetOrAddComponent<T>(this GameObject o) where T : Component
+        public static T GetOrAdd<T>(this Component o) where T : Component
         {
             T t = o.GetComponent<T>();
-            if (t == null) t = o.AddComponent<T>();
-            return t;
+            return t == null ? o.gameObject.AddComponent<T>() : t;
+        }
+        /// <summary>
+        /// 查找所有带标记的组件
+        /// </summary>
+        public static void FindComponents(this Component mono)
+        {
+            Dictionary<Type, Component[]> dic = null;
+            var flags = BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance;
+            foreach (var field in mono.GetType().GetFields(flags))
+            {
+                var attribute = field.GetCustomAttribute<FindComponentAttribute>();
+                if (attribute == null) continue;
+                dic ??= new Dictionary<Type, Component[]>();
+                Type type = field.FieldType;
+                if (!dic.TryGetValue(type, out var components))
+                {
+                    components = mono.GetComponentsInChildren(type, true);
+                    if (components == null || components.Length == 0)
+                    {
+#if UNITY_EDITOR
+                        $"无法找到{type}对象".Log();
+#endif
+                        continue;
+                    }
+                    dic.Add(type, components);
+                }
+                if (attribute.GetChild)
+                {
+                    foreach (var component in components)
+                    {
+                        if (component.transform.parent.name == attribute.GoName)
+                        {
+                            field.SetValue(mono, component);
+                            break;
+                        }
+                    }
+                }
+                else
+                {
+                    foreach (var component in components)
+                    {
+                        if (component.name == attribute.GoName)
+                        {
+                            field.SetValue(mono, component);
+                            break;
+                        }
+                    }
+                }
+            }
         }
         /// <summary>
         /// 找到面板父节点下所有对应控件
@@ -129,14 +200,14 @@ namespace Panty
             Debug.unityLogger.Log(LogType.Warning, o);
             return o;
         }
-        public static void DrawBox(Vector2 a, Vector2 b, Vector2 c, Vector2 d, Color color, float duration = 0)
+        public static void Box(Vector2 a, Vector2 b, Vector2 c, Vector2 d, Color color, float duration = 0)
         {
             Debug.DrawLine(a, b, color, duration);
             Debug.DrawLine(b, c, color, duration);
             Debug.DrawLine(c, d, color, duration);
             Debug.DrawLine(d, a, color, duration);
         }
-        public static void DrawBox(Vector2 origin, Vector2 size, Color color, float duration = 0)
+        public static void Box(Vector2 origin, Vector2 size, Color color, float duration = 0)
         {
             Vector2 _half = size * 0.5f;
 
@@ -150,7 +221,7 @@ namespace Panty
             var c = new Vector2(x2, y1);
             var d = new Vector2(x1, y1);
 
-            DrawBox(a, b, c, d, color, duration);
+            Box(a, b, c, d, color, duration);
         }
     }
     public static partial class HubEx
@@ -164,63 +235,27 @@ namespace Panty
         /// </summary>
         public static M GetModel<M>(this IPermissionProvider self) where M : class, IModule => self.Hub.Module<M>();
         /// <summary>
-        /// 添加事件的监听 并标记为物体被销毁时注销
+        /// 标记为物体被销毁时注销
         /// </summary>
-        public static void AddEvent_OnDestroyed_UnRegister<E>(this IPermissionProvider self, GameObject o, Action<E> evt) where E : struct
-        {
-            self.Hub.AddEvent<E>(evt);
-            o.GetOrAddComponent<UnRegisterOnDestroyTrigger>().Add(() => self.Hub.RmvEvent<E>(evt));
-        }
+        public static void RmvOnDestroy(this IRmv rmv, Component c) => c.GetOrAdd<RmvOnDestroyTrigger>().Add(rmv);
         /// <summary>
-        /// 添加通知的监听 并标记为物体被销毁时注销
+        /// 标记为物体失活时注销
         /// </summary>
-        public static void AddNotify_OnDestroyed_UnRegister<E>(this IPermissionProvider self, GameObject o, Action evt) where E : struct
-        {
-            self.Hub.AddNotify<E>(evt);
-            o.GetOrAddComponent<UnRegisterOnDestroyTrigger>().Add(() => self.Hub.RmvNotify<E>(evt));
-        }
+        public static void RmvOnDisable(this IRmv rmv, Component c) => c.GetOrAdd<RmvOnDisableTrigger>().Add(rmv);
         /// <summary>
-        /// 添加事件的监听 并标记为物体失活时注销
+        /// 标记为场景卸载时注销
         /// </summary>
-        public static void AddEvent_OnDisabled_UnRegister<E>(this IPermissionProvider self, GameObject o, Action<E> evt) where E : struct
-        {
-            self.Hub.AddEvent<E>(evt);
-            o.GetOrAddComponent<UnRegisterOnDisableTrigger>().Add(() => self.Hub.RmvEvent<E>(evt));
-        }
-        /// <summary>
-        /// 添加通知的监听 并标记为物体失活时注销
-        /// </summary>
-        public static void AddNotify_OnDisabled_UnRegister<E>(this IPermissionProvider self, GameObject o, Action evt) where E : struct
-        {
-            self.Hub.AddNotify<E>(evt);
-            o.GetOrAddComponent<UnRegisterOnDisableTrigger>().Add(() => self.Hub.RmvNotify<E>(evt));
-        }
-        /// <summary>
-        /// 添加事件的监听 并标记为场景卸载时注销
-        /// </summary>
-        public static void AddEvent_OnSceneUnload_UnRegister<E>(this IPermissionProvider self, Action<E> evt) where E : struct
-        {
-            self.Hub.AddEvent<E>(evt);
-            mWaitUninstActions += () => self.Hub.RmvEvent<E>(evt);
-        }
-        /// <summary>
-        /// 添加通知的监听 并标记为场景卸载时注销
-        /// </summary>
-        public static void AddNotify_OnSceneUnload_UnRegister<N>(this IPermissionProvider self, Action evt) where N : struct
-        {
-            self.Hub.AddNotify<N>(evt);
-            mWaitUninstActions += () => self.Hub.RmvNotify<N>(evt);
-        }
+        public static void RmvOnSceneUnload(this IRmv rmv) => mWaitUnLoadRmvs.Add(rmv);
         /// <summary>
         /// 用于当前场景卸载时 注销所有事件和通知
         /// </summary>
-        public static void UnRegisterAllUnloadEvents()
+        public static void OnSceneUnloadComplete()
         {
-            mWaitUninstActions?.Invoke();
-            mWaitUninstActions = null;
+            foreach (var rmv in mWaitUnLoadRmvs) rmv.Do();
+            mWaitUnLoadRmvs.Clear();
         }
         // 用于存储所有当前场景卸载时 需要注销的事件和通知
-        private static Action mWaitUninstActions;
+        private readonly static HashSet<IRmv> mWaitUnLoadRmvs = new HashSet<IRmv>();
     }
     public abstract partial class ModuleHub<H>
     {
@@ -233,7 +268,7 @@ namespace Panty
             };
             // 预注册场景卸载事件
             SceneManager.sceneUnloaded +=
-                scene => HubEx.UnRegisterAllUnloadEvents();
+                scene => HubEx.OnSceneUnloadComplete();
         }
     }
 }

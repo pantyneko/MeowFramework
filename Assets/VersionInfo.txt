@@ -1,50 +1,19 @@
-1.1.0@
+1.1.1@
+【v1.1.1 更新】
+# 增加音频播放系统
+# 增加资源加载系统
+# 增加延时调度器
+# 增加高性能动态数组结构
+# 整合三种Binder类型
+# 重构StringKit底层逻辑
+# 重构UIPanel结构类
+# 调整自动注销事件流程
+# 增加IRmv接口 用于整合移除操作
+# 增加查找组件特性 用于快速查找面板子层级
+# 重新布局文档 增加双语支持
+# 更新的文件有ModuleHub、UnityModuleHub
+
 【v1.1.0 更新】
 # 增加NekoAI编辑器 快捷键 Alt+3
 # 优化事件扩展方法的参数顺序
 # 更新的文件有ModuleHub、UnityModuleHub
-
-【v1.0.9 更新】
-# 调整编辑器部分布局 
-# 增加编辑器快捷键 Alt+1或Alt+2
-# 增加快速拉取 核心代码功能
-# 增加相对完整的架构流程调试信息
-# 调整部分方法的命名
-# 优化事件系统中委托链的移除流程
-# 调整MonoKit的初始化流程
-# 移除MonoSingle.cs文件 整合内容到UnityModuleHub中
-# 更新的文件有MeowEditor、PnEditor、ModuleHub、UnityModuleHub、EditorKit、SOCreateEditor
-
-【v1.0.8 更新】
-# 移除大部分无意义的注释
-# 简化Mono单例类的逻辑
-# 调整并简化架构对于Unity平台的内存释放流程
-# 增加字典结构的Log函数
-# 为一些必要状态添加Log信息
-# 调整MeowEditor的检查更新逻辑
-# 调整PnEditor 样式bug
-# 移除DeInit生命周期 转为内嵌
-# 优化事件系统中委托链的移除流程
-# 移除MonoKit.cs文件 整合内容到Unity架构扩展中
-# 更新的文件有MeowEditor、PnEditor、ModuleHub、UnityModuleHub、MonoKit、MonoSingle
-
-【v1.0.7 更新】
-# 统一整体的命名风格
-# 为架构增加详细的注释
-# 将查找所有组件方法移到了架构扩展类中
-# 增加2个事件注册扩展和2个通知注册扩展
-# 将架构版本号集成进架构本体
-# 修复编辑器常驻时未能成功初始化BUG
-# 更新的文件有 ModuleHub、UnityModuleHub、MeowEditor、MonoKit、PnEditor
-
-【v1.0.6 大更新】
-# 调整 ModuleHub 整体结构
-# 修复事件系统无法移除key的bug  
-# 将MonoKit中的 Log 方法集成到架构中
-# 移除原架构中System和Model 的 API
-# 增加 UnityModuleHub 扩展类
-# 增加两个特殊的事件注册方法
-# 移除 BuildModule 中的 自动Deinit;
-# 将架构检查更新部分移动到MeowEditor编辑器中
-# 增加一个用于显示长文本的文本对话框
-# 调整 PnEditor 的基本布局

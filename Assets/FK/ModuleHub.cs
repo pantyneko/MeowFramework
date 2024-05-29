@@ -24,7 +24,7 @@ using System.Collections.Generic;
 */
 namespace Panty
 {
-    #region 命令接口
+    #region 架构模块和规则接口    
     /// <summary>
     /// 用于分离命令中的具体执行逻辑 
     /// </summary>
@@ -37,8 +37,6 @@ namespace Panty
     /// 带参数的命令接口，用于执行需要额外信息的操作
     /// </summary>
     public interface ICmd<P> { void Do(IModuleHub hub, P info); }
-    #endregion
-    #region 查询接口
     /// <summary>
     /// 仅返回结果的无参数查询接口
     /// </summary>
@@ -47,8 +45,6 @@ namespace Panty
     /// 带参数且返回结果的查询接口
     /// </summary>
     public interface IQuery<P, R> { R Do(IModuleHub hub, P info); }
-    #endregion
-    #region 模块与层级
     /// <summary>
     /// 权限提供者接口 > 为对象赋予访问架构的能力
     /// </summary>
@@ -130,7 +126,7 @@ namespace Panty
     public static partial class HubTool
     {
 #if DEBUG
-        public const string version = "1.1.0";
+        public const string version = "1.1.1";
         /// <summary>
         /// 在调试模式下 将对象信息输出到控制台 可支持多个平台。
         /// </summary>
@@ -183,11 +179,11 @@ namespace Panty
     {
         public static M Module<M>(this IPermissionProvider self) where M : class, IModule => self.Hub.Module<M>();
         public static U Utility<U>(this IPermissionProvider self) where U : class, IUtility => self.Hub.Utility<U>();
-        public static void AddEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct => self.Hub.AddEvent<E>(evt);
+        public static IRmv AddEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct => self.Hub.AddEvent<E>(evt);
         public static void RmvEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct => self.Hub.RmvEvent<E>(evt);
         public static void SendEvent<E>(this IPermissionProvider self, E e) where E : struct => self.Hub.SendEvent<E>(e);
         public static void SendEvent<E>(this IPermissionProvider self) where E : struct => self.Hub.SendEvent<E>();
-        public static void AddNotify<N>(this IPermissionProvider self, Action evt) where N : struct => self.Hub.AddNotify<N>(evt);
+        public static IRmv AddNotify<N>(this IPermissionProvider self, Action evt) where N : struct => self.Hub.AddNotify<N>(evt);
         public static void RmvNotify<N>(this IPermissionProvider self, Action evt) where N : struct => self.Hub.RmvNotify<N>(evt);
         public static void SendNotify<N>(this IPermissionProvider self) where N : struct => self.Hub.SendNotify<N>();
         public static void SendCmd<C>(this IPermissionProvider self, C cmd) where C : ICmd => self.Hub.SendCmd(cmd);
@@ -208,11 +204,11 @@ namespace Panty
     {
         M Module<M>() where M : class, IModule;
         U Utility<U>() where U : class, IUtility;
-        void AddEvent<E>(Action<E> evt) where E : struct;
+        IRmv AddEvent<E>(Action<E> evt) where E : struct;
         void RmvEvent<E>(Action<E> evt) where E : struct;
         void SendEvent<E>(E e) where E : struct;
         void SendEvent<E>() where E : struct;
-        void AddNotify<N>(Action evt) where N : struct;
+        IRmv AddNotify<N>(Action evt) where N : struct;
         void RmvNotify<N>(Action evt) where N : struct;
         void SendNotify<N>() where N : struct;
         void SendCmd<C>(C cmd) where C : ICmd;
@@ -226,6 +222,26 @@ namespace Panty
     }
     #endregion
     #region 架构基类
+    public interface IRmv { void Do(); }
+    // 实现自身移除委托
+    public class CustomRmv : IRmv
+    {
+        private Action call;
+        public CustomRmv(Action call) => this.call = call;
+        void IRmv.Do() => call?.Invoke();
+    }
+    // 实现字典中移除委托
+    public class DelegateDicRmv<T> : IRmv where T : struct
+    {
+        private Dictionary<Type, Delegate> mEvents;
+        private Delegate call;
+        void IRmv.Do() => mEvents.Separate(typeof(T), call);
+        public DelegateDicRmv(Dictionary<Type, Delegate> events, Delegate e)
+        {
+            mEvents = events;
+            call = e;
+        }
+    }
     public abstract partial class ModuleHub<H> : IModuleHub where H : ModuleHub<H>, new()
     {
         private static H mHub;
@@ -296,19 +312,21 @@ namespace Panty
 #endif
             return null;
         }
-        void IModuleHub.AddEvent<E>(Action<E> evt)
+        IRmv IModuleHub.AddEvent<E>(Action<E> evt)
         {
 #if DEBUG
             if (evt == null) $"{evt} 不可为Null".Log();
 #endif
             mEvents.Combine(typeof(E), evt);
+            return new DelegateDicRmv<E>(mEvents, evt);
         }
-        void IModuleHub.AddNotify<E>(Action evt)
+        IRmv IModuleHub.AddNotify<E>(Action evt)
         {
 #if DEBUG
             if (evt == null) $"{evt} 不可为Null".Log();
 #endif
             mNotifies.Combine(typeof(E), evt);
+            return new DelegateDicRmv<E>(mNotifies, evt);
         }
         void IModuleHub.SendEvent<E>(E e)
         {

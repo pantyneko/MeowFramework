@@ -6,7 +6,7 @@ using UnityEngine;
 
 namespace Panty
 {
-    public class NekoAI : EditorWindow
+    public class NekoAIEditor : EditorWindow
     {
         private Vector2 scrollPos;
 
@@ -35,7 +35,7 @@ namespace Panty
 
         [MenuItem("PnTool/NekoAI &3")]
         private static void OpenSelf() =>
-            GetWindow<NekoAI>($"{Lifiya}(Lifiya)").Show();
+            GetWindow<NekoAIEditor>($"{Lifiya}(Lifiya)", true);
         private void Awake()
         {
             chatgpt.Init(300);
