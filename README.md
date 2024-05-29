@@ -9,9 +9,7 @@
 
 ---
 
-## 命名空间和接口
-
-### 命名空间: Panty
+## 底层接口
 
 #### 接口 IReceiver
 - **用途:** 用于分离命令中的具体执行逻辑。
@@ -195,7 +193,7 @@
 
 ---
 
-## 架构扩展工具类
+## 架构工具
 
 ### 静态类 HubTool
 - **用途:** 提供扩展方法和工具函数。
@@ -255,60 +253,71 @@
     this.RmvEvent<MyEvent>(myEventHandler);
     ```
   - `public static void SendEvent<E>(this IPermissionProvider self, E e) where E : struct`
+    
     ```csharp
-    this.SendEvent
+    this.SendEvent(new MyEvent());
     ```
-
-(new MyEvent());
-    ```
-  - `public static void SendEvent<E>(this IPermissionProvider self) where E : struct`
-    ```csharp
-    this.SendEvent<MyEvent>();
-    ```
-  - `public static IRmv AddNotify<N>(this IPermissionProvider self, Action evt) where N : struct`
-    ```csharp
-    IRmv notifyRemoval = this.AddNotify<MyNotification>(() => { /* 通知处理逻辑 */ });
-    ```
-  - `public static void RmvNotify<N>(this IPermissionProvider self, Action evt) where N : struct`
-    ```csharp
-    this.RmvNotify<MyNotification>(myNotifyHandler);
-    ```
-  - `public static void SendNotify<N>(this IPermissionProvider self) where N : struct`
-    ```csharp
-    this.SendNotify<MyNotification>();
-    ```
-  - `public static void SendCmd<C>(this IPermissionProvider self, C cmd) where C : ICmd`
-    ```csharp
-    this.SendCmd(new MyCommand());
-    ```
-  - `public static void SendCmd<C>(this IPermissionProvider self) where C : struct, ICmd`
-    ```csharp
-    this.SendCmd<MyCommand>();
-    ```
-  - `public static void SendCmd<C, P>(this IPermissionProvider self, C cmd, P info) where C : ICmd<P>`
-    ```csharp
-    this.SendCmd(new MyParameterizedCommand(), "参数信息");
-    ```
-  - `public static void SendCmd<C, P>(this IPermissionProvider self, P info) where C : struct, ICmd<P>`
-    ```csharp
-    this.SendCmd<MyParameterizedCommand, string>("参数信息");
-    ```
-  - `public static R Query<Q, R>(this IPermissionProvider self) where Q : struct, IQuery<R>`
-    ```csharp
-    var result = this.Query<MyQuery, int>();
-    ```
-  - `public static R Query<Q, P, R>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, R>`
-    ```csharp
-    var result = this.Query<MyParameterizedQuery, string, int>("参数信息");
-    ```
-  - `public static Q Query<Q>(this IPermissionProvider self) where Q : struct, IQuery<Q>`
-    ```csharp
-    var result = this.Query<MyQuery>();
-    ```
-  - `public static Q Query<Q, P>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, Q>`
-    ```csharp
-    var result = this.Query<MyParameterizedQuery, string>("参数信息");
-    ```
+    
+    - `public static void SendEvent<E>(this IPermissionProvider self) where E : struct`
+  
+  	```csharp
+  	this.SendEvent<MyEvent>();
+  	```
+    - `public static IRmv AddNotify<N>(this IPermissionProvider self, Action evt) where N : struct`
+  
+  	```csharp
+  	IRmv notifyRemoval = this.AddNotify<MyNotification>(() => { /* 通知处理逻辑 */ });
+  	```
+    - `public static void RmvNotify<N>(this IPermissionProvider self, Action evt) where N : struct`
+  
+  	```csharp
+  	this.RmvNotify<MyNotification>(myNotifyHandler);
+  	```
+    - `public static void SendNotify<N>(this IPermissionProvider self) where N : struct`
+  
+  	```csharp
+  	this.SendNotify<MyNotification>();
+  	```
+    - `public static void SendCmd<C>(this IPermissionProvider self, C cmd) where C : ICmd`
+  
+  	```csharp
+  	this.SendCmd(new MyCommand());
+  	```
+    - `public static void SendCmd<C>(this IPermissionProvider self) where C : struct, ICmd`
+  
+  	```csharp
+  	this.SendCmd<MyCommand>();
+  	```
+    - `public static void SendCmd<C, P>(this IPermissionProvider self, C cmd, P info) where C : ICmd<P>`
+  
+  	```csharp
+  	this.SendCmd(new MyParameterizedCommand(), "参数信息");
+  	```
+    - `public static void SendCmd<C, P>(this IPermissionProvider self, P info) where C : struct, ICmd<P>`
+  
+  	```csharp
+  	this.SendCmd<MyParameterizedCommand, string>("参数信息");
+  	```
+    - `public static R Query<Q, R>(this IPermissionProvider self) where Q : struct, IQuery<R>`
+  
+  	```csharp
+  	var result = this.Query<MyQuery, int>();
+  	```
+    - `public static R Query<Q, P, R>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, R>`
+  
+  	```csharp
+  	var result = this.Query<MyParameterizedQuery, string, int>("参数信息");
+  	```
+    - `public static Q Query<Q>(this IPermissionProvider self) where Q : struct, IQuery<Q>`
+  
+  	```csharp
+  	var result = this.Query<MyQuery>();
+  	```
+    - `public static Q Query<Q, P>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, Q>`
+  
+  	```csharp
+  	var result = this.Query<MyParameterizedQuery, string>("参数信息");
+  	```
 
 ---
 
@@ -334,25 +343,6 @@
   - `R Query<Q, P, R>(P info) where Q : struct, IQuery<P, R>;`
   - `Q Query<Q>() where Q : struct, IQuery<Q>;`
   - `Q Query<Q, P>(P info) where Q : struct, IQuery<P, Q>;`
-- **示例:**
-  ```csharp
-  public class MyModuleHub : ModuleHub<MyModuleHub>
-  {
-      protected override void BuildModule()
-      {
-          // 构建模块和工具
-          AddModule(new MyModule());
-          AddUtility(new MyUtility());
-      }
-  }
-
-  // 使用示例
-  var hub = MyModuleHub.GetIns();
-  var module = hub.Module<MyModule>();
-  var utility = hub.Utility<MyUtility>();
-  hub.SendCmd(new MyCommand());
-  var result = hub.Query<MyQuery, int>();
-  ```
 
 ---
 
@@ -371,8 +361,7 @@
       public CustomRmv(Action call) => this.call = call;
       void IRmv.Do() => call?.Invoke();
   }
-
-  // 使用示例
+// 使用示例
   IRmv rmv = new CustomRmv(() => { /* 移除逻辑 */ });
   rmv.Do();
   ```
@@ -395,8 +384,7 @@
           call = e;
       }
   }
-
-  // 使用示例
+// 使用示例
   var events = new Dictionary<Type, Delegate>();
   var handler = new Action<MyEvent>(e => { /* 事件逻辑 */ });
   events.Combine(typeof(MyEvent), handler);
@@ -556,8 +544,7 @@
   {
       // 失活逻辑
   }
-
-  // 使用示例
+// 使用示例
   var trigger = gameObject.AddComponent<MyRmvOnDisableTrigger>();
   trigger.Add(new CustomRmv(() => { /* 移除逻辑 */ }));
   // 当对象失活时，自动调用 trigger.OnDisable();
@@ -582,8 +569,7 @@
   {
       // MonoKit逻辑
   }
-
-  // 使用示例
+// 使用示例
   MonoKit.OnUpdate += () => { /* 更新逻辑 */ };
   MonoKit.OnFixedUpdate += () => { /* 固定更新逻辑 */ };
   MonoKit.OnLateUpdate += () => { /* 延迟更新逻辑 */ };
@@ -622,9 +608,9 @@
   - `public static bool operator !=(ValueBinder<V> binder, V value)`: 判断绑定的值是否不等。
 - **示例:**
   ```csharp
-  var valueBinder = new ValueBinder<int>(42);
+  var valueBinder = 42; // 隐式转换
   valueBinder.Register(value => { /* 值变化处理逻辑 */ });
-  valueBinder.SetValue(42);
+  valueBinder.Value = 421;
   int value = valueBinder; // 隐式转换
   ```
 
@@ -638,9 +624,9 @@
   - `public static bool operator !=(StringBinder binder, string value)`: 判断绑定的值是否不等。
 - **示例:**
   ```csharp
-  var stringBinder = new StringBinder("Hello");
+  var stringBinder = "Hello"; // 隐式转换
   stringBinder.Register(value => { /* 值变化处理逻辑 */ });
-  stringBinder.SetValue("Hello");
+  stringBinder.Value = "Hello？";
   string value = stringBinder; // 隐式转换
   ```
 
@@ -700,36 +686,35 @@
   - `public void ToFirst()`: 重置游标。
   - `public void ToLast()`: 将游标移动到数组末端。
   - `public IEnumerator<T> GetEnumerator()`: 获取迭代器
-
-。
-  - `IEnumerator IEnumerable.GetEnumerator()`: 获取迭代器。
+  
+    - `IEnumerator IEnumerable.GetEnumerator()`: 获取迭代器。
 - **示例:**
   ```csharp
   var pArray = new PArray<int>(10);
   pArray.Push(1);
   pArray.Push(2);
   pArray.Push(3);
-
+  
   Debug.Log(pArray.First);  // 输出: 1
   Debug.Log(pArray.Last);   // 输出: 3
-
+  
   pArray.Sort(Comparer<int>.Default);
   foreach (var item in pArray)
   {
       Debug.Log(item);
   }
-
+  
   if (pArray.Contains(2))
   {
       Debug.Log("包含元素2");
   }
-
+  
   int index = pArray.IndexOf(3);
   Debug.Log($"元素3的索引: {index}");
-
+  
   pArray.RmvAt(1);
   Debug.Log(pArray.Count);  // 输出: 2
-
+  
   pArray.Clear();
   Debug.Log(pArray.IsEmpty);  // 输出: true
   ```
@@ -758,8 +743,7 @@
           Debug.Log($"{btnName} clicked");
       }
   }
-
-  // 使用示例
+// 使用示例
   var panel = gameObject.AddComponent<MyUIPanel>();
   panel.Activate(true);
   ```
@@ -800,9 +784,6 @@ namespace Panty.Test
         IModuleHub IPermissionProvider.Hub => CalcHub.GetIns();
     }
 }
-
-using UnityEngine;
-
 namespace Panty.Test
 {
     // 定义 CalcResultQuery 结构体，实现查询接口，返回计算结果
@@ -829,7 +810,6 @@ namespace Panty.Test
             };
         }
     }
-
     // 定义 NextOpIndexCmd 结构体，实现命令接口，用于切换操作符
     public struct NextOpIndexCmd : ICmd
     {
@@ -842,7 +822,6 @@ namespace Panty.Test
             hub.SendCmd<CalcCmd>();
         }
     }
-
     // 定义 RandomCalcCmd 结构体，实现命令接口，用于生成随机数并发送计算命令
     public struct RandomCalcCmd : ICmd
     {
@@ -858,7 +837,6 @@ namespace Panty.Test
             hub.SendCmd<CalcCmd>();
         }
     }
-
     // 定义 CalcCmd 结构体，实现命令接口，用于执行计算并发送事件
     public struct CalcCmd : ICmd
     {
@@ -871,21 +849,18 @@ namespace Panty.Test
             hub.SendEvent(new CalcEvent() { result = result });
         }
     }
-
     // 定义 OpChangeEvent 结构体，用于表示操作符变化事件
     public struct OpChangeEvent
     {
         // 表示当前操作符
         public string op;
     }
-
     // 定义 CalcEvent 结构体，用于表示计算结果事件
     public struct CalcEvent
     {
         // 表示计算结果
         public float result;
     }
-
     // 定义 IOpSystem 接口，用于表示操作符系统
     public interface IOpSystem : IModule
     {
@@ -902,7 +877,6 @@ namespace Panty.Test
         private int opIndex;
         // 操作符数组
         private string[] ops;
-
         // 获取当前操作符
         public string Op => ops[opIndex];
 
@@ -912,7 +886,6 @@ namespace Panty.Test
             ops = new string[4] { "+", "-", "*", "/" };
             opIndex = 0;
         }
-
         // 切换到下一个操作符
         public void NextOpIndex()
         {
@@ -921,7 +894,6 @@ namespace Panty.Test
             this.SendEvent(new OpChangeEvent() { op = ops[opIndex] });
         }
     }
-
     // 定义 ICalcModel 接口，用于表示计算模型
     public interface ICalcModel : IModule
     {
@@ -942,9 +914,6 @@ namespace Panty.Test
         protected override void OnInit() { }
     }
 }
-
-using UnityEngine.UI;
-
 namespace Panty.Test
 {
     // 定义 CalcPanel 类，继承自 CalcUI，负责管理 UI 逻辑
@@ -955,10 +924,8 @@ namespace Panty.Test
         [FindComponent("Result")] private Text mResultText;
         [FindComponent("InputA")] private Text mInputA;
         [FindComponent("InputB")] private Text mInputB;
-
         // 存储计算模型模块实例
         private ICalcModel mModel;
-
         // 初始化方法，在 Start 中注册操作数和事件的回调
         private void Start()
         {
@@ -968,13 +935,11 @@ namespace Panty.Test
             // 注册操作数A和B的值变化回调，并在销毁时移除
             mModel.NumA.RegisterWithInitValue(v => mInputA.text = v.ToString()).RmvOnDestroy(this);
             mModel.NumB.RegisterWithInitValue(v => mInputB.text = v.ToString()).RmvOnDestroy(this);
-
             // 注册计算结果事件的回调，并在销毁时移除
             this.AddEvent<CalcEvent>(e => mResultText.text = e.result.ToString()).RmvOnDestroy(this);
             // 注册操作符变化事件的回调，并在销毁时移除
             this.AddEvent<OpChangeEvent>(e => mOPText.text = e.op).RmvOnDestroy(this);
         }
-
         // 处理按钮点击事件
         protected override void OnClick(string btnName)
         {
