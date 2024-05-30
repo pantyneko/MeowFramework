@@ -430,6 +430,7 @@
   
   - `void Init();`
 - **示例:**
+  
   ```csharp
   public class MySingleton : ISingleton
   {
@@ -686,8 +687,7 @@
   - `public void ToFirst()`: 重置游标。
   - `public void ToLast()`: 将游标移动到数组末端。
   - `public IEnumerator<T> GetEnumerator()`: 获取迭代器
-  
-    - `IEnumerator IEnumerable.GetEnumerator()`: 获取迭代器。
+  - `IEnumerator IEnumerable.GetEnumerator()`: 获取迭代器。
 - **示例:**
   ```csharp
   var pArray = new PArray<int>(10);
