@@ -2,7 +2,7 @@
 
 ## 项目概述
 
-**项目名称:** MeowFramework<精简版QF>  
+**项目名称:** 喵喵框架  
 **作者:** [PantyNeko](https://gitee.com/PantyNeko)  
 **创建日期:** 2024-05-09  
 **描述:** 这是一个基于QF架构的高性能框架，提供了高度开放的扩展权限，适合喜欢自定义、追求极限轻量的开发者。架构旨在支持高度模块化和灵活的系统设计，实现了单例模式、命令/查询处理模式和事件处理等功能。框架的设计理念是简化开发流程，提供高效、可扩展的解决方案，适用于各种规模的项目。
@@ -97,7 +97,7 @@
   public class MyPermissionProvider : IPermissionProvider
   {
       public IModuleHub Hub { get; private set; }
-
+  
       public MyPermissionProvider(IModuleHub hub)
       {
           Hub = hub;
@@ -183,7 +183,7 @@
       {
           // 初始化逻辑
       }
-
+  
       protected override void OnDeInit()
       {
           // 逆初始化逻辑
@@ -361,7 +361,7 @@
       public CustomRmv(Action call) => this.call = call;
       void IRmv.Do() => call?.Invoke();
   }
-// 使用示例
+  // 使用示例
   IRmv rmv = new CustomRmv(() => { /* 移除逻辑 */ });
   rmv.Do();
   ```
@@ -384,7 +384,7 @@
           call = e;
       }
   }
-// 使用示例
+  // 使用示例
   var events = new Dictionary<Type, Delegate>();
   var handler = new Action<MyEvent>(e => { /* 事件逻辑 */ });
   events.Combine(typeof(MyEvent), handler);
@@ -411,7 +411,7 @@
           AddUtility(new MyUtility());
       }
   }
-
+  
   // 使用示例
   var hub = MyModuleHub.GetIns();
   var module = hub.Module<MyModule>();
@@ -450,13 +450,13 @@
   public class MySingleton : Singleton<MySingleton>, ISingleton
   {
       private MySingleton() { }
-
+  
       public void Init()
       {
           // 初始化逻辑
       }
   }
-
+  
   // 使用示例
   var instance = MySingleton.GetIns();
   instance.Init();
@@ -476,7 +476,7 @@
           // 初始化逻辑
       }
   }
-
+  
   // 使用示例
   var instance = MyMonoSingle.GetIns();
   ```
@@ -508,7 +508,7 @@
   {
       // 触发器逻辑
   }
-
+  
   // 使用示例
   var trigger = gameObject.AddComponent<MyRmvTrigger>();
   trigger.Add(new CustomRmv(() => { /* 移除逻辑 */ }));
@@ -526,7 +526,7 @@
   {
       // 销毁逻辑
   }
-
+  
   // 使用示例
   var trigger = gameObject.AddComponent<MyRmvOnDestroyTrigger>();
   trigger.Add(new CustomRmv(() => { /* 移除逻辑 */ }));
@@ -544,7 +544,7 @@
   {
       // 失活逻辑
   }
-// 使用示例
+  // 使用示例
   var trigger = gameObject.AddComponent<MyRmvOnDisableTrigger>();
   trigger.Add(new CustomRmv(() => { /* 移除逻辑 */ }));
   // 当对象失活时，自动调用 trigger.OnDisable();
@@ -569,7 +569,7 @@
   {
       // MonoKit逻辑
   }
-// 使用示例
+  // 使用示例
   MonoKit.OnUpdate += () => { /* 更新逻辑 */ };
   MonoKit.OnFixedUpdate += () => { /* 固定更新逻辑 */ };
   MonoKit.OnLateUpdate += () => { /* 延迟更新逻辑 */ };
@@ -643,7 +643,7 @@
   {
       public int Value;
   }
-
+  
   var obj = new MyObject { Value = 10 };
   var objectBinder = new ObjectBinder<MyObject>(obj);
   objectBinder.Register(value => { /* 对象变化处理逻辑 */ });
@@ -743,7 +743,7 @@
           Debug.Log($"{btnName} clicked");
       }
   }
-// 使用示例
+  // 使用示例
   var panel = gameObject.AddComponent<MyUIPanel>();
   panel.Activate(true);
   ```
@@ -751,6 +751,12 @@
 ---
 
 ## 完整示例
+
+### 流程图
+
+![](https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/Doc/img3.png)
+
+### 示例代码
 
 ```csharp
 using UnityEngine;
