@@ -76,12 +76,11 @@ namespace Panty
     }
     public abstract class RmvTrigger : MonoBehaviour
     {
-        private readonly HashSet<IRmv> rmvs = new HashSet<IRmv>();
-        public void Add(IRmv rmv) => rmvs.Add(rmv);
+        private readonly Stack<IRmv> rmvs = new Stack<IRmv>();
+        public void Add(IRmv rmv) => rmvs.Push(rmv);
         protected void RmvAll()
         {
-            foreach (var item in rmvs) item.Do();
-            rmvs.Clear();
+            while (rmvs.Count > 0) rmvs.Pop().Do();
         }
     }
     public class RmvOnDestroyTrigger : RmvTrigger
@@ -245,17 +244,17 @@ namespace Panty
         /// <summary>
         /// 标记为场景卸载时注销
         /// </summary>
-        public static void RmvOnSceneUnload(this IRmv rmv) => mWaitUnLoadRmvs.Add(rmv);
+        public static void RmvOnSceneUnload(this IRmv rmv) => mWaitUnLoadRmvs.Push(rmv);
         /// <summary>
         /// 用于当前场景卸载时 注销所有事件和通知
         /// </summary>
         public static void OnSceneUnloadComplete()
         {
-            foreach (var rmv in mWaitUnLoadRmvs) rmv.Do();
-            mWaitUnLoadRmvs.Clear();
+            while (mWaitUnLoadRmvs.Count > 0)
+                mWaitUnLoadRmvs.Pop().Do();
         }
         // 用于存储所有当前场景卸载时 需要注销的事件和通知
-        private readonly static HashSet<IRmv> mWaitUnLoadRmvs = new HashSet<IRmv>();
+        private readonly static Stack<IRmv> mWaitUnLoadRmvs = new Stack<IRmv>();
     }
     public abstract partial class ModuleHub<H>
     {

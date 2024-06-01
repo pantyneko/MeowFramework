@@ -35,7 +35,7 @@ namespace Panty
 
         [MenuItem("PnTool/NekoAI &3")]
         private static void OpenSelf() =>
-            GetWindow<NekoAIEditor>($"{Lifiya}(Lifiya)", true);
+            EditorKit.ShowOrHide<NekoAIEditor>(out var _, false, $"{Lifiya}(Lifiya)");
         private void Awake()
         {
             chatgpt.Init(300);
@@ -81,14 +81,14 @@ namespace Panty
                 NameOp = new GUILayoutOption[] { GUILayout.Width(size) };
             }
             Event e = Event.current;
-            if (e.type == EventType.KeyDown)
+            if (hasFocus && e.type == EventType.KeyDown)
             {
                 if (e.keyCode == KeyCode.Return)
                 {
                     SendAsync();
                     e.Use();
                 }
-                else if (e.keyCode == KeyCode.Escape)
+                else if (e.keyCode == KeyCode.Space)
                 {
                     ShowAllText();
                     e.Use();

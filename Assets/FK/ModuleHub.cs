@@ -126,7 +126,7 @@ namespace Panty
     public static partial class HubTool
     {
 #if DEBUG
-        public const string version = "1.1.1";
+        public const string version = "1.1.2";
         /// <summary>
         /// 在调试模式下 将对象信息输出到控制台 可支持多个平台。
         /// </summary>
@@ -364,8 +364,8 @@ namespace Panty
         void IModuleHub.RmvEvent<E>(Action<E> evt) => mEvents.Separate(typeof(E), evt);
         void IModuleHub.RmvNotify<E>(Action evt) => mNotifies.Separate(typeof(E), evt);
 
-        void IModuleHub.SendCmd<C>() => SendCmd(new C());
-        void IModuleHub.SendCmd<C, P>(P info) => SendCmd(new C(), info);
+        void IModuleHub.SendCmd<C>() => SendCmd(cmd: new C());
+        void IModuleHub.SendCmd<C, P>(P info) => SendCmd(cmd: new C(), info);
         // 可重写的命令 架构子类可对该命令逻辑进行重写 例如在命令前后记录日志
         public virtual void SendCmd<C>(C cmd) where C : ICmd => cmd.Do(this);
         public virtual void SendCmd<C, P>(C cmd, P info) where C : ICmd<P> => cmd.Do(this, info);

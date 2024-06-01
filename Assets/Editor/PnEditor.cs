@@ -1,14 +1,13 @@
 using UnityEngine;
 using UnityEditor;
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 
 namespace Panty
 {
-    public abstract class PnEditor<T> : EditorWindow where T : Enum
+    public abstract class PnEditor : EditorWindow
     {
         protected enum E_Path : byte
         {
@@ -23,8 +22,6 @@ namespace Panty
             Custom,
         }
         protected string inputText = "喵喵工具箱";
-
-        protected T modes;
         protected bool IsAsync;
         protected E_Path mPath;
         protected GUIStyle HelpBoxStyle;
@@ -32,20 +29,14 @@ namespace Panty
 
         private (string name, Action call)[] btnInfos;
 
+        protected GUILayoutOption[] btnLayoutOps;
         private GUIContent[] mMenuItemContent;
         private GenericMenu.MenuFunction[] mMenuItemFunc;
 
         protected const float textSpacing = 8f;
         protected const byte MaxLineItemCount = 4;
 
-        protected abstract T Empty { get; }
-        protected virtual void ExecuteMode(T mode) { }
         private void OnEnable() => mCanInit = true;
-        private void Update()
-        {
-            if (EqualityComparer<T>.Default.Equals(modes, Empty)) return;
-            ExecuteMode(modes);
-        }
         private void OnInspectorUpdate()
         {
             if (EditorApplication.isPlaying) Repaint();
@@ -54,6 +45,7 @@ namespace Panty
         {
             if (mCanInit)
             {
+                btnLayoutOps = new GUILayoutOption[] { GUILayout.Height(30) };
                 HelpBoxStyle = new GUIStyle(EditorStyles.helpBox)
                 {
                     padding = new RectOffset(6, 6, 6, 6)
@@ -89,7 +81,6 @@ namespace Panty
             mIsShowBtn = GUILayout.Toggle(mIsShowBtn, "显示功能按钮");
             mDisabledInputBox = GUILayout.Toggle(mDisabledInputBox, "禁用输入框");
             mShowBaseInfo = GUILayout.Toggle(mShowBaseInfo, "基础信息");
-            modes = (T)EditorGUILayout.EnumPopup(modes);
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space();
@@ -143,7 +134,6 @@ namespace Panty
                 mIsShowBtn = true;
                 mDisabledInputBox = true;
                 mShowBaseInfo = false;
-                modes = Empty;
                 inputText = "状态已重置";
             }
             else if (OnClick("打开路径"))
@@ -262,7 +252,7 @@ namespace Panty
         protected virtual (string, Action)[] InitBtnInfo() => null;
         protected bool OnClick(string name)
         {
-            return GUILayout.Button(name, GUILayout.Height(30)) && Event.current.button == 0;
+            return GUILayout.Button(name, btnLayoutOps) && Event.current.button == 0;
         }
     }
 }

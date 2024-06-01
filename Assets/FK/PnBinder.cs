@@ -41,11 +41,16 @@ namespace Panty
         public ValueBinder(V value = default) => mValue = value;
         public static bool operator ==(ValueBinder<V> binder, V value) => binder.mValue.Equals(value);
         public static bool operator !=(ValueBinder<V> binder, V value) => !binder.mValue.Equals(value);
-
         /// <summary>
         /// 使用当前值对内部进行设置 注意该方法为重新构建 禁止在初始化以外的地方胡乱使用
         /// </summary>
-        public static implicit operator ValueBinder<V>(V value) => new ValueBinder<V>(value);
+        public static implicit operator ValueBinder<V>(V value)
+        {
+#if DEBUG
+            $"{value} => Binder".Log();
+#endif
+            return new ValueBinder<V>(value);
+        }
         public override bool Equals(object obj) =>
             obj is ValueBinder<V> binder && mValue.Equals(binder.mValue);
         public override string ToString() => mValue.ToString();
@@ -66,7 +71,13 @@ namespace Panty
         public StringBinder(string value = default) => mValue = value;
         public static bool operator ==(StringBinder binder, string value) => binder.mValue == value;
         public static bool operator !=(StringBinder binder, string value) => binder.mValue != value;
-        public static implicit operator StringBinder(string value) => new StringBinder(value);
+        public static implicit operator StringBinder(string value)
+        {
+#if DEBUG
+            $"{value} => Binder".Log();
+#endif
+            return new StringBinder(value);
+        }
         public override bool Equals(object obj) =>
             obj is StringBinder binder && mValue == binder.mValue;
         public override string ToString() => mValue;

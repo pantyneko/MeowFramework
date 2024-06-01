@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -9,22 +7,19 @@ namespace Panty
     public class TextDialog : EditorWindow
     {
         private Vector2 scrollPosition;
-        private GUIStyle style;
         private string longText = "";
         private Action succeed, fail;
 
-        public static void Show(string msg, Action succeed = null, Action fail = null)
+        public static void Open(string msg, Action succeed = null, Action fail = null)
         {
-            var wd = GetWindow<TextDialog>("喵喵提示器",true).Init(msg);
+            var wd = GetWindow<TextDialog>("喵喵提示器", true);
             wd.succeed = succeed;
             wd.fail = fail;
+            wd.longText = msg;
         }
-        private TextDialog Init(string text)
+        private void Awake()
         {
-            longText = text;
-            style = new GUIStyle(EditorStyles.textArea) { wordWrap = true };
             position.Set(position.x, position.y, 100f, 300f);
-            return this;
         }
         private void OnGUI()
         {
@@ -32,19 +27,35 @@ namespace Panty
             EditorGUILayout.HelpBox("您的喵喵女友来电话啦！不接的话打洗你哦", MessageType.Info);
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
+            var style = new GUIStyle(EditorStyles.textArea) { wordWrap = true };
             GUILayout.Label(longText, style, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
             EditorGUILayout.EndScrollView();
 
             GUILayout.FlexibleSpace();
             EditorGUILayout.BeginHorizontal();
-            if (GUILayout.Button("确认", GUILayout.Height(30f)))
+            var e = Event.current;
+            var op = new GUILayoutOption[] { GUILayout.Height(30f) };
+            bool trigger = hasFocus && e.type == EventType.KeyDown;
+            if (GUILayout.Button("确认", op))
             {
                 succeed?.Invoke();
                 Close();
             }
-            if (GUILayout.Button("取消", GUILayout.Height(30f)))
+            else if (trigger && e.keyCode == KeyCode.Return)
+            {
+                e.Use();
+                succeed?.Invoke();
+                Close();
+            }
+            if (GUILayout.Button("取消", op))
             {
                 fail?.Invoke();
+                Close();
+            }
+            else if (trigger && e.keyCode == KeyCode.Escape)
+            {
+                fail?.Invoke();
+                e.Use();
                 Close();
             }
             EditorGUILayout.EndHorizontal();
@@ -55,13 +66,11 @@ namespace Panty
             fail = null;
         }
     }
-    public class MeowEditor : PnEditor<MeowEditor.E_Type>
+    public class MeowEditor : PnEditor
     {
-        public enum E_Type : byte { Empty, A }
         protected string NameSpace => "Panty.Test";
         [MenuItem("PnTool/MeowEditor &1")]
-        private static void OpenSelf() => GetWindow<MeowEditor>("MeowEditor", true);
-        protected override E_Type Empty => E_Type.Empty;
+        private static void OpenSelf() => EditorKit.ShowOrHide<MeowEditor>(out var _);
         protected override (string, Action)[] InitBtnInfo()
         {
             return new (string, Action)[]
@@ -70,14 +79,14 @@ namespace Panty
                 {
                     if (CheckInputLegal())
                     {
-                        CreatScript("", $"using UnityEngine;\r\n\r\nnamespace {NameSpace}\r\n{{\r\n    public class @ : MonoBehaviour\r\n    {{\r\n\r\n    }}\r\n}}");
+                        EditorKit.CreatScript(inputText,"", $"using UnityEngine;\r\n\r\nnamespace {NameSpace}\r\n{{\r\n    public class @ : MonoBehaviour\r\n    {{\r\n\r\n    }}\r\n}}");
                     }
                 }),
                 ("创建编辑器",()=>
                 {
                     if (CheckInputLegal())
                     {
-                        CreatScript("Editor", $"using UnityEditor;\r\n\r\nnamespace {NameSpace}\r\n{{\r\n    public class @Editor : PnEditor<@Editor.E_Type>\r\n    {{\r\n        public enum E_Type : byte {{ Empty }}\r\n\r\n        [MenuItem(\"PnTool/@Editor\")]\r\n        public static void ShowWindow()\r\n        {{\r\n            GetWindow<@Editor>(\"@Editor\", true);\r\n        }}\r\n        protected override E_Type Empty => E_Type.Empty;\r\n    }}\r\n}}");
+                        EditorKit.CreatScript(inputText,"Editor", $"using UnityEditor;\r\n\r\nnamespace {NameSpace}\r\n{{\r\n    public class @Editor : PnEditor<@Editor.E_Type>\r\n    {{\r\n        public enum E_Type : byte {{ Empty }}\r\n\r\n        [MenuItem(\"PnTool/@Editor\")]\r\n        public static void ShowWindow()\r\n        {{\r\n            GetWindow<@Editor>(\"@Editor\", true);\r\n        }}\r\n        protected override E_Type Empty => E_Type.Empty;\r\n    }}\r\n}}");
                     }
                 }),
                 ("创建Hub类",() =>
@@ -85,7 +94,7 @@ namespace Panty
                     if (CheckInputLegal())
                     {
                         string code = $"using UnityEngine;\r\n\r\nnamespace {NameSpace}\r\n{{\r\n    public class @Hub : ModuleHub<@Hub>\r\n    {{\r\n        protected override void BuildModule()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n    public class @Game : MonoBehaviour, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n    public class @UI : UIPanel, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n}}";
-                        CreatScript("Hub",code);
+                        EditorKit.CreatScript(inputText,"Hub",code);
                     }
                 }),
                 ("创建模块",() =>
@@ -93,28 +102,28 @@ namespace Panty
                     if (CheckInputLegal())
                     {
                         string code = $"namespace {NameSpace}\r\n{{\r\n    public interface I@Module : IModule\r\n    {{\r\n\r\n    }}\r\n    public class @Module : AbsModule, I@Module\r\n    {{\r\n        protected override void OnInit()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n}}";
-                        CreatScript("Module",code);
+                        EditorKit.CreatScript(inputText, "Module",code);
                     }
                 }),
                 ("QF_创建架构",() =>
                 {
                     if (CheckInputLegal())
                     {
-                        CreatScript("Game",$"using UnityEngine;\r\n\r\nnamespace {NameSpace}\r\n{{\r\n    public class @Game : Architecture<@Game>\r\n    {{\r\n        protected override void Init()\r\n        {{\r\n            // 注册模块\r\n        }}\r\n    }}\r\n    public class @GameController : MonoBehaviour, IController\r\n    {{\r\n        IArchitecture IBelongToArchitecture.GetArchitecture() => @Game.Interface;\r\n    }}\r\n    public class @UIController : UIPanel, IController\r\n    {{\r\n        IArchitecture IBelongToArchitecture.GetArchitecture() => @Game.Interface;\r\n    }}\r\n}}");
+                        EditorKit.CreatScript(inputText, "Game",$"using UnityEngine;\r\n\r\nnamespace {NameSpace}\r\n{{\r\n    public class @Game : Architecture<@Game>\r\n    {{\r\n        protected override void Init()\r\n        {{\r\n            // 注册模块\r\n        }}\r\n    }}\r\n    public class @GameController : MonoBehaviour, IController\r\n    {{\r\n        IArchitecture IBelongToArchitecture.GetArchitecture() => @Game.Interface;\r\n    }}\r\n    public class @UIController : UIPanel, IController\r\n    {{\r\n        IArchitecture IBelongToArchitecture.GetArchitecture() => @Game.Interface;\r\n    }}\r\n}}");
                     }
                 }),
                 ("QF_创建系统",() =>
                 {
                     if (CheckInputLegal())
                     {
-                        CreatScript("System", $"namespace {NameSpace}\r\n{{\r\n    public interface I@System : ISystem\r\n    {{\r\n\r\n    }}\r\n    public class @System : AbstractSystem, I@System\r\n    {{\r\n        protected override void OnInit()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n}}");
+                        EditorKit.CreatScript(inputText, "System", $"namespace {NameSpace}\r\n{{\r\n    public interface I@System : ISystem\r\n    {{\r\n\r\n    }}\r\n    public class @System : AbstractSystem, I@System\r\n    {{\r\n        protected override void OnInit()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n}}");
                     }
                 }),
                 ("QF_创建数据模型",() =>
                 {
                     if (CheckInputLegal())
                     {
-                        CreatScript("Model", $"namespace {NameSpace}\r\n{{\r\n    public interface I@Model : IModel\r\n    {{\r\n\r\n    }}\r\n    public class @Model : AbstractModel, I@Model\r\n    {{\r\n        protected override void OnInit()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n}}");
+                        EditorKit.CreatScript(inputText, "Model", $"namespace {NameSpace}\r\n{{\r\n    public interface I@Model : IModel\r\n    {{\r\n\r\n    }}\r\n    public class @Model : AbstractModel, I@Model\r\n    {{\r\n        protected override void OnInit()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n}}");
                     }
                 }),
                 ("检查更新",() =>
@@ -127,12 +136,12 @@ namespace Panty
                         string version = HubTool.version;
                         if (res[0] == version)
                         {
-                            TextDialog.Show($"当前为最新版本：[ {version} ] > 无需更新\r\n{res[1]}");
+                            TextDialog.Open($"当前为最新版本：[ {version} ] > 无需更新\r\n{res[1]}");
                         }
                         else
                         {
                             mPath = E_Path.UpdateFK;
-                            TextDialog.Show($"当前版本：{version}\r\n最新版本：{res[0]}\r\n\r\n1：点击【打开路径按钮】= 访问最新版本\r\n2：右键【拉取核心代码】= 进行快速更新\r\n{res[1]}");
+                            TextDialog.Open($"当前版本：{version}\r\n最新版本：{res[0]}\r\n\r\n1：点击【打开路径按钮】= 访问最新版本\r\n2：右键【拉取核心代码】= 进行快速更新\r\n{res[1]}");
                         }
                     });
                 }),
@@ -154,7 +163,7 @@ namespace Panty
                     EditorKit.Tips("请在面板上正确输入类型名");
                     return false;
                 }
-                if (inputText.AsSpan().ContainsSpecialSymbols())
+                if (inputText.ContainsSpecialSymbols())
                 {
                     EditorKit.Tips($"编辑器名字有特殊符号");
                     return false;
@@ -162,18 +171,6 @@ namespace Panty
                 return true;
             }
             return false;
-        }
-        private void CreatScript(string tag, string tmple)
-        {
-            string path = $"{Application.dataPath}/{inputText}{tag}.cs";
-            // 查找是否存在同名脚本 如果存在就跳出
-            if (File.Exists(path))
-            {
-                EditorKit.Tips("脚本已存在");
-                return;
-            }
-            File.WriteAllText(path, Regex.Replace(tmple, Regex.Escape("@"), inputText));
-            AssetDatabase.Refresh();
         }
     }
 }

@@ -6,22 +6,57 @@ namespace Panty
 {
     public static class FileKit
     {
+        public static bool EnsurePathExists(ref string path)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(path)) return false;
+                if (path.ContainsInvalidPathCharacters()) return false;
+
+                if (Path.HasExtension(path))
+                {
+                    path = Path.GetDirectoryName(path);
+                    if (string.IsNullOrEmpty(path)) return false;
+                }
+                return true;
+            }
+            catch (Exception e)
+            {
+#if DEBUG
+                e.Log();
+#endif
+                return false;
+            }
+        }
         public static bool TryCreateDirectory(string path)
         {
             if (Directory.Exists(path)) return false;
             Directory.CreateDirectory(path);
             return true;
         }
-        public static void CreateOrWrite(string filePath, string msg)
+        public static void WriteFile(string filePath, string content)
         {
 #if DEBUG
-            if (msg == null) throw new ArgumentNullException("字符串为空");
+            if (content == null) throw new ArgumentNullException("字符串为空");
 #endif
+            var spanContent = content.AsSpan();
+            var encode = Encoding.UTF8;
+            int maxByteCount = encode.GetMaxByteCount(spanContent.Length);
+
             using (FileStream fs = File.Create(filePath))
             {
-                var chars = msg.ToCharArray();
-                byte[] buff = Encoding.Default.GetBytes(chars, 0, chars.Length);
-                fs.Write(buff, 0, buff.Length);
+                if (maxByteCount < 1024)
+                {// 如果最大字节数小于某个阈值，使用 stackalloc
+                    Span<byte> byteBuffer = stackalloc byte[maxByteCount];
+                    int bytesWritten = encode.GetBytes(spanContent, byteBuffer);
+                    fs.Write(byteBuffer.Slice(0, bytesWritten));
+                }
+                else // 否则使用堆分配
+                {
+                    byte[] byteBuffer = new byte[maxByteCount];
+                    int bytesWritten = encode.GetBytes(spanContent, byteBuffer);
+                    fs.Write(byteBuffer, 0, bytesWritten);
+                }
             }
         }
         /// <summary>
