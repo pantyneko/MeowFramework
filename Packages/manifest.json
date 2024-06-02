@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.unity.collections": "1.2.4",
     "com.unity.ide.visualstudio": "2.0.22",
     "com.unity.nuget.newtonsoft-json": "3.2.1",
     "com.unity.ugui": "1.0.0",
