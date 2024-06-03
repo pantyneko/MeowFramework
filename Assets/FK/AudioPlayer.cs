@@ -70,7 +70,7 @@ namespace Panty
             }
             if (mBGM.clip == null || mBGM.clip.name == name) return;
             bgmClipVolume = clipVolume;
-            ResKit.AsyncLoad<AudioClip>("Audios/Bgm/" + name, TryPlay);
+            mLoader.AsyncLoad<AudioClip>("Audios/Bgm/" + name, TryPlay);
         }
         void IAudioPlayer.StopBgm()
         {
@@ -93,7 +93,7 @@ namespace Panty
         void IAudioPlayer.PlaySound(string name, float clipVolume)
         {
             TryGetSource(clipVolume, out var temp);
-            var clip = mLoader.SyncLoad<AudioClip>("Sound/" + name);
+            var clip = mLoader.SyncLoadFromCache<AudioClip>("Sound/" + name);
             temp.clip = clip;
             temp.volume = clipVolume * SoundVolume;
             temp.loop = false;
@@ -102,7 +102,7 @@ namespace Panty
         AudioSource IAudioPlayer.GetSound(string name, float clipVolume)
         {
             TryGetSource(clipVolume, out var temp);
-            var clip = mLoader.SyncLoad<AudioClip>("Sound/" + name);
+            var clip = mLoader.SyncLoadFromCache<AudioClip>("Sound/" + name);
             temp.clip = clip;
             temp.volume = clipVolume * SoundVolume;
             temp.loop = true;

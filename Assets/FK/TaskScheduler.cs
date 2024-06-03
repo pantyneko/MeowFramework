@@ -5,6 +5,7 @@ namespace Panty
 {
     public interface ITaskScheduler : IModule
     {
+        void AddConditionalTask(Func<bool> exitCondition, Action onFinished);
         DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop = false, bool isUnScaled = false);
         DelayTask AddTemporaryTask(float duration, Action onUpdate, bool isUnScaled = false);
     }
@@ -13,6 +14,7 @@ namespace Panty
         private PArray<DelayTask> mAvailable;
         private PArray<DelayTask> mDelayTasks;
         private PArray<DelayTask> mUnScaledTasks;
+        private PArray<(Func<bool> isEnd, Action call)> mConditionalTasks;
 
         public DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop, bool isUnScaled)
         {
@@ -21,6 +23,10 @@ namespace Panty
             if (isUnScaled) mUnScaledTasks.Push(task);
             else mDelayTasks.Push(task);
             return task;
+        }
+        void ITaskScheduler.AddConditionalTask(Func<bool> exitCondition, Action onFinished)
+        {
+            mConditionalTasks.Push((exitCondition, onFinished));
         }
         DelayTask ITaskScheduler.AddTemporaryTask(float duration, Action onUpdate, bool isUnScaled)
         {
@@ -32,6 +38,7 @@ namespace Panty
         }
         protected override void OnInit()
         {
+            mConditionalTasks = new PArray<(Func<bool>, Action)>();
             mUnScaledTasks = new PArray<DelayTask>();
             mDelayTasks = new PArray<DelayTask>();
             mAvailable = new PArray<DelayTask>();
@@ -52,7 +59,21 @@ namespace Panty
                 }
                 else i++;
             }
-            if (mDelayTasks.IsEmpty || Time.timeScale <= 0f) return;
+            if (Time.timeScale <= 0f) return;
+            if (mConditionalTasks.Count > 0)
+            {
+                while (i < mConditionalTasks.Count)
+                {
+                    var task = mConditionalTasks[i];
+                    if (task.isEnd())
+                    {
+                        task.call?.Invoke();
+                        mConditionalTasks.RmvAt(i);
+                    }
+                    else i++;
+                }
+            }
+            if (mDelayTasks.IsEmpty) return;
             i = 0; delta = Time.deltaTime;
             while (i < mDelayTasks.Count)
             {
