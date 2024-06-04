@@ -5,7 +5,10 @@ namespace Panty
     public interface IAudioPlayer : IModule
     {
         void PlayBgm(string name, float clipVolume = 1f);
+        void PlayBgmAsync(string name, float clipVolume = 1f);
         void PlaySound(string name, float clipVolume = 1f);
+        void PlaySoundAsync(string name, float clipVolume = 1f);
+        void PlaySoundCall(string name, float clipVolume = 1f);
         void StopBgm();
         void PauseBgm();
 
@@ -35,14 +38,14 @@ namespace Panty
             public bool IsPlaying => source.loop || source.isPlaying;
         }
 
+        private static float bgmClipVolume;
+
         private IResLoader mLoader;
 
-        private AudioSource mBGM;
         private Fade fade;
-        private static float bgmClipVolume;
+        private AudioSource mBGM;
         private GameObject mRoot;
-        private PArray<Sound> mOpenList;
-        private PArray<Sound> mCloseList;
+        private PArray<Sound> mOpenList, mCloseList;
 
         public ValueBinder<float> BgmVolume { get; } = 0.5f;
         public ValueBinder<float> SoundVolume { get; } = 0.5f;
@@ -58,19 +61,27 @@ namespace Panty
             BgmVolume.RegisterWithInitValue(OnBgmVolumeChanged);
             SoundVolume.RegisterWithInitValue(OnSoundVolumeChanged);
         }
+        private void InitBgm()
+        {
+            if (mRoot == null) InitRoot();
+            mBGM = mRoot.AddComponent<AudioSource>();
+            mBGM.loop = true;
+            mBGM.volume = 0;
+            MonoKit.OnUpdate += OnUpdate;
+        }
         void IAudioPlayer.PlayBgm(string name, float clipVolume)
         {
-            if (mBGM == null)
-            {
-                if (mRoot == null) InitRoot();
-                mBGM = mRoot.AddComponent<AudioSource>();
-                mBGM.loop = true;
-                mBGM.volume = 0;
-                MonoKit.OnUpdate += OnUpdate;
-            }
+            if (mBGM == null) InitBgm();
             if (mBGM.clip == null || mBGM.clip.name == name) return;
             bgmClipVolume = clipVolume;
-            mLoader.AsyncLoad<AudioClip>("Audios/Bgm/" + name, TryPlay);
+            mLoader.AsyncLoad<AudioClip>(name, TryPlay);
+        }
+        async void IAudioPlayer.PlayBgmAsync(string name, float clipVolume)
+        {
+            if (mBGM == null) InitBgm();
+            if (mBGM.clip == null || mBGM.clip.name == name) return;
+            bgmClipVolume = clipVolume;
+            TryPlay(await mLoader.AsyncLoad<AudioClip>(name));
         }
         void IAudioPlayer.StopBgm()
         {
@@ -92,8 +103,19 @@ namespace Panty
         }
         void IAudioPlayer.PlaySound(string name, float clipVolume)
         {
+            PlaySound(mLoader.SyncLoadFromCache<AudioClip>(name), clipVolume);
+        }
+        async void IAudioPlayer.PlaySoundAsync(string name, float clipVolume)
+        {
+            PlaySound(await mLoader.AsyncLoadFromCache<AudioClip>(name), clipVolume);
+        }
+        void IAudioPlayer.PlaySoundCall(string name, float clipVolume)
+        {
+            mLoader.AsyncLoadFromCache<AudioClip>(name, clip => PlaySound(clip, clipVolume));
+        }
+        private void PlaySound(AudioClip clip, float clipVolume)
+        {
             TryGetSource(clipVolume, out var temp);
-            var clip = mLoader.SyncLoadFromCache<AudioClip>("Sound/" + name);
             temp.clip = clip;
             temp.volume = clipVolume * SoundVolume;
             temp.loop = false;
@@ -101,8 +123,8 @@ namespace Panty
         }
         AudioSource IAudioPlayer.GetSound(string name, float clipVolume)
         {
+            var clip = mLoader.SyncLoadFromCache<AudioClip>(name);
             TryGetSource(clipVolume, out var temp);
-            var clip = mLoader.SyncLoadFromCache<AudioClip>("Sound/" + name);
             temp.clip = clip;
             temp.volume = clipVolume * SoundVolume;
             temp.loop = true;
