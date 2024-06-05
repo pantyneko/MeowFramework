@@ -4,7 +4,10 @@
 
 **项目名称:** 喵喵框架  
 **作者:** [PantyNeko](https://gitee.com/PantyNeko)  
-**创建日期:** 2024-05-09  
+**创建日期:** 2024-05-09 
+**友情链接**：
+感谢 vonweller 提供的附属工具集  https://gitee.com/vw112266/meow-framework-tool-kit
+
 **描述:** 这是一个基于高性能QF架构的抠门级框架，提供了高度开放的扩展权限，适合喜欢自定义、追求极限轻量的开发者。架构旨在支持高度模块化和灵活的系统设计，实现了单例模式、命令/查询处理模式和事件处理等功能。框架的设计理念是简化开发流程，提供高效、可扩展的解决方案，适用于各种规模的项目。
 
 ![](https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/Doc/Logo.png)
@@ -671,7 +674,6 @@ public class MyObject
 {
     public int Value;
 }
-
 var obj = new MyObject { Value = 10 };
 var objectBinder = new ObjectBinder<MyObject>(obj);
 objectBinder.Register(value => { /* 对象变化处理逻辑 */ });
@@ -681,6 +683,188 @@ MyObject value = objectBinder; // 隐式转换
 ```
 
 ---
+
+## 内置模块
+
+### 接口 IResLoader
+
+**用途:** 定义资源加载器接口，支持同步和异步加载资源，并提供缓存机制。
+**方法:**
+
+- `Task<T> AsyncLoad<T>(string path) where T : UnityEngine.Object;`
+  （可重写）异步加载资源，返回 Task<T> 在 Resources 加载中 通常Path只需要传入短链接。
+- `T SyncLoad<T>(string path) where T : UnityEngine.Object;`
+  （可重写）同步加载资源，直接返回资源实例。
+- `void AsyncLoad<T>(string path, Action<T> call) where T : UnityEngine.Object;`
+  （可重写）异步加载资源，通过回调函数返回资源实例。
+- `void AsyncLoadGo(string path, Action<GameObject> call = null);`
+  异步加载 GameObject，通过回调函数返回实例。
+- `Task<GameObject> AsyncLoadGo(string path, Vector3 pos);`
+  异步加载 GameObject，并设置位置，返回 Task<GameObject>。
+- `Task<GameObject> AsyncLoadGo(string path, Vector3 pos, Quaternion q);`
+  异步加载 GameObject，并设置位置和旋转，返回 Task<GameObject>。
+- `GameObject SyncLoadGo(string path, Vector3 pos);`
+  同步加载 GameObject，并设置位置，返回实例。
+- `GameObject SyncLoadGo(string path, Vector3 pos, Quaternion q);`
+  同步加载 GameObject，并设置位置和旋转，返回实例。
+- `T SyncLoadFromCache<T>(string path) where T : UnityEngine.Object;`
+  从缓存中同步加载资源，若缓存中不存在则加载并缓存。
+- `void AsyncLoadFromCache<T>(string path, Action<T> call) where T : UnityEngine.Object;`
+  从缓存中异步加载资源，通过回调函数返回，若缓存中不存在则加载并缓存。
+- `Task<T> AsyncLoadFromCache<T>(string path) where T : UnityEngine.Object;`
+  从缓存中异步加载资源，返回 Task<T>，若缓存中不存在则加载并缓存。
+
+### 接口 IAudioPlayer
+
+**用途:** 定义音频播放器接口，支持播放背景音乐和音效，并提供同步和异步的播放方法。
+**方法:**
+
+- `void PlayBgm(string name, float clipVolume = 1f);`  
+  播放背景音乐 传入音频的路径和 切片音量。
+  
+  ```csharp
+  this.Module<IAudioPlayer>().PlayBgm("BgmName");
+  ```
+
+- `void PlayBgmAsync(string name, float clipVolume = 1f);`  
+  异步播放背景音乐 传入音频的路径和 切片音量。
+  
+  ```csharp
+  this.Module<IAudioPlayer>().PlayBgmAsync("BgmName");
+  ```
+
+- `void PlaySound(string name, float clipVolume = 1f);`  
+  播放音效 传入音频的路径和 切片音量。
+  
+  ```csharp
+  this.Module<IAudioPlayer>().PlaySound("SoundName");
+  ```
+
+- `void PlaySoundAsync(string name, float clipVolume = 1f);`  
+  异步播放音效 传入音频的路径和 切片音量。
+  
+  ```csharp
+  this.Module<IAudioPlayer>().PlaySoundAsync("SoundName");
+  ```
+
+- `void PlaySoundCall(string name, float clipVolume = 1f);`  
+  异步播放音效，通过回调函数返回 传入音频的路径和 切片音量。
+  
+  ```csharp
+  this.Module<IAudioPlayer>().PlaySoundCall("SoundName");
+  ```
+
+- `void StopBgm();`  
+  停止播放背景音乐。
+  ```csharp
+  this.Module<IAudioPlayer>().StopBgm();
+  ```
+  
+- `void PauseBgm();`  
+  暂停播放背景音乐。
+  ```csharp
+  this.Module<IAudioPlayer>().PauseBgm();
+  ```
+  
+- `AudioSource GetSound(string name, float clipVolume = 1f);`  
+  获取音效音源 传入音频的路径和 切片音量 会自主回收。
+  
+  ```csharp
+  this.Module<IAudioPlayer>().GetSound("SoundName").Play();
+  ```
+  
+- `ValueBinder<float> BgmVolume { get; }`  
+  获取背景音乐音量绑定器。
+  
+  ```csharp
+  this.Module<IAudioPlayer>().BgmVolume.Value = 0.8f;
+  ```
+
+- `ValueBinder<float> SoundVolume { get; }`  
+  获取音效音量绑定器。
+  
+  ```csharp
+  this.Module<IAudioPlayer>().SoundVolume.Value = 0.8f;
+  ```
+
+### 接口 ITaskScheduler
+
+**用途:** 定义任务调度器接口，用于管理延迟任务、临时任务和条件任务。
+**方法:**
+
+- `void AddConditionalTask(Func<bool> exitCondition, Action onFinished);`  
+  添加一个条件任务，当指定的条件为真时执行任务。
+  ```csharp
+  this.Module<ITaskScheduler>().AddConditionalTask(() => Time.time > 60, () => Debug.Log("Condition met after 60 seconds"));
+  ```
+  
+- `DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop = false, bool isUnScaled = false);`  
+  添加一个延迟任务，在指定的持续时间后执行任务。
+  ```csharp
+  var delayTask = this.Module<ITaskScheduler>().AddDelayTask(5f, () => Debug.Log("5 seconds delay task finished"));
+  ```
+  
+- `DelayTask AddTemporaryTask(float duration, Action onUpdate, bool isUnScaled = false);`  
+  添加一个临时任务，在指定的持续时间内每帧执行更新任务。
+  ```csharp
+  var temporaryTask = this.Module<ITaskScheduler>().AddTemporaryTask(5f, () => Debug.Log("Temporary task updating..."));
+  ```
+
+### 类 DelayTask
+
+**用途:** 定义延迟任务，支持延迟执行、循环执行和状态管理。
+**方法:**
+
+- `public DelayTask Init(float delayTime, bool isLoop, Action task)`  
+  初始化延迟任务。
+  ```csharp
+  var delayTask = new DelayTask().Init(5f, false, () => Debug.Log("Task executed after 5 seconds"));
+  ```
+
+- `public void Start()`  
+  开始执行任务 需先执行 Init 操作。
+  
+  ```csharp
+  delayTask.Start();
+  ```
+```
+  
+- `public void Pause()`  
+  暂停任务执行。
+  
+  ```csharp
+  delayTask.Pause();
+```
+
+- `public void Stop()`  
+  停止任务执行。
+  
+  ```csharp
+  delayTask.Stop();
+  ```
+```
+  
+- `public void Complete()`  
+  完成任务，立即执行任务。
+  
+  ```csharp
+  delayTask.Complete();
+```
+
+- `public void Update(float delta)`  
+  更新任务状态。
+  
+  ```csharp
+  delayTask.Update(Time.deltaTime);
+  ```
+```
+  
+- `public void Reset()`  
+  重置任务进度。
+  
+  ```csharp
+  delayTask.Reset();
+```
 
 ## 容器类
 

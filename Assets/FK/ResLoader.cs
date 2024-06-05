@@ -6,12 +6,18 @@ using UnityEngine.SceneManagement;
 
 namespace Panty
 {
+    // 定义资源字典类型的简写
     using ResDic = Dictionary<string, UnityEngine.Object>;
     public interface IResLoader : IModule
     {
         Task<T> AsyncLoad<T>(string path) where T : UnityEngine.Object;
         T SyncLoad<T>(string path) where T : UnityEngine.Object;
         void AsyncLoad<T>(string path, Action<T> call) where T : UnityEngine.Object;
+        void AsyncLoadGo(string path, Action<GameObject> call = null);
+        Task<GameObject> AsyncLoadGo(string path, Vector3 pos);
+        Task<GameObject> AsyncLoadGo(string path, Vector3 pos, Quaternion q);
+        GameObject SyncLoadGo(string path, Vector3 pos);
+        GameObject SyncLoadGo(string path, Vector3 pos, Quaternion q);
         T SyncLoadFromCache<T>(string path) where T : UnityEngine.Object;
         void AsyncLoadFromCache<T>(string path, Action<T> call) where T : UnityEngine.Object;
         Task<T> AsyncLoadFromCache<T>(string path) where T : UnityEngine.Object;
@@ -58,6 +64,50 @@ namespace Panty
 #endif
                 call.Invoke(ass as T);
             };
+        }
+        void IResLoader.AsyncLoadGo(string path, Action<GameObject> call)
+        {
+            AsyncLoad<GameObject>(path, o =>
+            {
+                o = GameObject.Instantiate(o);
+                call?.Invoke(o);
+            });
+        }
+        async Task<GameObject> IResLoader.AsyncLoadGo(string path, Vector3 pos)
+        {
+            return GameObject.Instantiate(await AsyncLoad<GameObject>(path), pos, Quaternion.identity);
+        }
+        async Task<GameObject> IResLoader.AsyncLoadGo(string path, Vector3 pos, Quaternion q)
+        {
+            return GameObject.Instantiate(await AsyncLoad<GameObject>(path), pos, q);
+        }
+        GameObject IResLoader.SyncLoadGo(string path, Vector3 pos)
+        {
+            return GameObject.Instantiate(SyncLoad<GameObject>(path), pos, Quaternion.identity);
+        }
+        GameObject IResLoader.SyncLoadGo(string path, Vector3 pos, Quaternion q)
+        {
+            return GameObject.Instantiate(SyncLoad<GameObject>(path), pos, q);
+        }
+        private static string GetPrefix(Type type)
+        {
+            string prefix = type switch
+            {
+                Type t when t == typeof(GameObject) => "Prefabs/",
+                Type t when t == typeof(AudioClip) => "Audios/",
+                Type t when t == typeof(ScriptableObject) => "So/",
+                Type t when t == typeof(Sprite) => "Sprites/",
+                _ => ""
+            };
+#if UNITY_EDITOR
+            string _path = "Assets/Resources/" + prefix;
+            if (FileKit.TryCreateDirectory(_path))
+            {
+                UnityEditor.AssetDatabase.Refresh();
+                throw new Exception($"{_path} 文件夹被创建,请将资源文件放入该根目录");
+            }
+#endif
+            return prefix;
         }
         T IResLoader.SyncLoadFromCache<T>(string path)
         {
@@ -131,26 +181,6 @@ namespace Panty
             T ass = await AsyncLoad<T>(path);
             cache[path] = ass;
             return ass;
-        }
-        private static string GetPrefix(Type type)
-        {
-            string prefix = type switch
-            {
-                Type t when t == typeof(GameObject) => "Prefabs/",
-                Type t when t == typeof(AudioClip) => "Audios/",
-                Type t when t == typeof(ScriptableObject) => "So/",
-                Type t when t == typeof(Sprite) => "Sprites/",
-                _ => ""
-            };
-#if UNITY_EDITOR
-            string _path = "Assets/Resources/" + prefix;
-            if (FileKit.TryCreateDirectory(_path))
-            {
-                UnityEditor.AssetDatabase.Refresh();
-                throw new Exception($"{_path} 文件夹被创建,请将资源文件放入该根目录");
-            }
-#endif
-            return prefix;
         }
     }
 }
