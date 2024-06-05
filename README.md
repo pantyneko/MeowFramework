@@ -9,6 +9,8 @@
 
 ---
 
+![](https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/Doc/Logo.png)
+
 ## 底层接口
 
 ### 接口 IReceiver
@@ -26,6 +28,7 @@ public class MyReceiver : IReceiver
 
 **用途:** 无参数的命令接口，用于执行不需要额外信息的操作。  
 **方法:**
+
 - `void Do(IModuleHub hub);`  
 **示例:**
 ```csharp
