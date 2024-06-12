@@ -4,68 +4,6 @@ using UnityEngine;
 
 namespace Panty
 {
-    public class TextDialog : EditorWindow
-    {
-        private Vector2 scrollPosition;
-        private string longText = "";
-        private Action succeed, fail;
-
-        public static void Open(string msg, Action succeed = null, Action fail = null)
-        {
-            var wd = GetWindow<TextDialog>("喵喵提示器", true);
-            wd.succeed = succeed;
-            wd.fail = fail;
-            wd.longText = msg;
-        }
-        private void Awake()
-        {
-            position.Set(position.x, position.y, 100f, 300f);
-        }
-        private void OnGUI()
-        {
-            EditorGUILayout.Space();
-            EditorGUILayout.HelpBox("您的喵喵女友来电话啦！不接的话打洗你哦", MessageType.Info);
-
-            scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
-            var style = new GUIStyle(EditorStyles.textArea) { wordWrap = true };
-            GUILayout.Label(longText, style, GUILayout.ExpandHeight(true), GUILayout.ExpandWidth(true));
-            EditorGUILayout.EndScrollView();
-
-            GUILayout.FlexibleSpace();
-            EditorGUILayout.BeginHorizontal();
-            var e = Event.current;
-            var op = new GUILayoutOption[] { GUILayout.Height(30f) };
-            bool trigger = hasFocus && e.type == EventType.KeyDown;
-            if (GUILayout.Button("确认", op))
-            {
-                succeed?.Invoke();
-                Close();
-            }
-            else if (trigger && e.keyCode == KeyCode.Return)
-            {
-                e.Use();
-                succeed?.Invoke();
-                Close();
-            }
-            if (GUILayout.Button("取消", op))
-            {
-                fail?.Invoke();
-                Close();
-            }
-            else if (trigger && e.keyCode == KeyCode.Escape)
-            {
-                fail?.Invoke();
-                e.Use();
-                Close();
-            }
-            EditorGUILayout.EndHorizontal();
-        }
-        private void OnDestroy()
-        {
-            succeed = null;
-            fail = null;
-        }
-    }
     public class MeowEditor : PnEditor
     {
         protected string NameSpace => "Panty.Test";
