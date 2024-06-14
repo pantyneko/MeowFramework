@@ -128,36 +128,61 @@ namespace Panty
                     flexGrow = 1 // 占用剩余空间
                 }
             };
-            mField.RegisterCallback<ChangeEvent<string>>(evt => mCmd = evt.newValue);
+            mField.RegisterCallback<ChangeEvent<string>>(OnChangeText);
             mField.RegisterCallback<KeyDownEvent>(OnKeyDown);
             mField.RegisterCallback<DragPerformEvent>(OnDragPerform);
             mField.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
+
+            mField.AddManipulator(new ContextualMenuManipulator(BuildContextualMenu));
             // 将TextField添加到根元素
             root.Add(mField);
         }
+        private void BuildContextualMenu(ContextualMenuPopulateEvent evt)
+        {
+            // 清除现有菜单项
+            evt.menu.MenuItems().Clear();
+            // 添加新的菜单项
+            evt.menu.AppendAction("显示帮助", e => ShowHelp());
+            evt.menu.AppendAction("基础目录", e => BasicCatalog());
+            evt.menu.AppendAction("检查更新", e => CheckUpdate());
+            evt.menu.AppendAction("清空数据", e => ClearInfo());
+        }
+        private void OnChangeText(ChangeEvent<string> evt) => mCmd = evt.newValue;
+        private void ChangeField(string value) => mField.value = value;
         private void OnDragUpdated(DragUpdatedEvent evt)
         {
-            DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+            DragAndDrop.visualMode = DragAndDropVisualMode.Link;
+            evt.StopImmediatePropagation();
         }
         private void OnDragPerform(DragPerformEvent evt)
         {
             DragAndDrop.AcceptDrag();
             if (DragAndDrop.paths.Length > 0)
             {
-                var mono = AssetDatabase.LoadAssetAtPath<MonoScript>(DragAndDrop.paths[0]);
-                if (mono == null) "无法获取拖曳数据".Log();
+                if (evt.ctrlKey)
+                {
+                    mPath = DragAndDrop.paths[0];
+                    $"已标记{mPath}".Log();
+                }
                 else
                 {
-                    Type scriptType = mono.GetClass();
-                    if (scriptType != null)
+                    var mono = AssetDatabase.LoadAssetAtPath<MonoScript>(DragAndDrop.paths[0]);
+                    if (mono == null)
+                        "无法获取拖曳数据".Log();
+                    else
                     {
-                        if (scriptType.IsSubclassOf(typeof(ScriptableObject)))
+                        Type scriptType = mono.GetClass();
+                        if (scriptType != null)
                         {
-                            SCRIPT = mono;
-                            mField.value = "SoIns:" + mono.name;
-                            $"SO => {mono.name}已标记".Log();
+                            if (scriptType.IsSubclassOf(typeof(ScriptableObject)) &&
+                                !scriptType.IsSubclassOf(typeof(EditorWindow)))
+                            {
+                                SCRIPT = mono;
+                                mField.value = "SoIns:" + mono.name;
+                                $"SO => {mono.name}已标记".Log();
+                            }
+                            else $"{mono.name}不是ScriptableObject".Log();
                         }
-                        else $"{mono.name}不是ScriptableObject".Log();
                     }
                 }
             }
@@ -189,6 +214,54 @@ namespace Panty
             EditorKit.CreatScript(mPath, name, "", tmp);
             mField.value = $"{tag}:";
         }
+        private void ShowHelp()
+        {
+            string instructions = $"// 以下指令已兼容大小写和全角半角\r\n\r\n[快捷指令] -> 通常由一个单词组成 例如：help\r\n[组合指令] -> 通常由类型+名字组成 例如：hub:Project\r\n[分隔指令] -> 通常由（:）或（：）组成\r\n\r\n// 快捷指令\r\n\r\n[ help   （帮助）] -> 显示帮助面板 在自定义提示窗显示一些信息\r\n[ path   （路径）] -> 在Console 窗口显示已标记路径\r\n[ space（空间）] -> 在Console 窗口显示已标记命名空间\r\n\r\n// 衍生指令\r\n\r\n[ path : 路径字符串 ] -> 标记自定义路径 如果路径不存在 尝试创建目录\r\n[ space : 命名空间 ] -> 标记自定义命名空间 并保存\r\n\r\n// 创建型指令  创建文件的路径以 path（路径） 的标记为准\r\n\r\n[ hub : Name ] 或 [ 架构 : 名字 ]\r\n尝试创建一个该名字的架构（Framework）\r\n\r\n[ Mono : Name ] 或 [ 脚本 : 名字 ]\r\n尝试创建一个该名字的普通脚本（Script）\r\n\r\n[ UI : Name ] 或 [ 表现 : 名字 ]\r\n尝试创建一个该名字的UI脚本（UI）\r\n\r\n[ Game : Name ] 或 [ 游戏 : 名字 ]\r\n尝试创建一个该名字的控制脚本（Control） \r\n\r\n[ Model : Name ] 或 [ 数据 : 名字 ]\r\n尝试创建一个该名字的数据脚本（Model） \r\n\r\n[ System : Name ] 或 [ 系统 : 名字 ]\r\n尝试创建一个该名字的系统脚本（System）\r\n\r\n[ Module : Name ] 或 [ 模块 : 名字 ]\r\n尝试创建一个该名字的模块脚本（Module）";
+            string sc = SCRIPT == null ? "null" : SCRIPT.name;
+            TextDialog.Open($"{instructions}\r\n\r\n已标记架构：{mHub}Hub\r\n已标记路径：{mPath}\r\n已标记命名空间：{mSpace}\r\n已标记SO资源：{sc}\r\n");
+            mField.value = "";
+        }
+        private void ClearInfo()
+        {
+            mField.value = null;
+            SCRIPT = null;
+            "清理成功".Log();
+        }
+        private void BasicCatalog()
+        {
+            bool lose = true;
+            string[] fileNames = { "ArtRes/Sprites", "Resources/Audios/Bgm", "Resources/Audios/Sound", "Resources/Prefabs", "Scripts/Framework", "Project/Game", "StreamingAssets/Csv" };
+            for (int i = 0; i < fileNames.Length; i++)
+            {
+                string path = $"Assets/{fileNames[i]}";
+                if (FileKit.TryCreateDirectory(path))
+                {
+                    $"{path}创建成功".Log();
+                    lose = false;
+                }
+            }
+            if (lose) "所有文件夹已就位".Log();
+            else AssetDatabase.Refresh();
+        }
+        private void CheckUpdate()
+        {
+            if (IsAsync) return;
+            string url = "https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/VersionInfo.txt";
+            RequestInfo(url, "正在检查更新 请稍后...", txt =>
+            {
+                string[] res = txt.Split("@");
+                string version = HubTool.version;
+                if (res[0] == version)
+                {
+                    TextDialog.Open($"当前为最新版本：[ {version} ] > 无需更新\r\n{res[1]}");
+                }
+                else
+                {
+                    TextDialog.Open($"当前版本：{version}\r\n最新版本：{res[0]}\r\n\r\n{res[1]}");
+                }
+                mField.value = "";
+            });
+        }
         private void OnKeyDown(KeyDownEvent evt)
         {
             if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
@@ -202,41 +275,10 @@ namespace Panty
                 // 去除指令头尾
                 string cmd = mCmd.Trim();
                 // 帮助指令
-                if (Eq(cmd, "help", "帮助"))
-                {
-                    string instructions = $"// 以下指令已兼容大小写和全角半角\r\n\r\n[快捷指令] -> 通常由一个单词组成 例如：help\r\n[组合指令] -> 通常由类型+名字组成 例如：hub:Project\r\n[分隔指令] -> 通常由（:）或（：）组成\r\n\r\n// 快捷指令\r\n\r\n[ help   （帮助）] -> 显示帮助面板 在自定义提示窗显示一些信息\r\n[ path   （路径）] -> 在Console 窗口显示已标记路径\r\n[ space（空间）] -> 在Console 窗口显示已标记命名空间\r\n\r\n// 衍生指令\r\n\r\n[ path : 路径字符串 ] -> 标记自定义路径 如果路径不存在 尝试创建目录\r\n[ space : 命名空间 ] -> 标记自定义命名空间 并保存\r\n\r\n// 创建型指令  创建文件的路径以 path（路径） 的标记为准\r\n\r\n[ hub : Name ] 或 [ 架构 : 名字 ]\r\n尝试创建一个该名字的架构（Framework）\r\n\r\n[ Mono : Name ] 或 [ 脚本 : 名字 ]\r\n尝试创建一个该名字的普通脚本（Script）\r\n\r\n[ UI : Name ] 或 [ 表现 : 名字 ]\r\n尝试创建一个该名字的UI脚本（UI）\r\n\r\n[ Game : Name ] 或 [ 游戏 : 名字 ]\r\n尝试创建一个该名字的控制脚本（Control） \r\n\r\n[ Model : Name ] 或 [ 数据 : 名字 ]\r\n尝试创建一个该名字的数据脚本（Model） \r\n\r\n[ System : Name ] 或 [ 系统 : 名字 ]\r\n尝试创建一个该名字的系统脚本（System）\r\n\r\n[ Module : Name ] 或 [ 模块 : 名字 ]\r\n尝试创建一个该名字的模块脚本（Module）";
-                    string sc = SCRIPT == null ? "null" : SCRIPT.name;
-                    TextDialog.Open($"{instructions}\r\n\r\n已标记架构：{mHub}Hub\r\n已标记路径：Assets/{mPath}\r\n已标记命名空间：{mSpace}\r\n已标记SO资源：{sc}\r\n");
-                    mField.value = "";
-                }
-                else if (Eq(cmd, "clear", "清理"))
-                {
-                    mField.value = null;
-                    SCRIPT = null;
-                    "清理成功".Log();
-                }
-                // 检查指令
+                if (Eq(cmd, "help", "帮助")) ShowHelp();
+                else if (Eq(cmd, "clear", "清理")) ClearInfo();
                 else if (Eq(cmd, "check", "检查更新"))
-                {
-                    if (!IsAsync)
-                    {
-                        string url = "https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/VersionInfo.txt";
-                        RequestInfo(url, "正在检查更新 请稍后...", txt =>
-                        {
-                            string[] res = txt.Split("@");
-                            string version = HubTool.version;
-                            if (res[0] == version)
-                            {
-                                TextDialog.Open($"当前为最新版本：[ {version} ] > 无需更新\r\n{res[1]}");
-                            }
-                            else
-                            {
-                                TextDialog.Open($"当前版本：{version}\r\n最新版本：{res[0]}\r\n\r\n{res[1]}");
-                            }
-                            mField.value = "";
-                        });
-                    }
-                }
+                    CheckUpdate();
                 else // 带后缀的指令
                 {
                     string[] cmds = cmd.Split(':', '：');
@@ -256,48 +298,48 @@ namespace Panty
                     {
                         if (cmds.Length == 1)
                         {
-                            $"当前路径为:Assets/{mPath}".Log();
+                            $"当前路径为:{mPath}".Log();
                         }
                         else
                         {
-                            string sub = cmds[1].TrimStart();
-                            string[] arr = sub.Split('/');
-
-                            if (arr[0] == "Assets")
-                                sub = sub.Substring(arr.Length > 1 ? 7 : 6);
-
-                            if (Eq(sub, "base", "基础"))
+                            if (string.IsNullOrEmpty(cmds[1]))
                             {
-                                string[] fileNames = { "ArtRes/Sprites", "Resources/Audios/Bgm", "Resources/Audios/Sound", "Resources/Prefabs", "Scripts/Framework", "Project/Game", "StreamingAssets/Csv" };
-                                for (int i = 0; i < fileNames.Length; i++)
-                                {
-                                    string path = $"Assets/{fileNames[i]}";
-                                    if (FileKit.TryCreateDirectory(path)) $"{path}创建成功".Log();
-                                }
-                                AssetDatabase.Refresh();
+                                $"当前路径为:{mPath}".Log();
                             }
                             else
                             {
-                                cmd = $"Assets/{sub}";
-                                if (FileKit.EnsurePathExists(ref cmd))
+                                // 得到实际路径 并去掉空格 2种情况 相对路径模式 绝对路径模式
+                                string sub = cmds[1].Trim();
+
+                                if (Eq(sub, "base", "基础"))
+                                    BasicCatalog();
+                                else
                                 {
-                                    if (Directory.Exists(cmd))
+                                    // 相对路径处理
+                                    if (sub[0] == '/') cmd = mPath + sub;
+                                    // 如果没有根目录 需要加上根目录
+                                    else cmd = sub.Split('/')[0] == "Assets" ? sub : $"Assets/{sub}";
+                                    // 进行路径合法性判断
+                                    if (FileKit.EnsurePathExists(ref cmd))
                                     {
-                                        $"路径存在,已标记{cmd}".Log();
-                                        mPath = sub;
-                                        mField.value = "path:";
+                                        if (Directory.Exists(cmd))
+                                        {
+                                            $"路径存在,已标记{cmd}".Log();
+                                            mPath = cmd;
+                                            mField.value = "path:";
+                                        }
+                                        else if (EditorKit.Dialog($"确定要创建该路径？\r\nPath：{cmd}"))
+                                        {
+                                            mField.value = "path:";
+                                            mPath = cmd;
+                                            $"{cmd}创建成功,已标记该路径".Log();
+                                            Directory.CreateDirectory(cmd);
+                                            AssetDatabase.Refresh();
+                                        }
+                                        else $"取消创建,标记原路径 {mPath}".Log();
                                     }
-                                    else if (EditorKit.Dialog($"确定要创建该路径？\r\nPath：{cmd}"))
-                                    {
-                                        mField.value = "path:";
-                                        mPath = sub;
-                                        $"{cmd}创建成功,已标记该路径".Log();
-                                        Directory.CreateDirectory(cmd);
-                                        AssetDatabase.Refresh();
-                                    }
-                                    else $"取消创建,标记原路径 Assets/{mPath}".Log();
+                                    else $"路径不合法 {cmd}".Log();
                                 }
-                                else $"路径不合法 {cmd}".Log();
                             }
                         }
                     }
@@ -308,7 +350,7 @@ namespace Panty
                         {
                             if (SCRIPT != null)
                             {
-                                string path = $"Assets/{mPath}";
+                                string path = mPath;
                                 FileKit.TryCreateDirectory(path);
                                 path = $"{path}/{sub}.asset";
                                 if (File.Exists(path))
