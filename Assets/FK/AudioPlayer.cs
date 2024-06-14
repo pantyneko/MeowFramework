@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Panty
 {
@@ -12,31 +13,49 @@ namespace Panty
         void StopBgm();
         void PauseBgm();
 
-        AudioSource GetSound(string name, float clipVolume = 1f);
+        Sound GetSound(string name, float clipVolume = 1f);
         ValueBinder<float> BgmVolume { get; }
         ValueBinder<float> SoundVolume { get; }
     }
+    public class Sound
+    {
+        private float clipVolume;
+        private AudioSource source;
+        public Predicate<AudioSource> onUpdate;
+        public Sound(AudioSource source)
+        {
+            this.source = source;
+        }
+        public Sound Set(float volume)
+        {
+            clipVolume = volume;
+            return this;
+        }
+        public void Play() => source.Play();
+        public void Pause() => source.Pause();
+        public void Stop() => source.Stop();
+        public void SetClip(AudioClip clip, bool loop)
+        {
+            source.clip = clip;
+            source.loop = loop;
+        }
+        public void Update()
+        {
+            if (onUpdate == null) return;
+            if (onUpdate.Invoke(source))
+            {
+                onUpdate = null;
+            }
+        }
+        public void Volume(float newValue)
+        {
+            source.volume = clipVolume * newValue;
+        }
+        public bool IsPlaying => source.loop || source.isPlaying;
+    }
     public class AudioPlayer : AbsModule, IAudioPlayer
     {
-        private class Sound
-        {
-            private float clipVolume;
-            public AudioSource source;
-            public Sound(AudioSource source)
-            {
-                this.source = source;
-            }
-            public Sound Set(float volume)
-            {
-                clipVolume = volume;
-                return this;
-            }
-            public void Volume(float newValue)
-            {
-                source.volume = clipVolume * newValue;
-            }
-            public bool IsPlaying => source.loop || source.isPlaying;
-        }
+        public static Predicate<AudioSource> Call;
 
         private static float bgmClipVolume;
 
@@ -103,34 +122,33 @@ namespace Panty
         }
         void IAudioPlayer.PlaySound(string name, float clipVolume)
         {
-            PlaySound(mLoader.SyncLoadFromCache<AudioClip>(name), clipVolume);
+            GetSound(mLoader.SyncLoadFromCache<AudioClip>(name), clipVolume, false).Play();
         }
         async void IAudioPlayer.PlaySoundAsync(string name, float clipVolume)
         {
-            PlaySound(await mLoader.AsyncLoadFromCache<AudioClip>(name), clipVolume);
+            GetSound(await mLoader.AsyncLoadFromCache<AudioClip>(name), clipVolume, false).Play();
         }
         void IAudioPlayer.PlaySoundCall(string name, float clipVolume)
         {
-            mLoader.AsyncLoadFromCache<AudioClip>(name, clip => PlaySound(clip, clipVolume));
+            mLoader.AsyncLoadFromCache<AudioClip>(name, clip => GetSound(clip, clipVolume, false).Play());
         }
-        private void PlaySound(AudioClip clip, float clipVolume)
+        private Sound GetSound(AudioClip clip, float clipVolume, bool loop = false)
         {
-            TryGetSource(clipVolume, out var temp);
-            temp.clip = clip;
-            temp.volume = clipVolume * SoundVolume;
-            temp.loop = false;
-            temp.Play();
+            TryGetSource(clipVolume, out var sound);
+            sound.SetClip(clip, loop);
+            sound.Volume(SoundVolume);
+            if (Call != null)
+            {
+                sound.onUpdate = Call;
+                Call = null;
+            }
+            return sound;
         }
-        AudioSource IAudioPlayer.GetSound(string name, float clipVolume)
+        Sound IAudioPlayer.GetSound(string name, float clipVolume)
         {
-            var clip = mLoader.SyncLoadFromCache<AudioClip>(name);
-            TryGetSource(clipVolume, out var temp);
-            temp.clip = clip;
-            temp.volume = clipVolume * SoundVolume;
-            temp.loop = true;
-            return temp;
+            return GetSound(mLoader.SyncLoadFromCache<AudioClip>(name), clipVolume, true);
         }
-        private void TryGetSource(float clipVolume, out AudioSource source)
+        private void TryGetSource(float clipVolume, out Sound sound)
         {
             if (mCloseList.IsEmpty)
             {
@@ -138,7 +156,7 @@ namespace Panty
                 int i = 0;
                 while (i < mOpenList.Count)
                 {
-                    var sound = mOpenList[i];
+                    sound = mOpenList[i];
                     if (sound.IsPlaying) i++;
                     else
                     {
@@ -146,22 +164,13 @@ namespace Panty
                         mCloseList.Push(sound);
                     }
                 }
-                if (mCloseList.IsEmpty)
-                {
-                    source = mRoot.AddComponent<AudioSource>();
-                    mOpenList.Push(new Sound(source).Set(clipVolume));
-                }
-                else
-                {
-                    var sound = mCloseList.Pop();
-                    source = sound.source;
-                    mOpenList.Push(sound.Set(clipVolume));
-                }
+                sound = mCloseList.IsEmpty ?
+                    new Sound(mRoot.AddComponent<AudioSource>()) : mCloseList.Pop();
+                mOpenList.Push(sound.Set(clipVolume));
             }
             else
             {
-                var sound = mCloseList.Pop();
-                source = sound.source;
+                sound = mCloseList.Pop();
                 mOpenList.Push(sound.Set(clipVolume));
             }
         }
@@ -177,6 +186,8 @@ namespace Panty
         }
         private void OnUpdate()
         {
+            for (int i = 0; i < mOpenList.Count; i++)
+                mOpenList[i].Update();
             if (fade.IsClose) return;
             fade.Update(Time.deltaTime);
             mBGM.volume = fade.Cur;
