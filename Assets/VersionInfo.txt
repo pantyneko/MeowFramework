@@ -5,6 +5,7 @@
 # 优化UI面板的操作
 # 优化UI绑定流程
 # 拆分独立数据到底层
+# 移除MeowEditor
 
 【v1.1.2 更新】
 # 调整MeowEditor的创建API

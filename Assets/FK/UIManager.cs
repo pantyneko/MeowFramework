@@ -103,7 +103,7 @@ namespace Panty
             if (mUIPool.TryGetValue(type, out var panel))
             {
                 if (panel == null || panel.IsOpen) return;
-                panel.Activate(true);
+                panel.Active(true);
                 panel.OnShow();
                 call?.Invoke(panel as T);
                 return;
@@ -132,7 +132,7 @@ namespace Panty
         {
             if (mUIPool.TryGetValue(typeof(T), out var panel))
             {
-                panel.Activate(false);
+                panel.Active(false);
                 panel.OnHide();
             }
         }
