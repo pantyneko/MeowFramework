@@ -56,6 +56,8 @@ namespace Panty
         }
         protected virtual void InitSingle() { }
     }
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Method, Inherited = false)]
+    public class EmptyAttribute : Attribute { }
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
     public class FindComponentAttribute : Attribute
     {
@@ -119,14 +121,20 @@ namespace Panty
             var o = new GameObject(nameof(MonoKit), typeof(MonoKit));
             GameObject.DontDestroyOnLoad(o);
         }
+        public static T GetOrAddComponent<T>(this GameObject o) where T : Component
+        {
+            T t = o.GetComponent<T>();
+            return t == null ? o.AddComponent<T>() : t;
+        }
         /// <summary>
         /// 尝试从一个物体身上获取脚本 如果获取不到就添加一个
         /// </summary>
-        public static T GetOrAdd<T>(this Component o) where T : Component
+        public static T GetOrAddComponent<T>(this Component o) where T : Component
         {
             T t = o.GetComponent<T>();
             return t == null ? o.gameObject.AddComponent<T>() : t;
         }
+        public readonly static Assembly BaseAss = Assembly.Load("Assembly-CSharp");
         /// <summary>
         /// 查找所有带标记的组件
         /// </summary>
@@ -223,6 +231,12 @@ namespace Panty
             Box(a, b, c, d, color, duration);
         }
     }
+    public class I
+    {
+        public static string Space = "Panty.Test";
+        public static string TPath = "Assets/";
+        public static string Hub = "Test";
+    }
     public static partial class HubEx
     {
         /// <summary>
@@ -236,11 +250,11 @@ namespace Panty
         /// <summary>
         /// 标记为物体被销毁时注销
         /// </summary>
-        public static void RmvOnDestroy(this IRmv rmv, Component c) => c.GetOrAdd<RmvOnDestroyTrigger>().Add(rmv);
+        public static void RmvOnDestroy(this IRmv rmv, Component c) => c.GetOrAddComponent<RmvOnDestroyTrigger>().Add(rmv);
         /// <summary>
         /// 标记为物体失活时注销
         /// </summary>
-        public static void RmvOnDisable(this IRmv rmv, Component c) => c.GetOrAdd<RmvOnDisableTrigger>().Add(rmv);
+        public static void RmvOnDisable(this IRmv rmv, Component c) => c.GetOrAddComponent<RmvOnDisableTrigger>().Add(rmv);
         /// <summary>
         /// 标记为场景卸载时注销
         /// </summary>

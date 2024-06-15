@@ -31,12 +31,12 @@ namespace Panty
                 //如果是渐入状态 0 - 1
                 case State.In:
                     if (Cur == Max) OnEnd();
-                    else Cur.MoveTowards(Max, step);
+                    else Cur = Cur < Max ? Cur + step : Max;
                     break;
                 //如果是渐出状态 1 - 0
                 case State.Out:
                     if (Cur == Min) OnEnd();
-                    else Cur.MoveTowards(Min, step);
+                    else Cur = Cur > Min ? Cur - step : Min;
                     break;
             }
         }

@@ -6,6 +6,9 @@ using System.Threading;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UIElements;
+using System.Text;
+using System.Linq;
+using UnityEditor.SceneManagement;
 
 namespace Panty
 {
@@ -75,12 +78,10 @@ namespace Panty
     {
         private bool IsAsync;
         private string mCmd = "help";
-        private string mPath = "Codes";
-        private string mSpace = "Panty.Test";
-        private string mHub;
-        private TextField mField;
 
-        private MonoScript SCRIPT;
+        private TextField mField;
+        private static MonoScript SCRIPT;
+        private static PArray<GameObject> mGos = new PArray<GameObject>();
 
         [MenuItem("PnTool/QuickCmd &Q")]
         private static void OpenSelf()
@@ -91,23 +92,134 @@ namespace Panty
                 win.minSize = new Vector2(360f, 40f);
             }
         }
+        [MenuItem("PnTool/Quick/AddBind &B")]
+        private static void AddBind()
+        {
+            if (Selection.objects.Length == 0) return;
+            foreach (var go in Selection.objects.OfType<GameObject>())
+            {
+                if (go == null) continue;
+                var bind = go.GetOrAddComponent<Bind>();
+                if (mGos.Count == 1) bind.root = mGos[0];
+                EditorUtility.SetDirty(go);
+                EditorSceneManager.MarkSceneDirty(go.scene);
+            }
+        }
+        [MenuItem("PnTool/Quick/AddUIRoot &W")]
+        private static void AddUIRoot()
+        {
+            if (Selection.objects.Length == 0) return;
+            bool add = false;
+            foreach (var go in Selection.objects.OfType<GameObject>())
+            {
+                if (go == null) continue;
+                if (AddUIRoot(go)) add = true;
+            }
+            if (add) AssetDatabase.Refresh();
+        }
+        private static void GetPathFD(string fileName, out string assetPath)
+        {
+            string[] sc = new string[] { "Assets/Scripts" };
+            assetPath = EditorKit.GetMonoPath(fileName, fileName + ".cs", sc);
+            assetPath = $"{Path.GetDirectoryName(assetPath)}/{fileName}_FD.cs";
+            if (!File.Exists(assetPath))
+            {
+
+                var psth = EditorKit.GetMonoPath(fileName, fileName + "_FD.cs", sc);
+                if (psth != null) assetPath = psth;
+            }
+        }
+        private static bool AddUIRoot(GameObject go)
+        {
+            var binds = go.GetComponentsInChildren<Bind>();
+            if (binds.Length == 0)
+            {
+                "没有可绑定对象".Log();
+                return false;
+            }
+            else
+            {
+                string assetPath = null;
+                var cp = go.GetComponent<UIPanel>();
+                string full = $"{I.Space}.{go.name}";
+                if (cp && cp.GetType().FullName == full)
+                {
+                    GetPathFD(go.name, out assetPath);
+                }
+                else
+                {
+                    var type = HubTool.BaseAss.GetType(full);
+                    // 说明没有这个资源
+                    if (type == null)
+                    {
+                        string tmple = $"using UnityEngine;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    [DisallowMultipleComponent]\r\n    public partial class {go.name} : {I.Hub}UI\r\n    {{\r\n\r\n    }}\r\n}}";
+                        File.WriteAllText($"{I.TPath}/{go.name}.cs", tmple);
+                        assetPath = $"{I.TPath}/{go.name}_FD.cs";
+                    }
+                    else
+                    {
+                        if (go.GetComponent(type) == null) go.AddComponent(type);
+                        GetPathFD(go.name, out assetPath);
+                        $"{type.Name}脚本已存在".Log();
+                    }
+                }
+                string[] data = $"using UnityEngine;\r\nusing UnityEngine.UI;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    public partial class {go.name}\r\n    {{\r\n        @\r\n    }}\r\n}}".Split('@');
+                var bd = new StringBuilder(data[0]);
+                for (int i = 0, len = binds.Length; i < len; i++)
+                {
+                    var bind = binds[i];
+                    if (bind.root == null)
+                        $"{bind}的Root is Null".Log();
+                    else if (bind.root == go)
+                    {
+                        string pre = bind.type switch
+                        {
+                            Bind.E_Type.Button => "btn",
+                            Bind.E_Type.Canvas => "cnv",
+                            Bind.E_Type.Image => "img",
+                            Bind.E_Type.Text => "txt",
+                            Bind.E_Type.Toggle => "tgl",
+                            Bind.E_Type.Slider => "sld",
+                            Bind.E_Type.Transform => "tr",
+                            Bind.E_Type.Dropdown => "drpDwn",
+                            Bind.E_Type.Scrollbar => "scrlBr",
+                            Bind.E_Type.ScrollRect => "scrlRt",
+                            Bind.E_Type.InputField => "inpFld",
+                            Bind.E_Type.RawImage => "rwImg",
+                            _ => ""
+                        };
+                        if (i > 1) bd.Append("\t\t");
+                        string goName = bind.gameObject.name.RemoveSpecialCharacters();
+                        bd.Append($"private {bind.type} {pre}_{goName};");
+                        if (i < len - 1) bd.Append("\r\n");
+                    }
+                    else $"{bind.root}不属于当前父级".Log();
+                }
+                bd.Append(data[1]);
+                File.WriteAllText(assetPath, bd.ToString());
+                $"{go.name}数据已更新".Log();
+                EditorUtility.SetDirty(go);
+                EditorSceneManager.MarkSceneDirty(go.scene);
+                return true;
+            }
+        }
         private void OnEnable()
         {
             string n = nameof(QuickCmdEditor);
             mCmd = EditorPrefs.GetString($"{n}Cmd", mCmd);
-            mPath = EditorPrefs.GetString($"{n}Path", mPath);
-            mSpace = EditorPrefs.GetString($"{n}Space", mSpace);
-            mHub = EditorPrefs.GetString($"{n}Hub", mHub);
+            I.TPath = EditorPrefs.GetString($"{n}Path", I.TPath);
+            I.Space = EditorPrefs.GetString($"{n}Space", I.Space);
+            I.Hub = EditorPrefs.GetString($"{n}Hub", I.Hub);
         }
         private void OnDisable()
         {
             string n = nameof(QuickCmdEditor);
             EditorPrefs.SetString($"{n}Cmd", mCmd);
-            EditorPrefs.SetString($"{n}Path", mPath);
-            if (!string.IsNullOrEmpty(mSpace))
-                EditorPrefs.SetString($"{n}Space", mSpace);
-            if (!string.IsNullOrEmpty(mHub))
-                EditorPrefs.SetString($"{n}Hub", mHub);
+            EditorPrefs.SetString($"{n}Path", I.TPath);
+            if (!string.IsNullOrEmpty(I.Space))
+                EditorPrefs.SetString($"{n}Space", I.Space);
+            if (!string.IsNullOrEmpty(I.Hub))
+                EditorPrefs.SetString($"{n}Hub", I.Hub);
         }
         private void CreateGUI()
         {
@@ -143,9 +255,16 @@ namespace Panty
             evt.menu.MenuItems().Clear();
             // 添加新的菜单项
             evt.menu.AppendAction("显示帮助", e => ShowHelp());
+            evt.menu.AppendAction("绑定 UI", e => OnUIBind());
             evt.menu.AppendAction("基础目录", e => BasicCatalog());
             evt.menu.AppendAction("检查更新", e => CheckUpdate());
-            evt.menu.AppendAction("清空数据", e => ClearInfo());
+            evt.menu.AppendAction("清空数据", e =>
+            {
+                if (EditorKit.Dialog("真的要清空数据嘛！"))
+                {
+                    ClearInfo();
+                }
+            });
         }
         private void OnChangeText(ChangeEvent<string> evt) => mCmd = evt.newValue;
         private void ChangeField(string value) => mField.value = value;
@@ -157,12 +276,12 @@ namespace Panty
         private void OnDragPerform(DragPerformEvent evt)
         {
             DragAndDrop.AcceptDrag();
-            if (DragAndDrop.paths.Length > 0)
+            if (DragAndDrop.paths.Length == 1)
             {
                 if (evt.ctrlKey)
                 {
-                    mPath = DragAndDrop.paths[0];
-                    $"已标记{mPath}".Log();
+                    I.TPath = DragAndDrop.paths[0];
+                    $"已标记{I.TPath}".Log();
                 }
                 else
                 {
@@ -186,19 +305,32 @@ namespace Panty
                     }
                 }
             }
+            else
+            {
+                var refs = DragAndDrop.objectReferences;
+                if (refs.Length > 0)
+                {
+                    mGos.ToFirst();
+                    foreach (var obj in refs.OfType<GameObject>())
+                    {
+                        mGos.Push(obj);
+                        mField.value = $"已缓存{obj.name}：GameObject";
+                    }
+                }
+            }
             evt.StopImmediatePropagation();
         }
         private static bool Eq(string source, string en, string ch) =>
             StringComparer.OrdinalIgnoreCase.Equals(source, en) || source == ch;
         private void CreateModule(string name, string tag)
         {
-            string tmp = $"namespace {mSpace}\r\n{{\r\n    public interface I@{tag} : IModule\r\n    {{\r\n\r\n    }}\r\n    public class @{tag} : AbsModule, I@{tag}\r\n    {{\r\n        protected override void OnInit()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n}}";
-            EditorKit.CreatScript(mPath, name, tag, tmp);
+            string tmp = $"namespace {I.Space}\r\n{{\r\n    public interface I@{tag} : IModule\r\n    {{\r\n\r\n    }}\r\n    public class @{tag} : AbsModule, I@{tag}\r\n    {{\r\n        protected override void OnInit()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n}}";
+            EditorKit.CreatScript(I.TPath, name, tag, tmp);
             mField.value = $"{tag}:";
         }
         private void CreateScript(string name, string tag)
         {
-            if (string.IsNullOrEmpty(mHub))
+            if (string.IsNullOrEmpty(I.Hub))
             {
                 mField.value = "hub:";
                 $"请先设置架构 {mCmd}架构名".Log();
@@ -208,29 +340,30 @@ namespace Panty
             {
                 "Mono" => "MonoBehaviour",
                 "So" => "ScriptableObject",
-                _ => mHub + tag
+                _ => I.Hub + tag
             };
-            string tmp = $"using UnityEngine;\r\n\r\nnamespace {mSpace}\r\n{{\r\n    public class @ : {father}\r\n    {{\r\n\r\n    }}\r\n}}";
-            EditorKit.CreatScript(mPath, name, "", tmp);
+            string tmp = $"using UnityEngine;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    public class @ : {father}\r\n    {{\r\n\r\n    }}\r\n}}";
+            EditorKit.CreatScript(I.TPath, name, "", tmp);
             mField.value = $"{tag}:";
         }
         private void ShowHelp()
         {
-            string instructions = $"// 以下指令已兼容大小写和全角半角\r\n\r\n[快捷指令] -> 通常由一个单词组成 例如：help\r\n[组合指令] -> 通常由类型+名字组成 例如：hub:Project\r\n[分隔指令] -> 通常由（:）或（：）组成\r\n\r\n// 快捷指令\r\n\r\n[ help   （帮助）] -> 显示帮助面板 在自定义提示窗显示一些信息\r\n[ path   （路径）] -> 在Console 窗口显示已标记路径\r\n[ space（空间）] -> 在Console 窗口显示已标记命名空间\r\n\r\n// 衍生指令\r\n\r\n[ path : 路径字符串 ] -> 标记自定义路径 如果路径不存在 尝试创建目录\r\n[ space : 命名空间 ] -> 标记自定义命名空间 并保存\r\n\r\n// 创建型指令  创建文件的路径以 path（路径） 的标记为准\r\n\r\n[ hub : Name ] 或 [ 架构 : 名字 ]\r\n尝试创建一个该名字的架构（Framework）\r\n\r\n[ Mono : Name ] 或 [ 脚本 : 名字 ]\r\n尝试创建一个该名字的普通脚本（Script）\r\n\r\n[ UI : Name ] 或 [ 表现 : 名字 ]\r\n尝试创建一个该名字的UI脚本（UI）\r\n\r\n[ Game : Name ] 或 [ 游戏 : 名字 ]\r\n尝试创建一个该名字的控制脚本（Control） \r\n\r\n[ Model : Name ] 或 [ 数据 : 名字 ]\r\n尝试创建一个该名字的数据脚本（Model） \r\n\r\n[ System : Name ] 或 [ 系统 : 名字 ]\r\n尝试创建一个该名字的系统脚本（System）\r\n\r\n[ Module : Name ] 或 [ 模块 : 名字 ]\r\n尝试创建一个该名字的模块脚本（Module）";
+            string instructions = $"# Panty 工具集使用手册\r\n\r\n```\r\n==============================\r\n  Panty 工具集使用手册\r\n==============================\r\n\r\n目录:\r\n1. TextDialog 使用指南\r\n2. QuickCmdEditor 使用指南\r\n   - 基础操作\r\n   - 命令说明\r\n   - 拖曳操作与上下文菜单\r\n\r\n------------------------------\r\n1. TextDialog 使用指南\r\n------------------------------\r\n\r\n打开提示框:\r\n1. 调用 TextDialog.Open 方法，传入需要显示的消息和可选的回调函数:\r\n   TextDialog.Open(\"你的消息\", 确认回调, 取消回调);\r\n2. 在提示框中，用户可以通过点击确认或取消按钮进行相应的操作。\r\n\r\n------------------------------\r\n2. QuickCmdEditor 使用指南\r\n------------------------------\r\n\r\n### 基础操作\r\n\r\n快速打开:\r\n1. 在 Unity 编辑器顶部菜单栏选择 PnTool/QuickCmd &Q 打开 QuickCmdEditor 窗口。\r\n   - 快捷键: Alt + Q\r\n\r\n添加绑定:\r\n1. 在场景中选择一个或多个 GameObject。\r\n2. 在 Unity 编辑器顶部菜单栏选择 PnTool/Quick/AddBind &B 为所选对象添加绑定组件。\r\n   - 快捷键: Alt + B\r\n\r\n添加UI根节点:\r\n1. 在场景中选择一个或多个 GameObject。\r\n2. 在 Unity 编辑器顶部菜单栏选择 PnTool/Quick/AddUIRoot &W 将所选对象设置为 UI 根节点。\r\n   - 快捷键: Alt + W\r\n\r\n检查更新:\r\n1. 打开 QuickCmdEditor 窗口。\r\n2. 在命令输入框中输入 check 或 检查更新，然后按回车键。\r\n3. 程序将会检查更新并显示相应信息。\r\n   - 上下文菜单: 右键点击命令输入框选择 检查更新。\r\n\r\n### 命令说明\r\n\r\n基础命令:\r\n- 帮助: 输入 help 或 帮助 查看帮助信息。\r\n  - 上下文菜单: 右键点击命令输入框选择 显示帮助。\r\n- 清理: 输入 clear 或 清理 清空已标记的信息。\r\n  - 上下文菜单: 右键点击命令输入框选择 清空数据。\r\n- UI绑定: 输入 uiBind 或 UI绑定 进行 UI 绑定操作。\r\n  - 上下文菜单: 右键点击命令输入框选择 绑定 UI。\r\n- 检查更新: 输入 check 或 检查更新 检查更新。\r\n  - 上下文菜单: 右键点击命令输入框选择 检查更新。\r\n\r\n模块和脚本创建命令:\r\n- 命名空间: 输入 space:命名空间 设置命名空间，例如 space:MyNamespace。\r\n- 路径: 输入 path:路径 设置路径，例如 path:Assets/MyPath。输入 path:base 或 path:基础 创建基础目录。\r\n- SoIns: 创建 ScriptableObject 实例。例如 SoIns:MyScriptableObject。\r\n- Module: 创建模块。例如 Module:MyModule。\r\n- System: 创建系统。例如 System:MySystem。\r\n- Model: 创建数据模型。例如 Model:MyModel。\r\n- Game: 创建游戏脚本。例如 Game:MyGameScript。\r\n- UI: 创建表现层脚本。例如 UI:MyUIScript。\r\n- Mono: 创建 MonoBehaviour 脚本。例如 Mono:MyMonoScript。\r\n- so: 创建 ScriptableObject 脚本。例如 so:MyScriptableObject。\r\n- hub: 创建架构。例如 hub:MyHub。\r\n\r\n### 拖曳操作与上下文菜单\r\n\r\n拖曳操作:\r\n1. 将一个 MonoScript 脚本文件拖到 QuickCmdEditor 窗口中，并按住 Ctrl 键以标记路径。\r\n2. 将一个或多个 GameObject 拖到 QuickCmdEditor 窗口中，以缓存这些对象供后续操作。\r\n\r\n上下文菜单:\r\n1. 右键点击 QuickCmdEditor 命令输入框可弹出上下文菜单，选择以下操作:\r\n   - 显示帮助: 查看帮助信息。\r\n   - 绑定 UI: 进行 UI 绑定操作。\r\n   - 基础目录: 设置基础目录。\r\n   - 检查更新: 检查更新。\r\n   - 清空数据: 清空已标记的信息。\r\n\r\n通过以上操作，用户可以快速利用 Panty 工具集在 Unity 编辑器中进行各种便捷的操作。\r\n```";
             string sc = SCRIPT == null ? "null" : SCRIPT.name;
-            TextDialog.Open($"{instructions}\r\n\r\n已标记架构：{mHub}Hub\r\n已标记路径：{mPath}\r\n已标记命名空间：{mSpace}\r\n已标记SO资源：{sc}\r\n");
+            TextDialog.Open($"{instructions}\r\n\r\n已标记架构：{I.Hub}Hub\r\n已标记路径：{I.TPath}\r\n已标记命名空间：{I.Space}\r\n已标记SO资源：{sc}\r\n");
             mField.value = "";
         }
         private void ClearInfo()
         {
             mField.value = null;
             SCRIPT = null;
-            "清理成功".Log();
+            I.TPath = "Assets/";
+            $"SCRIPT已置空,路径已重置".Log();
         }
         private void BasicCatalog()
         {
             bool lose = true;
-            string[] fileNames = { "ArtRes/Sprites", "Resources/Audios/Bgm", "Resources/Audios/Sound", "Resources/Prefabs", "Scripts/Framework", "Project/Game", "StreamingAssets/Csv" };
+            string[] fileNames = { "ArtRes/Sprites", "Resources/Audios/Bgm", "Resources/Audios/Sound", "Resources/Prefabs", "Scripts/Framework", "Scripts/Project/Game", "StreamingAssets/Csv" };
             for (int i = 0; i < fileNames.Length; i++)
             {
                 string path = $"Assets/{fileNames[i]}";
@@ -262,6 +395,22 @@ namespace Panty
                 mField.value = "";
             });
         }
+        private void OnUIBind()
+        {
+            if (mGos.Count == 0)
+                "无可操作对象".Log();
+            else
+            {
+                bool add = false;
+                foreach (var go in mGos)
+                {
+                    if (go == null) continue;
+                    if (AddUIRoot(go)) add = true;
+                }
+                if (add) AssetDatabase.Refresh();
+                mGos.ToFirst();
+            }
+        }
         private void OnKeyDown(KeyDownEvent evt)
         {
             if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
@@ -275,10 +424,10 @@ namespace Panty
                 // 去除指令头尾
                 string cmd = mCmd.Trim();
                 // 帮助指令
-                if (Eq(cmd, "help", "帮助")) ShowHelp();
+                if (Eq(cmd, "uiBind", "UI绑定")) OnUIBind();
+                else if (Eq(cmd, "help", "帮助")) ShowHelp();
                 else if (Eq(cmd, "clear", "清理")) ClearInfo();
-                else if (Eq(cmd, "check", "检查更新"))
-                    CheckUpdate();
+                else if (Eq(cmd, "check", "检查更新")) CheckUpdate();
                 else // 带后缀的指令
                 {
                     string[] cmds = cmd.Split(':', '：');
@@ -289,22 +438,22 @@ namespace Panty
                         {
                             cmd = cmds[1].TrimStart();
                             if (char.IsLetterOrDigit(cmd[cmd.Length - 1]))
-                                mSpace = cmd;
+                                I.Space = cmd;
                         }
-                        $"当前命名空间为:{mSpace}".Log();
+                        $"当前命名空间为:{I.Space}".Log();
                         mField.value = "space:";
                     }
                     else if (Eq(info, "path", "路径"))
                     {
                         if (cmds.Length == 1)
                         {
-                            $"当前路径为:{mPath}".Log();
+                            $"当前路径为:{I.TPath}".Log();
                         }
                         else
                         {
                             if (string.IsNullOrEmpty(cmds[1]))
                             {
-                                $"当前路径为:{mPath}".Log();
+                                $"当前路径为:{I.TPath}".Log();
                             }
                             else
                             {
@@ -316,7 +465,7 @@ namespace Panty
                                 else
                                 {
                                     // 相对路径处理
-                                    if (sub[0] == '/') cmd = mPath + sub;
+                                    if (sub[0] == '/') cmd = I.TPath + sub;
                                     // 如果没有根目录 需要加上根目录
                                     else cmd = sub.Split('/')[0] == "Assets" ? sub : $"Assets/{sub}";
                                     // 进行路径合法性判断
@@ -325,18 +474,18 @@ namespace Panty
                                         if (Directory.Exists(cmd))
                                         {
                                             $"路径存在,已标记{cmd}".Log();
-                                            mPath = cmd;
+                                            I.TPath = cmd;
                                             mField.value = "path:";
                                         }
                                         else if (EditorKit.Dialog($"确定要创建该路径？\r\nPath：{cmd}"))
                                         {
                                             mField.value = "path:";
-                                            mPath = cmd;
+                                            I.TPath = cmd;
                                             $"{cmd}创建成功,已标记该路径".Log();
                                             Directory.CreateDirectory(cmd);
                                             AssetDatabase.Refresh();
                                         }
-                                        else $"取消创建,标记原路径 {mPath}".Log();
+                                        else $"取消创建,标记原路径 {I.TPath}".Log();
                                     }
                                     else $"路径不合法 {cmd}".Log();
                                 }
@@ -350,7 +499,7 @@ namespace Panty
                         {
                             if (SCRIPT != null)
                             {
-                                string path = mPath;
+                                string path = I.TPath;
                                 FileKit.TryCreateDirectory(path);
                                 path = $"{path}/{sub}.asset";
                                 if (File.Exists(path))
@@ -380,11 +529,11 @@ namespace Panty
                         else if (Eq(info, "so", "SO")) CreateScript(sub, "So");
                         else if (Eq(info, "hub", "架构"))
                         {
-                            string tmp = $"using UnityEngine;\r\n\r\nnamespace {mSpace}\r\n{{\r\n    public class @Hub : ModuleHub<@Hub>\r\n    {{\r\n        protected override void BuildModule()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n    public class @Game : MonoBehaviour, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n    public class @UI : UIPanel, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n}}";
-                            EditorKit.CreatScript(mPath, sub, "Hub", tmp);
+                            string tmp = $"using UnityEngine;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    public class @Hub : ModuleHub<@Hub>\r\n    {{\r\n        protected override void BuildModule()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n    public class @Game : MonoBehaviour, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n    public class @UI : UIPanel, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n}}";
+                            EditorKit.CreatScript(I.TPath, sub, "Hub", tmp);
                             $"已标记{sub}Hub架构".Log();
                             mField.value = $"{info}:";
-                            mHub = sub;
+                            I.Hub = sub;
                         }
                     }
                     else $"{cmd}指令错误".Log();

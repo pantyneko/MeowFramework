@@ -13,15 +13,14 @@ namespace Panty
         public virtual void OnShow() { }
         public virtual void OnHide() { }
         // 这里最好不要写销毁
-        public virtual void Activate(bool active) =>
+        public virtual void Active(bool active) =>
             gameObject.SetActive(active);
         protected virtual void OnClick(string btnName) { }
         public virtual bool IsOpen => gameObject.activeSelf;
         protected virtual void Awake()
         {
-            this.FindComponents();
             this.FindChildrenControl<Button>((objName, control) =>
-            control.onClick.AddListener(() => OnClick(objName)));
+                control.onClick.AddListener(() => OnClick(objName)));
         }
     }
 }
