@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.UI;
 
 namespace Panty
@@ -6,26 +7,9 @@ namespace Panty
     public class Bind : MonoBehaviour
     {
 #if UNITY_EDITOR
-        public enum E_Type : byte
+        public static Type ToType(E_Type type)
         {
-            Transform,
-            Button,
-            Canvas,
-            Image,
-            Text,
-            InputField,
-            Toggle,
-            Slider,
-            Dropdown,
-            Scrollbar,
-            ScrollRect,
-            RawImage
-        }
-        public E_Type type;
-        public GameObject root;
-        private void OnValidate()
-        {
-            var tp = type switch
+            return type switch
             {
                 E_Type.Text => typeof(Text),
                 E_Type.Image => typeof(Image),
@@ -41,7 +25,28 @@ namespace Panty
                 E_Type.InputField => typeof(InputField),
                 _ => typeof(Transform),
             };
-            if (GetComponent(tp) == null)
+        }
+        public enum E_Type : byte
+        {
+            Transform,
+            Button,
+            Canvas,
+            Image,
+            Text,
+            InputField,
+            Toggle,
+            Slider,
+            Dropdown,
+            Scrollbar,
+            ScrollRect,
+            RawImage
+        }
+        public bool usePrefix = true;
+        public E_Type type;
+        public GameObject root;
+        private void OnValidate()
+        {
+            if (GetComponent(ToType(type)) == null)
             {
                 $"{type}组件不存在 请重新设置".Log();
                 type = E_Type.Transform;

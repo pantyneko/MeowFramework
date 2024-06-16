@@ -121,6 +121,11 @@ namespace Panty
             var o = new GameObject(nameof(MonoKit), typeof(MonoKit));
             GameObject.DontDestroyOnLoad(o);
         }
+        public static Component GetOrAddComponent(this GameObject o, Type type)
+        {
+            var t = o.GetComponent(type);
+            return t == null ? o.AddComponent(type) : t;
+        }
         public static T GetOrAddComponent<T>(this GameObject o) where T : Component
         {
             T t = o.GetComponent<T>();
@@ -234,7 +239,7 @@ namespace Panty
     public class I
     {
         public static string Space = "Panty.Test";
-        public static string TPath = "Assets/";
+        public static string TPath = "Assets/Scripts";
         public static string Hub = "Test";
     }
     public static partial class HubEx

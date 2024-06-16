@@ -60,13 +60,11 @@ namespace Panty
             var guids = AssetDatabase.FindAssets(typeName, searchInFolders);
             if (guids.Length > 0)
             {
-                MonoScript mono = null;
-                string path = null;
                 string full = $"{I.Space}.{typeName}";
                 foreach (var id in guids)
                 {
-                    path = AssetDatabase.GUIDToAssetPath(id);
-                    mono = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
+                    string path = AssetDatabase.GUIDToAssetPath(id);
+                    var mono = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
                     if (mono.GetClass().FullName == full) return mono;
                 }
             }

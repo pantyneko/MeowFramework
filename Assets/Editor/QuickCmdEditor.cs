@@ -9,6 +9,7 @@ using UnityEngine.UIElements;
 using System.Text;
 using System.Linq;
 using UnityEditor.SceneManagement;
+using System.Reflection;
 
 namespace Panty
 {
@@ -109,61 +110,94 @@ namespace Panty
         private static void AddUIRoot()
         {
             if (Selection.objects.Length == 0) return;
-            bool add = false;
             foreach (var go in Selection.objects.OfType<GameObject>())
             {
                 if (go == null) continue;
-                if (AddUIRoot(go)) add = true;
+                AddUIRoot(go);
             }
-            if (add) AssetDatabase.Refresh();
         }
         private static void GetPathFD(string fileName, out string assetPath)
         {
             string[] sc = new string[] { "Assets/Scripts" };
-            assetPath = EditorKit.GetMonoPath(fileName, fileName + ".cs", sc);
-            assetPath = $"{Path.GetDirectoryName(assetPath)}/{fileName}_FD.cs";
+
+            assetPath = EditorKit.GetMonoPath(fileName, $"{fileName}.cs", sc);
+            assetPath = $"{Path.GetDirectoryName(assetPath)}/F{fileName}.cs";
             if (!File.Exists(assetPath))
             {
-
-                var psth = EditorKit.GetMonoPath(fileName, fileName + "_FD.cs", sc);
+                var psth = EditorKit.GetMonoPath(fileName, $"F{fileName}.cs", sc);
                 if (psth != null) assetPath = psth;
             }
         }
-        private static bool AddUIRoot(GameObject go)
+        private static string GetPrefix(Bind.E_Type type)
+        {
+            return type switch
+            {
+                Bind.E_Type.Button => "btn",
+                Bind.E_Type.Canvas => "cnv",
+                Bind.E_Type.Image => "img",
+                Bind.E_Type.Text => "txt",
+                Bind.E_Type.Toggle => "tgl",
+                Bind.E_Type.Slider => "sld",
+                Bind.E_Type.Transform => "tr",
+                Bind.E_Type.Dropdown => "drpDwn",
+                Bind.E_Type.Scrollbar => "scrlBr",
+                Bind.E_Type.ScrollRect => "scrlRt",
+                Bind.E_Type.InputField => "inpFld",
+                Bind.E_Type.RawImage => "rwImg",
+                _ => ""
+            };
+        }
+        private static string CreateUIRootMono(string fileName)
+        {
+            string tmple = $"using UnityEngine;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    [DisallowMultipleComponent]\r\n    public partial class {fileName} : {I.Hub}UI\r\n    {{\r\n\r\n    }}\r\n}}";
+            File.WriteAllText($"{I.TPath}/{fileName}.cs", tmple);
+            return $"{I.TPath}/F{fileName}.cs";
+        }
+        private static void AddUIRoot(GameObject go)
         {
             var binds = go.GetComponentsInChildren<Bind>();
             if (binds.Length == 0)
             {
                 "没有可绑定对象".Log();
-                return false;
             }
             else
             {
                 string assetPath = null;
                 var cp = go.GetComponent<UIPanel>();
-                string full = $"{I.Space}.{go.name}";
+                string fileName = $"R_{go.name}";
+                string full = $"{I.Space}.{fileName}";
+                var type = HubTool.BaseAss.GetType(full);
+
                 if (cp && cp.GetType().FullName == full)
                 {
-                    GetPathFD(go.name, out assetPath);
+                    GetPathFD(fileName, out assetPath);
+                    SetRootData(type, binds, go);
+                    $"{type.Name}脚本已挂载".Log();
                 }
                 else
                 {
-                    var type = HubTool.BaseAss.GetType(full);
                     // 说明没有这个资源
                     if (type == null)
                     {
-                        string tmple = $"using UnityEngine;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    [DisallowMultipleComponent]\r\n    public partial class {go.name} : {I.Hub}UI\r\n    {{\r\n\r\n    }}\r\n}}";
-                        File.WriteAllText($"{I.TPath}/{go.name}.cs", tmple);
-                        assetPath = $"{I.TPath}/{go.name}_FD.cs";
+                        assetPath = CreateUIRootMono(fileName);
+                        $"构建{type.Name} 请在资源刷新完成后 再次触发以确保脚本的挂载".Log();
                     }
                     else
                     {
-                        if (go.GetComponent(type) == null) go.AddComponent(type);
-                        GetPathFD(go.name, out assetPath);
-                        $"{type.Name}脚本已存在".Log();
+                        if (type.IsSubclassOf(typeof(Component)))
+                        {
+                            GetPathFD(fileName, out assetPath);
+                            SetRootData(type, binds, go);
+                            $"{type.Name}脚本已存在 即将刷新数据类".Log();
+                        }
+                        else // 说明只有数据类
+                        {
+                            assetPath = CreateUIRootMono(fileName);
+                            $"构建{type.Name} 请在资源刷新完成后 再次触发以确保脚本的挂载".Log();
+                        }
                     }
                 }
-                string[] data = $"using UnityEngine;\r\nusing UnityEngine.UI;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    public partial class {go.name}\r\n    {{\r\n        @\r\n    }}\r\n}}".Split('@');
+                string[] data = $"using UnityEngine;\r\nusing UnityEngine.UI;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    public partial class {fileName}\r\n    {{\r\n        @\r\n    }}\r\n}}".Split('@');
                 var bd = new StringBuilder(data[0]);
                 for (int i = 0, len = binds.Length; i < len; i++)
                 {
@@ -172,36 +206,46 @@ namespace Panty
                         $"{bind}的Root is Null".Log();
                     else if (bind.root == go)
                     {
-                        string pre = bind.type switch
-                        {
-                            Bind.E_Type.Button => "btn",
-                            Bind.E_Type.Canvas => "cnv",
-                            Bind.E_Type.Image => "img",
-                            Bind.E_Type.Text => "txt",
-                            Bind.E_Type.Toggle => "tgl",
-                            Bind.E_Type.Slider => "sld",
-                            Bind.E_Type.Transform => "tr",
-                            Bind.E_Type.Dropdown => "drpDwn",
-                            Bind.E_Type.Scrollbar => "scrlBr",
-                            Bind.E_Type.ScrollRect => "scrlRt",
-                            Bind.E_Type.InputField => "inpFld",
-                            Bind.E_Type.RawImage => "rwImg",
-                            _ => ""
-                        };
                         if (i > 1) bd.Append("\t\t");
-                        string goName = bind.gameObject.name.RemoveSpecialCharacters();
-                        bd.Append($"private {bind.type} {pre}_{goName};");
+                        bd.Append($"[SerializeField] private {bind.type} {HandleBind(bind)};");
                         if (i < len - 1) bd.Append("\r\n");
                     }
                     else $"{bind.root}不属于当前父级".Log();
                 }
                 bd.Append(data[1]);
-                File.WriteAllText(assetPath, bd.ToString());
-                $"{go.name}数据已更新".Log();
-                EditorUtility.SetDirty(go);
-                EditorSceneManager.MarkSceneDirty(go.scene);
-                return true;
+                FileKit.WriteFile(assetPath, bd.ToString());
+                AssetDatabase.Refresh();
+                $"{fileName}数据已更新".Log();
             }
+        }
+        private static void SetRootData(Type rootType, Bind[] binds, GameObject go)
+        {
+            var cmpnt = go.GetOrAddComponent(rootType);
+            var fields = rootType.GetFields(BindingFlags.NonPublic | BindingFlags.Instance);
+            for (int i = 0, len = binds.Length; i < len; i++)
+            {
+                var bind = binds[i];
+                if (bind.root == null) continue;
+                if (bind.root == go)
+                {
+                    string n = HandleBind(bind).Trim();
+                    var info = fields.FirstOrDefault(t => t.Name == n);
+                    if (info == null) continue;
+                    var bindCp = bind.GetComponent(info.FieldType);
+                    info.SetValue(cmpnt, Convert.ChangeType(bindCp, info.FieldType));
+                }
+            }
+            EditorUtility.SetDirty(cmpnt);
+            EditorSceneManager.MarkSceneDirty(go.scene);
+        }
+        private static string HandleBind(Bind bind)
+        {
+            string goName = bind.gameObject.name;
+            if (string.IsNullOrWhiteSpace(goName)) bind.usePrefix = true;
+            else goName = goName.RemoveSpecialCharacters();
+            string prefix = GetPrefix(bind.type) + "_";
+            prefix = bind.usePrefix ? prefix : char.IsDigit(goName[0]) ? prefix : "";
+            return prefix + goName;
         }
         private void OnEnable()
         {
@@ -300,7 +344,7 @@ namespace Panty
                                 mField.value = "SoIns:" + mono.name;
                                 $"SO => {mono.name}已标记".Log();
                             }
-                            else $"{mono.name}不是ScriptableObject".Log();
+                            else $"{mono.name}不是SO".Log();
                         }
                     }
                 }
@@ -357,8 +401,8 @@ namespace Panty
         {
             mField.value = null;
             SCRIPT = null;
-            I.TPath = "Assets/";
-            $"SCRIPT已置空,路径已重置".Log();
+            I.TPath = "Assets/Scripts";
+            $"SCRIPT已置空,路径已重置为{I.TPath}".Log();
         }
         private void BasicCatalog()
         {
@@ -401,13 +445,11 @@ namespace Panty
                 "无可操作对象".Log();
             else
             {
-                bool add = false;
                 foreach (var go in mGos)
                 {
                     if (go == null) continue;
-                    if (AddUIRoot(go)) add = true;
+                    AddUIRoot(go);
                 }
-                if (add) AssetDatabase.Refresh();
                 mGos.ToFirst();
             }
         }
@@ -459,8 +501,11 @@ namespace Panty
                             {
                                 // 得到实际路径 并去掉空格 2种情况 相对路径模式 绝对路径模式
                                 string sub = cmds[1].Trim();
-
-                                if (Eq(sub, "base", "基础"))
+                                if (char.IsDigit(sub[0]))
+                                {
+                                    "指令不能以数字开头".Log();
+                                }
+                                else if (Eq(sub, "base", "基础"))
                                     BasicCatalog();
                                 else
                                 {
@@ -495,7 +540,11 @@ namespace Panty
                     else if (cmds.Length > 1)
                     {
                         string sub = cmds[1].TrimStart();
-                        if (Eq(info, "SoIns", "So实例"))
+                        if (char.IsDigit(sub[0]))
+                        {
+                            "指令不能以数字开头".Log();
+                        }
+                        else if (Eq(info, "SoIns", "So实例"))
                         {
                             if (SCRIPT != null)
                             {
