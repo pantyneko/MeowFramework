@@ -180,7 +180,8 @@ namespace Panty
                     if (type == null)
                     {
                         assetPath = CreateUIRootMono(fileName);
-                        $"构建{type.Name} 请在资源刷新完成后 再次触发以确保脚本的挂载".Log();
+                        string n = HubTool.BaseAss.GetType(full).Name;
+                        $"构建{n} 请在资源刷新完成后 再次触发以确保脚本的挂载".Log();
                     }
                     else
                     {
@@ -193,7 +194,7 @@ namespace Panty
                         else // 说明只有数据类
                         {
                             assetPath = CreateUIRootMono(fileName);
-                            $"构建{type.Name} 请在资源刷新完成后 再次触发以确保脚本的挂载".Log();
+                            $"只找到数据类 重新构建{type.Name} 请在资源刷新完成后 再次触发以确保脚本的挂载".Log();
                         }
                     }
                 }

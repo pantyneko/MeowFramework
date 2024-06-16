@@ -39,13 +39,13 @@ namespace Panty
             FileKit.TryCreateDirectory(path);
             var tmp = $"{name}{tag}";
             if (FindMonoAsset(tmp))
+                Tips($"已存在相同名字的脚本：{tmp}");
+            else
             {
-                Tips("脚本已存在");
-                return;
+                string str = Regex.Replace(tmple, Regex.Escape("@"), name);
+                FileKit.WriteFile($"{path}/{tmp}.cs", str);
+                AssetDatabase.Refresh();
             }
-            string str = Regex.Replace(tmple, Regex.Escape("@"), name);
-            File.WriteAllText($"{path}/{tmp}.cs", str);
-            AssetDatabase.Refresh();
         }
         public static bool Dialog(string msg)
         {
@@ -64,8 +64,12 @@ namespace Panty
                 foreach (var id in guids)
                 {
                     string path = AssetDatabase.GUIDToAssetPath(id);
-                    var mono = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
-                    if (mono.GetClass().FullName == full) return mono;
+                    var o = AssetDatabase.LoadAssetAtPath<Object>(path);
+                    if (o is MonoScript)
+                    {
+                        var mono = o as MonoScript;
+                        if (mono.GetClass().FullName == full) return mono;
+                    }
                 }
             }
             return null;
@@ -81,24 +85,16 @@ namespace Panty
                     string path = AssetDatabase.GUIDToAssetPath(id);
                     if (Path.GetFileName(path) == fileName)
                     {
-                        var mono = AssetDatabase.LoadAssetAtPath<MonoScript>(path);
-                        var type = mono.GetClass();
-                        if (type == null || type.FullName == full) return path;
+                        var o = AssetDatabase.LoadAssetAtPath<Object>(path);
+                        if (o is MonoScript)
+                        {
+                            var type = (o as MonoScript).GetClass();
+                            if (type == null || type.FullName == full) return path;
+                        }
                     }
                 }
             }
             return null;
-        }
-        public static string GetSelectionFolder()
-        {
-            string[] guids = Selection.assetGUIDs;
-
-            if (guids.Length > 0)
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guids[0]);
-                return AssetDatabase.IsValidFolder(path) ? path : Directory.GetParent(path).FullName;
-            }
-            return string.Empty; // 没有选中文件夹
         }
     }
 }
