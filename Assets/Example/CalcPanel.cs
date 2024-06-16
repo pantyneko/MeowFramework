@@ -13,6 +13,8 @@ namespace Panty.Test
 
         private void Start()
         {
+            this.FindComponents();
+
             mModel = this.Module<ICalcModel>();
 
             mModel.NumA.RegisterWithInitValue(v => mInputA.text = v.ToString()).RmvOnDestroy(this);
