@@ -146,13 +146,20 @@ namespace Panty
                     E_Path.TemporaryCachePath => Application.temporaryCachePath,
                     E_Path.DesktopPath => Environment.GetFolderPath(Environment.SpecialFolder.Desktop),
                     E_Path.DocumentsPath => Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                    E_Path.SelectPath => EditorKit.GetSelectionFolder(),
+                    E_Path.SelectPath => "all",
                     E_Path.UpdateFK => "https://github.com/pantyneko/MeowFramework",
                     _ => mDisabledInputBox ? "https://gitee.com/PantyNeko" : inputText,
                 };
                 try
                 {
                     if (string.IsNullOrEmpty(inputText)) inputText = "Â·¾¶Îª¿Õ";
+                    else if (inputText == "all")
+                    {
+                        foreach (var path in EditorKit.EnsureSelectedIsFolder())
+                        {
+                            System.Diagnostics.Process.Start(path);
+                        }
+                    }
                     else System.Diagnostics.Process.Start(inputText);
                 }
                 catch (System.ComponentModel.Win32Exception ex)

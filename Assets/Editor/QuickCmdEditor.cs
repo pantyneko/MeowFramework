@@ -330,11 +330,10 @@ namespace Panty
                 }
                 else
                 {
-                    var mono = AssetDatabase.LoadAssetAtPath<MonoScript>(DragAndDrop.paths[0]);
-                    if (mono == null)
-                        "无法获取拖曳数据".Log();
-                    else
+                    var o = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(DragAndDrop.paths[0]);
+                    if (o is MonoScript)
                     {
+                        var mono = o as MonoScript;
                         Type scriptType = mono.GetClass();
                         if (scriptType != null)
                         {
@@ -348,6 +347,7 @@ namespace Panty
                             else $"{mono.name}不是SO".Log();
                         }
                     }
+                    else "无法获取拖曳数据".Log();
                 }
             }
             else

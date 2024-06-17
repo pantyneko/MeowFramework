@@ -3,6 +3,7 @@ using UnityEditor;
 using System.IO;
 using UnityEngine;
 using System.Text.RegularExpressions;
+using System.Collections.Generic;
 
 namespace Panty
 {
@@ -95,6 +96,67 @@ namespace Panty
                 }
             }
             return null;
+        }
+        /// <summary>
+        /// 检查所选资源是否为文件夹，如果不是则将其转换为文件夹并返回文件夹路径列表。
+        /// </summary>
+        /// <returns>文件夹路径列表</returns>
+        public static List<string> EnsureSelectedIsFolder()
+        {
+            // 获取所有选中的资源
+            var selectedObjects = Selection.objects;
+            if (selectedObjects == null || selectedObjects.Length == 0)
+            {
+                "No assets selected.".Log();
+                return null;
+            }
+            var folderPaths = new List<string>();
+            foreach (Object selectedObject in selectedObjects)
+            {
+                string selectedPath = AssetDatabase.GetAssetPath(selectedObject);
+                // 如果选中的是场景中的对象，尝试找到它的Prefab路径
+                if (string.IsNullOrEmpty(selectedPath))
+                {
+                    var go = selectedObject as GameObject;
+                    if (go != null)
+                    {
+                        PrefabAssetType prefabAssetType = PrefabUtility.GetPrefabAssetType(go);
+                        if (prefabAssetType != PrefabAssetType.NotAPrefab)
+                        {
+                            selectedPath = AssetDatabase.GetAssetPath(PrefabUtility.GetCorrespondingObjectFromSource(go));
+                        }
+                    }
+                    // 如果仍然没有路径，则跳过
+                    if (string.IsNullOrEmpty(selectedPath))
+                    {
+                        $"Selected object {selectedObject.name} is not part of the AssetDatabase.".Log();
+                        continue;
+                    }
+                }
+                // 使用C#的文件和目录操作来处理路径
+                if (Directory.Exists(selectedPath))
+                {
+                    folderPaths.Add(selectedPath);
+                    continue;
+                }
+                string parentFolderPath = Path.GetDirectoryName(selectedPath);
+                if (string.IsNullOrEmpty(parentFolderPath))
+                {
+                    $"Unable to determine the parent folder path for {selectedObject.name}.".Log();
+                    continue;
+                }
+                string newFolderPath = Path.Combine(parentFolderPath, Path.GetFileNameWithoutExtension(selectedPath));
+
+                // 使用C#的文件系统操作来创建新文件夹
+                if (!Directory.Exists(newFolderPath))
+                {
+                    Directory.CreateDirectory(newFolderPath);
+                    // 刷新AssetDatabase以确保新创建的文件夹被正确识别
+                    AssetDatabase.Refresh();
+                }
+                folderPaths.Add(newFolderPath);
+            }
+            return folderPaths;
         }
     }
 }
