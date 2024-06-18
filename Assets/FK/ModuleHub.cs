@@ -183,9 +183,6 @@ namespace Panty
         public static void RmvEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct => self.Hub.RmvEvent<E>(evt);
         public static void SendEvent<E>(this IPermissionProvider self, E e) where E : struct => self.Hub.SendEvent<E>(e);
         public static void SendEvent<E>(this IPermissionProvider self) where E : struct => self.Hub.SendEvent<E>();
-        public static IRmv AddNotify<N>(this IPermissionProvider self, Action evt) where N : struct => self.Hub.AddNotify<N>(evt);
-        public static void RmvNotify<N>(this IPermissionProvider self, Action evt) where N : struct => self.Hub.RmvNotify<N>(evt);
-        public static void SendNotify<N>(this IPermissionProvider self) where N : struct => self.Hub.SendNotify<N>();
         public static void SendCmd<C>(this IPermissionProvider self, C cmd) where C : ICmd => self.Hub.SendCmd(cmd);
         public static void SendCmd<C>(this IPermissionProvider self) where C : struct, ICmd => self.Hub.SendCmd(new C());
         public static void SendCmd<C, P>(this IPermissionProvider self, C cmd, P info) where C : ICmd<P> => self.Hub.SendCmd(cmd, info);
@@ -208,9 +205,6 @@ namespace Panty
         void RmvEvent<E>(Action<E> evt) where E : struct;
         void SendEvent<E>(E e) where E : struct;
         void SendEvent<E>() where E : struct;
-        IRmv AddNotify<N>(Action evt) where N : struct;
-        void RmvNotify<N>(Action evt) where N : struct;
-        void SendNotify<N>() where N : struct;
         void SendCmd<C>(C cmd) where C : ICmd;
         void SendCmd<C>() where C : struct, ICmd;
         void SendCmd<C, P>(C cmd, P info) where C : ICmd<P>;
@@ -257,7 +251,6 @@ namespace Panty
         private Dictionary<Type, IUtility> mUtilities = new Dictionary<Type, IUtility>();
         private Dictionary<Type, IModule> mModules = new Dictionary<Type, IModule>();
         private Dictionary<Type, Delegate> mEvents = new Dictionary<Type, Delegate>();
-        private Dictionary<Type, Delegate> mNotifies = new Dictionary<Type, Delegate>();
         /// <summary>
         /// 由子类重写实现所有模块和工具的构建与注册
         /// </summary>
@@ -290,7 +283,6 @@ namespace Panty
             mModules = null;
             mUtilities = null;
             mEvents = null;
-            mNotifies = null;
         }
         M IModuleHub.Module<M>()
         {
@@ -320,14 +312,6 @@ namespace Panty
             mEvents.Combine(typeof(E), evt);
             return new DelegateDicRmv<E>(mEvents, evt);
         }
-        IRmv IModuleHub.AddNotify<E>(Action evt)
-        {
-#if DEBUG
-            if (evt == null) $"{evt} 不可为Null".Log();
-#endif
-            mNotifies.Combine(typeof(E), evt);
-            return new DelegateDicRmv<E>(mNotifies, evt);
-        }
         void IModuleHub.SendEvent<E>(E e)
         {
             if (mEvents.TryGetValue(typeof(E), out var methods))
@@ -350,19 +334,8 @@ namespace Panty
             $"{typeof(E)} 事件未注册".Log();
 #endif
         }
-        void IModuleHub.SendNotify<E>()
-        {
-            if (mNotifies.TryGetValue(typeof(E), out var methods))
-            {
-                (methods as Action).Invoke();
-                return;
-            }
-#if DEBUG
-            $"{typeof(E)} 通知未注册".Log();
-#endif
-        }
-        void IModuleHub.RmvEvent<E>(Action<E> evt) => mEvents.Separate(typeof(E), evt);
-        void IModuleHub.RmvNotify<E>(Action evt) => mNotifies.Separate(typeof(E), evt);
+        void IModuleHub.RmvEvent<E>(Action<E> evt) =>
+            mEvents.Separate(typeof(E), evt);
 
         void IModuleHub.SendCmd<C>() => SendCmd(cmd: new C());
         void IModuleHub.SendCmd<C, P>(P info) => SendCmd(cmd: new C(), info);
