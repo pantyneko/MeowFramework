@@ -7,130 +7,120 @@ namespace Panty
     public interface ITaskScheduler : IModule
     {
         void ConditionalTask(Func<bool> exitCondition, Action call);
-        TaskScheduler.Step Task();
+        TaskScheduler.Step Register();
     }
     public class TaskScheduler : AbsModule, ITaskScheduler
     {
-        private static Func<DelayTask> OnGetDelay;
-        private static Action<DelayTask, bool> OnAddDelay;
-        private static Action<Step, DelayTask, Func<bool>> OnAddSequence;
+        private class Item
+        {
+            public bool isTemporary;
+            public Func<bool> exitCondition;
+            public DelayTask task;
 
-        private PArray<DelayTask> mAvailable, mDelayTasks, mUnScaledTasks;
-        private PArray<(Func<bool> isEnd, Action call)> mConditionalTasks;
-        private Dictionary<Step, Queue<(Func<bool>, DelayTask)>> mSequenceGroup;
+            public Item(bool isTemporary, Func<bool> exit, DelayTask task)
+            {
+                this.isTemporary = isTemporary;
+                this.exitCondition = exit;
+                this.task = task;
+            }
+        }
+
+        private static Action<Step> OnAddDelay;
+        private static Action<Step, Func<bool>> OnAddSequence;
+
+        private PArray<DelayTask> mAvailable;
+        private PArray<(bool, DelayTask)> mDelayTasks, mUnScaledTasks;
+        private PArray<(Func<bool> onExit, Action call)> mConditionalTasks;
+        private Dictionary<Step, Queue<Item>> mSequenceGroup;
 
         private PArray<Step> mRmvStep;
 
         public class Step
         {
-            private Action call;
-            private float duration;
-            private bool loop, ignoreTimeScale, isTemporary;
+            public Action call;
+            public float duration;
+            public bool loop, ignoreTimeScale, isTemporary;
 
-            public Step Call(Action call) { this.call = call; return this; }
-            public Step Temporary() { isTemporary = true; return this; }
-            public Step Delay(float duration) { this.duration = duration; return this; }
-            public Step IgnoreTimeScale() { ignoreTimeScale = true; return this; }
-            public Step Loop() { loop = true; return this; }
-            public Step ToUpdate()
-            {
-                OnAddDelay(GetTask(), ignoreTimeScale);
-                return this;
-            }
-            public Step Enqueue(Func<bool> exit = null)
-            {
-                OnAddSequence(this, GetTask(), exit);
-                return this;
-            }
-            private DelayTask GetTask()
+            public Step Call(Action call = null)
+            { this.call = call; return this; }
+            public Step Temporary(bool isTemporary = false)
+            { this.isTemporary = isTemporary; return this; }
+            public Step Delay(float duration)
+            { this.duration = duration; return this; }
+            public Step IgnoreTimeScale(bool ignoreTimeScale = false)
+            { this.ignoreTimeScale = ignoreTimeScale; return this; }
+            public Step Loop(bool loop = false)
+            { this.loop = loop; return this; }
+            public void Execute()
             {
 #if DEBUG
-                if (OnGetDelay == null) throw new Exception("无法获取任务池");
                 if (call == null) throw new Exception("无意义回调函数");
 #endif
-                var task = OnGetDelay.Invoke();
-                task.Init(duration, loop).Start();
-                if (isTemporary)
-                {
-                    MonoKit.OnUpdate += call;
-                    task.SetTask(() => MonoKit.OnUpdate -= call);
-                }
-                else
-                {
-                    task.SetTask(call);
-                }
-                return task;
+                OnAddDelay(this);
+            }
+            public Step Submit(Func<bool> exit = null)
+            {
+                OnAddSequence(this, exit);
+                return this;
             }
         }
-        Step ITaskScheduler.Task() => new Step();
         void ITaskScheduler.ConditionalTask(Func<bool> exitCondition, Action call)
         {
 #if DEBUG
-            if (call == null) throw new Exception("Task is Empty");
+            if (call == null) throw new Exception("无意义回调函数");
 #endif
             mConditionalTasks.Push((exitCondition, call));
         }
-        private DelayTask GetDelay()
+        Step ITaskScheduler.Register() => new Step();
+        private DelayTask GetDelay() => mAvailable.IsEmpty ? new DelayTask() : mAvailable.Pop().Clear();
+        private void AddDelay(Step step)
         {
-            return mAvailable.IsEmpty ? new DelayTask() : mAvailable.Pop().Clear();
-        }
-        private void AddDelay(DelayTask task, bool ignoreTimeScale)
-        {
-            if (ignoreTimeScale)
-                mUnScaledTasks.Push(task);
+            var task = GetDelay();
+            task.Init(step.duration, step.loop);
+            task.SetTask(step.call).Start();
+            if (step.ignoreTimeScale)
+                mUnScaledTasks.Push((step.isTemporary, task));
             else
-                mDelayTasks.Push(task);
+                mDelayTasks.Push((step.isTemporary, task));
         }
-        private void AddSequence(Step step, DelayTask task, Func<bool> end)
+        private void AddSequence(Step step, Func<bool> exitCondition)
         {
-            if (mSequenceGroup.TryGetValue(step, out var q))
+            var task = GetDelay();
+            task.Init(step.duration, step.loop);
+            task.SetTask(step.call).Start();
+
+            if (!mSequenceGroup.TryGetValue(step, out var q))
             {
-                q.Enqueue((end, task));
-            }
-            else
-            {
-                q = new Queue<(Func<bool>, DelayTask)>();
-                q.Enqueue((end, task));
+                q = new Queue<Item>();
                 mSequenceGroup.Add(step, q);
             }
+            q.Enqueue(new Item(step.isTemporary, exitCondition, task));
         }
         protected override void OnInit()
         {
-            mSequenceGroup = new Dictionary<Step, Queue<(Func<bool>, DelayTask)>>();
+            mSequenceGroup = new Dictionary<Step, Queue<Item>>();
             mConditionalTasks = new PArray<(Func<bool>, Action)>();
-            mUnScaledTasks = new PArray<DelayTask>();
-            mDelayTasks = new PArray<DelayTask>();
+            mUnScaledTasks = new PArray<(bool, DelayTask)>();
+            mDelayTasks = new PArray<(bool, DelayTask)>();
             mAvailable = new PArray<DelayTask>();
             mRmvStep = new PArray<Step>();
             MonoKit.OnUpdate += Update;
 
-            OnGetDelay = GetDelay;
             OnAddDelay = AddDelay;
             OnAddSequence = AddSequence;
         }
         private void Update()
         {
-            int i = 0;
             float delta = Time.unscaledDeltaTime;
-            while (i < mUnScaledTasks.Count)
-            {
-                var task = mUnScaledTasks[i];
-                task.Update(delta);
-                if (task.IsEnd())
-                {
-                    mAvailable.Push(task);
-                    mUnScaledTasks.RmvAt(i);
-                }
-                else i++;
-            }
+            UpdateTasks(mUnScaledTasks, delta);
             if (Time.timeScale <= 0f) return;
-            i = 0;
+            int i = 0;
             while (i < mConditionalTasks.Count)
             {
-                var task = mConditionalTasks[i];
-                if (task.isEnd())
+                var item = mConditionalTasks[i];
+                if (item.onExit())
                 {
-                    task.call?.Invoke();
+                    item.call.Invoke();
                     mConditionalTasks.RmvAt(i);
                 }
                 else i++;
@@ -141,23 +131,36 @@ namespace Panty
                 mRmvStep.ToFirst();
                 foreach (var pair in mSequenceGroup)
                 {
-                    var (onFinish, task) = pair.Value.Peek();
-                    if (onFinish == null)
+                    var q = pair.Value;
+                    var x = q.Peek();
+                    // 如果没有定义退出条件 就关注计时器任务
+                    if (x.exitCondition == null)
                     {
-                        task.Update(delta);
-                        if (task.IsEnd())
+                        // 如果是临时任务 在计时完成前执行
+                        x.task.Update(delta);
+                        if (x.isTemporary)
                         {
-                            pair.Value.Dequeue();
-                            if (pair.Value.Count == 0)
-                                mRmvStep.Push(pair.Key);
+                            if (x.task.IsEnd())
+                            {
+                                RmvStep(q, pair.Key);
+                            }
+                            else x.task.Execute();
+                        }
+                        else if (x.task.IsEnd())
+                        {
+                            RmvStep(q, pair.Key);
                         }
                     }
-                    else if (onFinish())
+                    // 如果有退出条件
+                    else if (x.exitCondition())
                     {
-                        task.Execute();
-                        pair.Value.Dequeue();
-                        if (pair.Value.Count == 0)
-                            mRmvStep.Push(pair.Key);
+                        x.task.Execute();
+                        RmvStep(q, pair.Key);
+                    }
+                    // 如果没有满足退出条件 就执行
+                    else if (x.isTemporary)
+                    {
+                        x.task.Execute();
                     }
                 }
                 while (mRmvStep.Count > 0)
@@ -165,18 +168,32 @@ namespace Panty
                     mSequenceGroup.Remove(mRmvStep.Pop());
                 }
             }
-            i = 0;
-            while (i < mDelayTasks.Count)
+            UpdateTasks(mDelayTasks, delta);
+        }
+        private void UpdateTasks(PArray<(bool, DelayTask)> tasks, float delta)
+        {
+            int i = 0;
+            while (i < tasks.Count)
             {
-                var task = mDelayTasks[i];
+                var (tmp, task) = tasks[i];
                 task.Update(delta);
                 if (task.IsEnd())
                 {
                     mAvailable.Push(task);
-                    mDelayTasks.RmvAt(i);
+                    tasks.RmvAt(i);
                 }
-                else i++;
+                else
+                {
+                    if (tmp) task.Execute();
+                    i++;
+                }
             }
+        }
+        private void RmvStep(Queue<Item> q, Step step)
+        {
+            q.Dequeue();
+            if (q.Count == 0)
+                mRmvStep.Push(step);
         }
     }
     public class DelayTask
@@ -194,7 +211,7 @@ namespace Panty
         public float RemTime() => mRemTime;
 
         public void AddTask(Action task) => mTask += task;
-        public void SetTask(Action task) => mTask = task;
+        public DelayTask SetTask(Action task) { mTask = task; return this; }
         public void Execute() => mTask?.Invoke();
         public DelayTask Clear()
         {
