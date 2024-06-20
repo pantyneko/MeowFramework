@@ -41,7 +41,7 @@ namespace Panty.Test
         {
             var model = hub.Module<ICounterModel>();
             hub.SendEvent(new ChangeOpIconEvent() { icon = model.GetOpIcon(id) });
-            //hub.SendNotify<OperationSuccessfulNotify>();
+            hub.SendEvent<OperationSuccessfulNotify>();
         }
     }
     public struct RandomValueCmd : ICmd
@@ -103,14 +103,14 @@ namespace Panty.Test
             model.B.RegisterWithInitValue(OnBChange);
 
             this.AddEvent<ChangeOpIconEvent>(OnChangeOp);
-            //this.AddNotify<OperationSuccessfulNotify>(OnOperationSuccessful);
-            //this.AddNotify<OperationFailedNotify>(OnOperationFailed);
+            this.AddEvent<OperationSuccessfulNotify>(OnOperationSuccessful);
+            this.AddEvent<OperationFailedNotify>(OnOperationFailed);
         }
-        private void OnOperationSuccessful()
+        private void OnOperationSuccessful(OperationSuccessfulNotify e)
         {
             "操作成功".Log();
         }
-        private void OnOperationFailed()
+        private void OnOperationFailed(OperationFailedNotify e)
         {
             "操作失败".Log();
         }
@@ -125,8 +125,8 @@ namespace Panty.Test
             model.B.Unregister(OnBChange);
 
             this.RmvEvent<ChangeOpIconEvent>(OnChangeOp);
-            //this.RmvNotify<OperationSuccessfulNotify>(OnOperationSuccessful);
-            //this.RmvNotify<OperationFailedNotify>(OnOperationFailed);
+            this.RmvEvent<OperationSuccessfulNotify>(OnOperationSuccessful);
+            this.RmvEvent<OperationFailedNotify>(OnOperationFailed);
         }
         private void OnAChange(float a)
         {
@@ -171,7 +171,7 @@ namespace Panty.Test
                 }
                 else
                 {
-                   // this.SendNotify<OperationFailedNotify>();
+                    this.SendEvent<OperationFailedNotify>();
                 }
             }
             rect.x += size;
@@ -187,7 +187,7 @@ namespace Panty.Test
                 }
                 else
                 {
-                    //this.SendNotify<OperationFailedNotify>();
+                    this.SendEvent<OperationFailedNotify>();
                 }
             }
             rect.x += size;
@@ -203,7 +203,7 @@ namespace Panty.Test
                 var op = (Op)mSelect;
                 float r = this.Query<ResultQuery, Op, float>(op);
                 R = op == Op.Div ? r.ToString("F2") : r.ToString();
-                //this.SendNotify<OperationSuccessfulNotify>();
+                this.SendEvent<OperationSuccessfulNotify>();
             }
             rect.x = startX;
             if (GUI.Button(rect, "Operator", btnStyle))
