@@ -73,6 +73,8 @@ namespace Panty
         public void AddLast(T e) => arr[N++] = e;
         public void RmvLast() => N -= (N == 0 ? 0 : 1);
         public T Pop() => arr[--N];
+        public void LoopPos(ref int c) => c = (c + 1) % N;
+        public void LoopNeg(ref int c) => c = (c + N - 1) % N;
         /// <summary>
         /// 交换式移除
         /// </summary>
