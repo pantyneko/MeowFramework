@@ -118,13 +118,11 @@ namespace Panty
         }
         private static void GetPathFD(string fileName, out string assetPath)
         {
-            string[] sc = new string[] { "Assets/Scripts" };
-
-            assetPath = EditorKit.GetMonoPath(fileName, $"{fileName}.cs", sc);
+            assetPath = EditorKit.GetMonoPath(fileName, $"{fileName}.cs");
             assetPath = $"{Path.GetDirectoryName(assetPath)}/F{fileName}.cs";
             if (!File.Exists(assetPath))
             {
-                var psth = EditorKit.GetMonoPath(fileName, $"F{fileName}.cs", sc);
+                var psth = EditorKit.GetMonoPath(fileName, $"F{fileName}.cs");
                 if (psth != null) assetPath = psth;
             }
         }
@@ -325,27 +323,27 @@ namespace Panty
             {
                 if (evt.ctrlKey)
                 {
-                    I.TPath = DragAndDrop.paths[0];
-                    $"已标记{I.TPath}".Log();
+                    I.TPath = Path.GetDirectoryName(DragAndDrop.paths[0]);
+                    $"已标记:{I.TPath}".Log();
                 }
                 else
                 {
                     var o = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(DragAndDrop.paths[0]);
-                    if (o is MonoScript)
+                    if (o is MonoScript mono)
                     {
-                        var mono = o as MonoScript;
                         Type scriptType = mono.GetClass();
-                        if (scriptType != null)
+                        if (scriptType == null)
                         {
-                            if (scriptType.IsSubclassOf(typeof(ScriptableObject)) &&
-                                !scriptType.IsSubclassOf(typeof(EditorWindow)))
-                            {
-                                SCRIPT = mono;
-                                mField.value = "SoIns:" + mono.name;
-                                $"SO => {mono.name}已标记".Log();
-                            }
-                            else $"{mono.name}不是SO".Log();
+                            "此脚本未定义类或存在编译错误".Log();
                         }
+                        else if (scriptType.IsSubclassOf(typeof(ScriptableObject)) &&
+                                !scriptType.IsSubclassOf(typeof(EditorWindow)))
+                        {
+                            SCRIPT = mono;
+                            mField.value = "SoIns:" + mono.name;
+                            $"SO => {mono.name}已标记".Log();
+                        }
+                        else $"{mono.name}不是SO".Log();
                     }
                     else "无法获取拖曳数据".Log();
                 }
@@ -395,7 +393,7 @@ namespace Panty
         {
             string instructions = $"# Panty 工具集使用手册\r\n\r\n```\r\n==============================\r\n  Panty 工具集使用手册\r\n==============================\r\n\r\n目录:\r\n1. TextDialog 使用指南\r\n2. QuickCmdEditor 使用指南\r\n   - 基础操作\r\n   - 命令说明\r\n   - 拖曳操作与上下文菜单\r\n\r\n------------------------------\r\n1. TextDialog 使用指南\r\n------------------------------\r\n\r\n打开提示框:\r\n1. 调用 TextDialog.Open 方法，传入需要显示的消息和可选的回调函数:\r\n   TextDialog.Open(\"你的消息\", 确认回调, 取消回调);\r\n2. 在提示框中，用户可以通过点击确认或取消按钮进行相应的操作。\r\n\r\n------------------------------\r\n2. QuickCmdEditor 使用指南\r\n------------------------------\r\n\r\n### 基础操作\r\n\r\n快速打开:\r\n1. 在 Unity 编辑器顶部菜单栏选择 PnTool/QuickCmd &Q 打开 QuickCmdEditor 窗口。\r\n   - 快捷键: Alt + Q\r\n\r\n添加绑定:\r\n1. 在场景中选择一个或多个 GameObject。\r\n2. 在 Unity 编辑器顶部菜单栏选择 PnTool/Quick/AddBind &B 为所选对象添加绑定组件。\r\n   - 快捷键: Alt + B\r\n\r\n添加UI根节点:\r\n1. 在场景中选择一个或多个 GameObject。\r\n2. 在 Unity 编辑器顶部菜单栏选择 PnTool/Quick/AddUIRoot &W 将所选对象设置为 UI 根节点。\r\n   - 快捷键: Alt + W\r\n\r\n检查更新:\r\n1. 打开 QuickCmdEditor 窗口。\r\n2. 在命令输入框中输入 check 或 检查更新，然后按回车键。\r\n3. 程序将会检查更新并显示相应信息。\r\n   - 上下文菜单: 右键点击命令输入框选择 检查更新。\r\n\r\n### 命令说明\r\n\r\n基础命令:\r\n- 帮助: 输入 help 或 帮助 查看帮助信息。\r\n  - 上下文菜单: 右键点击命令输入框选择 显示帮助。\r\n- 清理: 输入 clear 或 清理 清空已标记的信息。\r\n  - 上下文菜单: 右键点击命令输入框选择 清空数据。\r\n- UI绑定: 输入 uiBind 或 UI绑定 进行 UI 绑定操作。\r\n  - 上下文菜单: 右键点击命令输入框选择 绑定 UI。\r\n- 检查更新: 输入 check 或 检查更新 检查更新。\r\n  - 上下文菜单: 右键点击命令输入框选择 检查更新。\r\n\r\n模块和脚本创建命令:\r\n- 命名空间: 输入 space:命名空间 设置命名空间，例如 space:MyNamespace。\r\n- 路径: 输入 path:路径 设置路径，例如 path:Assets/MyPath。输入 path:base 或 path:基础 创建基础目录。\r\n- SoIns: 创建 ScriptableObject 实例。例如 SoIns:MyScriptableObject。\r\n- Module: 创建模块。例如 Module:MyModule。\r\n- System: 创建系统。例如 System:MySystem。\r\n- Model: 创建数据模型。例如 Model:MyModel。\r\n- Game: 创建游戏脚本。例如 Game:MyGameScript。\r\n- UI: 创建表现层脚本。例如 UI:MyUIScript。\r\n- Mono: 创建 MonoBehaviour 脚本。例如 Mono:MyMonoScript。\r\n- so: 创建 ScriptableObject 脚本。例如 so:MyScriptableObject。\r\n- hub: 创建架构。例如 hub:MyHub。\r\n\r\n### 拖曳操作与上下文菜单\r\n\r\n拖曳操作:\r\n1. 将一个 MonoScript 脚本文件拖到 QuickCmdEditor 窗口中，并按住 Ctrl 键以标记路径。\r\n2. 将一个或多个 GameObject 拖到 QuickCmdEditor 窗口中，以缓存这些对象供后续操作。\r\n\r\n上下文菜单:\r\n1. 右键点击 QuickCmdEditor 命令输入框可弹出上下文菜单，选择以下操作:\r\n   - 显示帮助: 查看帮助信息。\r\n   - 绑定 UI: 进行 UI 绑定操作。\r\n   - 基础目录: 设置基础目录。\r\n   - 检查更新: 检查更新。\r\n   - 清空数据: 清空已标记的信息。\r\n\r\n通过以上操作，用户可以快速利用 Panty 工具集在 Unity 编辑器中进行各种便捷的操作。\r\n```";
             string sc = SCRIPT == null ? "null" : SCRIPT.name;
-            TextDialog.Open($"{instructions}\r\n\r\n已标记架构：{I.Hub}Hub\r\n已标记路径：{I.TPath}\r\n已标记命名空间：{I.Space}\r\n已标记SO资源：{sc}\r\n");
+            TextDialog.Open($"{instructions}\r\n\r\n标记架构：{I.Hub}Hub\r\n标记路径：{I.TPath}\r\n标记命名空间：{I.Space}\r\n标记搜索路径：{I.Search[0]}\r\n标记SO资源：{sc}\r\n");
             mField.value = "";
         }
         private void ClearInfo()
@@ -403,7 +401,8 @@ namespace Panty
             mField.value = null;
             SCRIPT = null;
             I.TPath = "Assets/Scripts";
-            $"SCRIPT已置空,路径已重置为{I.TPath}".Log();
+            I.Search[0] = "Assets";
+            $"SCRIPT已置空,创建路径:{I.TPath},搜索路径{I.Search[0]}".Log();
         }
         private void BasicCatalog()
         {
@@ -418,6 +417,7 @@ namespace Panty
                     lose = false;
                 }
             }
+            I.Search[0] = "Assets/Scripts";
             if (lose) "所有文件夹已就位".Log();
             else AssetDatabase.Refresh();
         }

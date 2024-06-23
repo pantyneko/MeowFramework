@@ -241,6 +241,7 @@ namespace Panty
         public static string Space = "Panty.Test";
         public static string TPath = "Assets/Scripts";
         public static string Hub = "Test";
+        public readonly static string[] Search = new string[] { "Assets" };
     }
     public static partial class HubEx
     {

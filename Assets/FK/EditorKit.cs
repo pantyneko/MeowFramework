@@ -56,9 +56,9 @@ namespace Panty
         {
             EditorUtility.DisplayDialog("让我来想想...喵~", msg, "晓得了");
         }
-        public static MonoScript FindMonoAsset(string typeName, string[] searchInFolders = null)
+        public static MonoScript FindMonoAsset(string typeName)
         {
-            var guids = AssetDatabase.FindAssets(typeName, searchInFolders);
+            var guids = AssetDatabase.FindAssets(typeName, I.Search);
             if (guids.Length > 0)
             {
                 string full = $"{I.Space}.{typeName}";
@@ -66,18 +66,19 @@ namespace Panty
                 {
                     string path = AssetDatabase.GUIDToAssetPath(id);
                     var o = AssetDatabase.LoadAssetAtPath<Object>(path);
-                    if (o is MonoScript)
+                    if (o is MonoScript mono)
                     {
-                        var mono = o as MonoScript;
-                        if (mono.GetClass().FullName == full) return mono;
+                        var type = mono.GetClass();
+                        if (type == null && mono.name == typeName) return mono;
+                        if (type != null && type.FullName == full) return mono;
                     }
                 }
             }
             return null;
         }
-        public static string GetMonoPath(string typeName, string fileName, string[] searchInFolders = null)
+        public static string GetMonoPath(string typeName, string fileName)
         {
-            var guids = AssetDatabase.FindAssets(typeName, searchInFolders);
+            var guids = AssetDatabase.FindAssets(typeName, I.Search);
             if (guids.Length > 0)
             {
                 string full = $"{I.Space}.{typeName}";
@@ -87,10 +88,11 @@ namespace Panty
                     if (Path.GetFileName(path) == fileName)
                     {
                         var o = AssetDatabase.LoadAssetAtPath<Object>(path);
-                        if (o is MonoScript)
+                        if (o is MonoScript mono)
                         {
-                            var type = (o as MonoScript).GetClass();
-                            if (type == null || type.FullName == full) return path;
+                            var type = mono.GetClass();
+                            if (type == null && mono.name == typeName) return path;
+                            if (type != null && type.FullName == full) return path;
                         }
                     }
                 }
