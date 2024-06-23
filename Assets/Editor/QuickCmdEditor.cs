@@ -178,8 +178,9 @@ namespace Panty
                     if (type == null)
                     {
                         assetPath = CreateUIRootMono(fileName);
-                        string n = HubTool.BaseAss.GetType(full).Name;
-                        $"构建{n} 请在资源刷新完成后 再次触发以确保脚本的挂载".Log();
+                        type = HubTool.BaseAss.GetType(full);
+                        (type == null ? "主程序集不存在该类" : $"构建{type.Name}").Log();
+                        "请在资源刷新完成后 再次触发以确保脚本的挂载".Log();
                     }
                     else
                     {
