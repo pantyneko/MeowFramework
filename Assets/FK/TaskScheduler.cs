@@ -88,25 +88,31 @@ namespace Panty
             public RepeatAction(PArray<IAction> sequences, byte count)
             {
                 this.sequences = sequences;
-                maxCount = count;
+                counter = maxCount = count;
             }
             public bool IsExit() => counter == 0;
             public void Reset()
             {
-                foreach (var s in sequences) s.Reset();
+                ResetAll();
                 counter = maxCount;
                 cur = 0;
             }
+            public void ResetAll()
+            {
+                foreach (var s in sequences) s.Reset();
+            }
             public void Update(float delta)
             {
-                var s = sequences[cur];
-                if (s.IsExit())
+                var sq = sequences[cur];
+                if (sq.IsExit())
                 {
-                    s.Reset();
                     sequences.LoopPos(ref cur);
-                    if (cur == 0) counter--;
+                    if (cur == 0 && --counter > 0)
+                    {
+                        ResetAll();
+                    }
                 }
-                else s.Update(delta);
+                else sq.Update(delta);
             }
         }
         private class LoopAction : IAction
@@ -153,7 +159,7 @@ namespace Panty
             {
                 E_Type.Repeat => new RepeatAction(cache, mCounter),
                 E_Type.Loop => new LoopAction(cache, mOnExit),
-                _ => null,
+                _ => new BaseAction(false, mOnExit, null),
             };
         }
         private enum E_Type : byte
@@ -178,18 +184,12 @@ namespace Panty
             public float duration;
             public bool loop, ignoreTimeScale, isTemporary;
 
-            public Step(bool ignoreTimeScale) =>
-                this.ignoreTimeScale = ignoreTimeScale;
             public Step(TaskScheduler scheduler, bool ignoreTimeScale)
-                : this(ignoreTimeScale) => mScheduler = scheduler;
-
-            public Step Clone() => new Step(ignoreTimeScale)
             {
-                loop = loop,
-                call = call,
-                duration = duration,
-                isTemporary = isTemporary
-            };
+                mScheduler = scheduler;
+                this.ignoreTimeScale = ignoreTimeScale;
+            }
+
             public Step Call(Action call = null)
             { this.call = call; return this; }
             public Step Temporary(bool isTemporary = false)
@@ -211,11 +211,7 @@ namespace Panty
             /// </summary>
             public Step Insert(Func<bool> onExit = null)
             {
-                // 如果组为null 说明没有层级 直接挂到主序列中
-                if (mScheduler.stepGroup == null)
-                    mScheduler.ToSequence(this, onExit);
-                else // 添加进当前序列的缓冲区
-                    mScheduler.RepeatCache(Clone(), onExit);
+                mScheduler.ToSequence(this, onExit);
                 return this;
             }
             public Step NotExitInsert(Action call)
@@ -313,11 +309,10 @@ namespace Panty
         }
         private void ToSequence(Step step, Func<bool> onExit)
         {
-            GetSequence(step).Enqueue(GetAction(step, step.loop, onExit));
-        }
-        private void RepeatCache(Step step, Func<bool> onExit)
-        {
-            stepGroup.Push(GetAction(step, false, onExit));
+            if (stepGroup == null)
+                GetSequence(step).Enqueue(GetAction(step, step.loop, onExit));
+            else
+                stepGroup.Push(GetAction(step, false, onExit));
         }
         private BaseAction GetAction(Step step, bool loop, Func<bool> onExit)
         {

@@ -304,10 +304,7 @@ namespace Panty
             evt.menu.AppendAction("检查更新", e => CheckUpdate());
             evt.menu.AppendAction("清空数据", e =>
             {
-                if (EditorKit.Dialog("真的要清空数据嘛！"))
-                {
-                    ClearInfo();
-                }
+                if (EditorKit.Dialog("真的要清空数据嘛！")) ClearInfo();
             });
         }
         private void OnChangeText(ChangeEvent<string> evt) => mCmd = evt.newValue;
@@ -324,7 +321,8 @@ namespace Panty
             {
                 if (evt.ctrlKey)
                 {
-                    I.TPath = Path.GetDirectoryName(DragAndDrop.paths[0]);
+                    string p = DragAndDrop.paths[0];
+                    I.TPath = File.Exists(p) ? Path.GetDirectoryName(p) : p;
                     $"已标记:{I.TPath}".Log();
                 }
                 else
