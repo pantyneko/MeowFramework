@@ -7,6 +7,13 @@ using System.Collections.Generic;
 
 namespace Panty
 {
+    public class I
+    {
+        public static string Space = "Panty.Test";
+        public static string TPath = "Assets/Scripts";
+        public static string Hub = "Test";
+        public readonly static string[] Search = new string[] { "Assets" };
+    }
     public static class EditorKit
     {
         public static bool ShowOrHide<T>(out T win, bool isUtility = false, string title = null) where T : EditorWindow

@@ -75,6 +75,13 @@ namespace Panty
         public T Pop() => arr[--N];
         public void LoopPos(ref int c) => c = (c + 1) % N;
         public void LoopNeg(ref int c) => c = (c + N - 1) % N;
+        public T RandomGet()
+        {
+#if DEBUG
+            if (N == 0) throw new Exception($"{arr}无元素");
+#endif
+            return arr[RandomEx.Range(N)];
+        }
         /// <summary>
         /// 交换式移除
         /// </summary>

@@ -254,16 +254,20 @@ namespace Panty
             I.TPath = EditorPrefs.GetString($"{n}Path", I.TPath);
             I.Space = EditorPrefs.GetString($"{n}Space", I.Space);
             I.Hub = EditorPrefs.GetString($"{n}Hub", I.Hub);
+            I.Search[0] = EditorPrefs.GetString($"{n}Search", I.Search[0]);
         }
         private void OnDisable()
         {
             string n = nameof(QuickCmdEditor);
             EditorPrefs.SetString($"{n}Cmd", mCmd);
-            EditorPrefs.SetString($"{n}Path", I.TPath);
+            if (!string.IsNullOrEmpty(I.TPath))
+                EditorPrefs.SetString($"{n}Path", I.TPath);
             if (!string.IsNullOrEmpty(I.Space))
                 EditorPrefs.SetString($"{n}Space", I.Space);
             if (!string.IsNullOrEmpty(I.Hub))
                 EditorPrefs.SetString($"{n}Hub", I.Hub);
+            if (!string.IsNullOrEmpty(I.Search[0]))
+                EditorPrefs.SetString($"{n}Search", I.Search[0]);
         }
         private void CreateGUI()
         {
@@ -323,7 +327,13 @@ namespace Panty
                 {
                     string p = DragAndDrop.paths[0];
                     I.TPath = File.Exists(p) ? Path.GetDirectoryName(p) : p;
-                    $"已标记:{I.TPath}".Log();
+                    $"已标记生成路径:{I.TPath}".Log();
+                }
+                if (evt.altKey)
+                {
+                    string p = DragAndDrop.paths[0];
+                    I.Search[0] = File.Exists(p) ? Path.GetDirectoryName(p) : p;
+                    $"已标记搜索路径:{I.Search[0]}".Log();
                 }
                 else
                 {
