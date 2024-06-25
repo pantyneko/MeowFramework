@@ -44,7 +44,15 @@ namespace Panty
         private class WaitAction : IAction
         {
             private Func<bool> exitCondition;
-            public WaitAction(Func<bool> exit) => exitCondition = exit;
+            public WaitAction(Func<bool> exit)
+            {
+#if UNITY_EDITOR
+                if (exit == null)
+                    throw new Exception("WaitAction : exit不能为null");
+#endif
+                exitCondition = exit;
+
+            }
             public bool IsExit() => exitCondition();
             public void Reset() { }
             public void Update(float delta) { }
@@ -53,7 +61,8 @@ namespace Panty
         private class DelayAction : IAction
         {
             private float duration, cur;
-            public DelayAction(float duration) => this.duration = duration;
+            public DelayAction(float duration) =>
+                this.duration = duration < 0f ? 0f : duration;
             public bool IsExit() => cur >= duration;
             public void Reset() => cur = 0;
             public void Update(float delta) => cur += delta;
@@ -63,9 +72,13 @@ namespace Panty
         {
             private Action call;
             private byte repeatCount, currentCount;
-            public RepeatAction(byte repeatCount, Action call)
+            public RepeatAction(byte count, Action call)
             {
-                this.repeatCount = repeatCount;
+#if UNITY_EDITOR
+                if (call == null)
+                    throw new Exception("RepeatAction : call不能为null");
+#endif
+                this.repeatCount = count == 0 ? (byte)1 : count;
                 this.call = call;
             }
             public bool IsExit() => currentCount >= repeatCount;
@@ -80,13 +93,17 @@ namespace Panty
         private class UntilConditionAction : IAction
         {
             private Action call;
-            private Func<bool> exitCondition;
-            public UntilConditionAction(Func<bool> exitCondition, Action call)
+            private Func<bool> exit;
+            public UntilConditionAction(Func<bool> exit, Action call)
             {
-                this.exitCondition = exitCondition;
+#if UNITY_EDITOR
+                if (call == null || exit == null)
+                    throw new Exception("UntilConditionAction : call和exit不能为null");
+#endif
+                this.exit = exit;
                 this.call = call;
             }
-            public bool IsExit() => exitCondition();
+            public bool IsExit() => exit();
             public void Reset() { }
             public void Update(float delta) => call.Invoke();
         }
@@ -97,8 +114,12 @@ namespace Panty
             private float duration, cur;
             public PeriodicAction(Action call, float duration)
             {
+#if UNITY_EDITOR
+                if (call == null)
+                    throw new Exception("PeriodicAction : call不能为null");
+#endif
                 this.call = call;
-                this.duration = duration;
+                this.duration = duration < 0f ? 0f : duration;
             }
             public bool IsExit() => cur >= duration;
             public void Reset() => cur = 0;
@@ -112,7 +133,14 @@ namespace Panty
         private class DoAction : IAction
         {
             private Action call;
-            public DoAction(Action call) => this.call = call;
+            public DoAction(Action call)
+            {
+#if UNITY_EDITOR
+                if (call == null)
+                    throw new Exception("DoAction : call不能为null");
+#endif
+                this.call = call;
+            }
             public bool IsExit()
             {
                 call.Invoke();
@@ -145,12 +173,12 @@ namespace Panty
             private readonly PArray<IAction> actions;
             private byte repeatCount, current;
             private int cur;
-            public RepeatGroup(PArray<IAction> actions, byte repeatCount)
+            public RepeatGroup(PArray<IAction> actions, byte count)
             {
-                this.repeatCount = repeatCount;
+                this.repeatCount = count == 0 ? (byte)1 : count;
                 this.actions = actions;
             }
-            public bool IsExit() => current == repeatCount;
+            public bool IsExit() => current >= repeatCount;
             public void ResetAll() { foreach (var s in actions) s.Reset(); }
             public void Reset()
             {
@@ -160,7 +188,7 @@ namespace Panty
             }
             public void Update(float delta)
             {
-                var sq = actions[current];
+                var sq = actions[cur];
                 if (sq.IsExit())
                 {
                     actions.LoopPos(ref cur);
@@ -188,10 +216,14 @@ namespace Panty
             private int cur = 0;
             private readonly PArray<IAction> actions;
             private Func<bool> exitCondition;
-            public LoopGroup(PArray<IAction> actions, Func<bool> exitCondition)
+            public LoopGroup(PArray<IAction> actions, Func<bool> exit)
             {
+#if UNITY_EDITOR
+                if (exit == null)
+                    throw new Exception("LoopGroup : exit不能为null");
+#endif
                 this.actions = actions;
-                this.exitCondition = exitCondition;
+                this.exitCondition = exit;
             }
             public bool IsExit() => exitCondition();
             public void Reset() { foreach (var s in actions) s.Reset(); }
@@ -252,9 +284,6 @@ namespace Panty
             /// </summary>
             public Step Wait(Func<bool> onExit)
             {
-#if UNITY_EDITOR
-                if (onExit == null) throw new Exception("onExit不能为null");
-#endif
                 mScheduler.ToSequence(this, new WaitAction(onExit));
                 return this;
             }
@@ -263,7 +292,6 @@ namespace Panty
             /// </summary>
             public Step Delay(float duration)
             {
-                if (duration < 0f) duration = 0f;
                 mScheduler.ToSequence(this, new DelayAction(duration));
                 return this;
             }
@@ -329,9 +357,6 @@ namespace Panty
             /// </summary>
             public Step LoopGroup(Func<bool> onExit)
             {
-#if UNITY_EDITOR
-                if (onExit == null) throw new Exception("onExit不能为null");
-#endif
                 mOnExit = onExit;
                 mScheduler.NextGroup(E_Type.Loop);
                 return this;

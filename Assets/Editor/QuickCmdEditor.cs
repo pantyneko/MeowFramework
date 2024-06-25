@@ -329,7 +329,7 @@ namespace Panty
                     I.TPath = File.Exists(p) ? Path.GetDirectoryName(p) : p;
                     $"已标记生成路径:{I.TPath}".Log();
                 }
-                if (evt.altKey)
+                else if (evt.altKey)
                 {
                     string p = DragAndDrop.paths[0];
                     I.Search[0] = File.Exists(p) ? Path.GetDirectoryName(p) : p;
