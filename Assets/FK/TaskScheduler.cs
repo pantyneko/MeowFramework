@@ -7,9 +7,8 @@ namespace Panty
 {
     public interface ITaskScheduler : IModule
     {
-        void AddConditionalTask(Func<bool> exitCondition, Action onFinished);
-        DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop = false, bool isUnScaled = false);
-        DelayTask AddTemporaryTask(float duration, Action onUpdate, bool isUnScaled = false);
+        DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop = false, bool ignoreTimeScale = false);
+        DelayTask AddTemporaryTask(float duration, Action onUpdate, bool ignoreTimeScale = false);
         TaskScheduler.Step Sequence(bool ignoreTimeScale = false);
         void StopSequence(TaskScheduler.Step step);
     }
@@ -47,8 +46,7 @@ namespace Panty
             public WaitAction(Func<bool> exit)
             {
 #if UNITY_EDITOR
-                if (exit == null)
-                    throw new Exception("WaitAction : exit不能为null");
+                ThrowEx.EmptyCallback(exit);
 #endif
                 exitCondition = exit;
 
@@ -75,8 +73,7 @@ namespace Panty
             public RepeatAction(byte count, Action call)
             {
 #if UNITY_EDITOR
-                if (call == null)
-                    throw new Exception("RepeatAction : call不能为null");
+                ThrowEx.EmptyCallback(call);
 #endif
                 this.repeatCount = count == 0 ? (byte)1 : count;
                 this.call = call;
@@ -97,8 +94,8 @@ namespace Panty
             public UntilConditionAction(Func<bool> exit, Action call)
             {
 #if UNITY_EDITOR
-                if (call == null || exit == null)
-                    throw new Exception("UntilConditionAction : call和exit不能为null");
+                ThrowEx.EmptyCallback(call);
+                ThrowEx.EmptyCallback(exit);
 #endif
                 this.exit = exit;
                 this.call = call;
@@ -115,8 +112,7 @@ namespace Panty
             public PeriodicAction(Action call, float duration)
             {
 #if UNITY_EDITOR
-                if (call == null)
-                    throw new Exception("PeriodicAction : call不能为null");
+                ThrowEx.EmptyCallback(call);
 #endif
                 this.call = call;
                 this.duration = duration < 0f ? 0f : duration;
@@ -136,8 +132,7 @@ namespace Panty
             public DoAction(Action call)
             {
 #if UNITY_EDITOR
-                if (call == null)
-                    throw new Exception("DoAction : call不能为null");
+                ThrowEx.EmptyCallback(call);
 #endif
                 this.call = call;
             }
@@ -191,7 +186,7 @@ namespace Panty
                 var sq = actions[cur];
                 if (sq.IsExit())
                 {
-                    actions.LoopPos(ref cur);
+                    actions.LoopPosN(ref cur);
                     if (cur == 0)
                     {
                         current++;
@@ -219,8 +214,7 @@ namespace Panty
             public LoopGroup(PArray<IAction> actions, Func<bool> exit)
             {
 #if UNITY_EDITOR
-                if (exit == null)
-                    throw new Exception("LoopGroup : exit不能为null");
+                ThrowEx.EmptyCallback(exit);
 #endif
                 this.actions = actions;
                 this.exitCondition = exit;
@@ -233,7 +227,7 @@ namespace Panty
                 if (s.IsExit())
                 {
                     s.Reset();
-                    actions.LoopPos(ref cur);
+                    actions.LoopPosN(ref cur);
                 }
                 else s.Update(delta);
             }
@@ -394,13 +388,11 @@ namespace Panty
         private Group stepGroup = null;
         private PArray<Step> mRmvStep;
         private PArray<DelayTask> mAvailable, mDelayTasks, mUnScaledTasks;
-        private PArray<(Func<bool> isEnd, Action call)> mConditionalTasks;
         private Dictionary<Step, Sequence> mSequenceGroup;
         private Dictionary<Step, Sequence> mUnscaledSequence;
 
         protected override void OnInit()
         {
-            mConditionalTasks = new PArray<(Func<bool>, Action)>();
             mSequenceGroup = new Dictionary<Step, Sequence>();
             mUnscaledSequence = new Dictionary<Step, Sequence>();
             mAvailable = new PArray<DelayTask>();
@@ -414,28 +406,24 @@ namespace Panty
         {
             GetSequence(step).Exit();
         }
-        public DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop, bool isUnScaled)
+        public DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop, bool ignoreTimeScale)
         {
             var task = GetTask().Init(duration, isLoop);
             task.SetTask(onFinished).Start();
 
-            if (isUnScaled)
+            if (ignoreTimeScale)
                 mUnScaledTasks.Push(task);
             else
                 mDelayTasks.Push(task);
             return task;
         }
-        void ITaskScheduler.AddConditionalTask(Func<bool> exitCondition, Action onFinished)
-        {
-            mConditionalTasks.Push((exitCondition, onFinished));
-        }
-        DelayTask ITaskScheduler.AddTemporaryTask(float duration, Action onUpdate, bool isUnScaled)
+        DelayTask ITaskScheduler.AddTemporaryTask(float duration, Action onUpdate, bool ignoreTimeScale)
         {
 #if DEBUG
-            if (onUpdate == null) throw new ArgumentNullException("onUpdate is Empty");
+            ThrowEx.EmptyCallback(onUpdate);
 #endif
             MonoKit.OnUpdate += onUpdate;
-            return AddDelayTask(duration, () => MonoKit.OnUpdate -= onUpdate, false, isUnScaled);
+            return AddDelayTask(duration, () => MonoKit.OnUpdate -= onUpdate, false, ignoreTimeScale);
         }
         Step ITaskScheduler.Sequence(bool ignoreTimeScale)
         {
@@ -498,8 +486,11 @@ namespace Panty
         }
         private void Update()
         {
-            Update(mUnscaledSequence, Time.unscaledDeltaTime);
+            float delta = Time.unscaledDeltaTime;
+            Update(mUnScaledTasks, delta);
+            Update(mUnscaledSequence, delta);
             if (Time.timeScale <= 0f) return;
+            Update(mDelayTasks, Time.deltaTime);
             Update(mSequenceGroup, Time.deltaTime);
         }
         private void Update(Dictionary<Step, Sequence> dic, float delta)
@@ -517,6 +508,21 @@ namespace Panty
             while (mRmvStep.Count > 0)
             {
                 dic.Remove(mRmvStep.Pop());
+            }
+        }
+        private void Update(PArray<DelayTask> tasks, float delta)
+        {
+            int i = 0;
+            while (i < tasks.Count)
+            {
+                var task = tasks[i];
+                task.Update(delta);
+                if (task.IsEnd())
+                {
+                    mAvailable.Push(task);
+                    tasks.RmvAt(i);
+                }
+                else i++;
             }
         }
     }

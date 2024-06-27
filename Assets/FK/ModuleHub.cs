@@ -327,7 +327,7 @@ namespace Panty
         {
             if (mEvents.TryGetValue(typeof(E), out var methods))
             {
-                (methods as Action<E>).Invoke(new E());
+                (methods as Action<E>).Invoke(default);
                 return;
             }
 #if DEBUG
@@ -337,8 +337,8 @@ namespace Panty
         void IModuleHub.RmvEvent<E>(Action<E> evt) =>
             mEvents.Separate(typeof(E), evt);
 
-        void IModuleHub.SendCmd<C>() => SendCmd(cmd: new C());
-        void IModuleHub.SendCmd<C, P>(P info) => SendCmd(cmd: new C(), info);
+        void IModuleHub.SendCmd<C>() => SendCmd(new C());
+        void IModuleHub.SendCmd<C, P>(P info) => SendCmd(new C(), info);
         // 可重写的命令 架构子类可对该命令逻辑进行重写 例如在命令前后记录日志
         public virtual void SendCmd<C>(C cmd) where C : ICmd => cmd.Do(this);
         public virtual void SendCmd<C, P>(C cmd, P info) where C : ICmd<P> => cmd.Do(this, info);

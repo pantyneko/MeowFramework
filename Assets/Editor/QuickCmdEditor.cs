@@ -416,7 +416,7 @@ namespace Panty
         private void BasicCatalog()
         {
             bool lose = true;
-            string[] fileNames = { "ArtRes/Sprites", "Resources/Audios/Bgm", "Resources/Audios/Sound", "Resources/Prefabs", "Scripts/Framework", "Scripts/Project/Game", "StreamingAssets/Csv" };
+            string[] fileNames = { "ArtRes/Sprites", "Resources/Audios/Bgm", "Resources/Audios/Sound", "Resources/Prefabs", "Scripts/Framework/Module", "Scripts/Project/Game", "StreamingAssets/Csv" };
             for (int i = 0; i < fileNames.Length; i++)
             {
                 string path = $"Assets/{fileNames[i]}";

@@ -36,9 +36,7 @@ namespace Panty
         }
         public static void WriteFile(string filePath, string content)
         {
-#if DEBUG
-            if (content == null) throw new ArgumentNullException("字符串为空");
-#endif
+            if (string.IsNullOrEmpty(content)) return;
             var spanContent = content.AsSpan();
             var encode = Encoding.UTF8;
             int maxByteCount = encode.GetMaxByteCount(spanContent.Length);
@@ -66,7 +64,7 @@ namespace Panty
         public static void WriteFile(string path, Action<FileStream> callback)
         {
 #if DEBUG
-            if (callback == null) throw new Exception("回调函数为空 该方法无意义");
+            ThrowEx.EmptyCallback(callback);
 #endif
             var file = new FileInfo(path);
             // 如果当前目录存在该文件 打开并写入文件 否则 创建存档文件

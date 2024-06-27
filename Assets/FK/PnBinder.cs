@@ -20,6 +20,9 @@ namespace Panty
         }
         public IRmv Register(Action<V> onValueChanged)
         {
+#if DEBUG
+            ThrowEx.EmptyCallback(onValueChanged);
+#endif
             mCallBack += onValueChanged;
             return new CustomRmv(() => Unregister(onValueChanged));
         }
@@ -88,16 +91,14 @@ namespace Panty
         public ObjectBinder(O value)
         {
 #if DEBUG
-            if (value == null) throw new Exception("Value is Empty");
+            ThrowEx.EmptyValue(value);
 #endif
             mValue = value;
         }
         public void Modify<D>(D newValue, string fieldOrPropName)
         {
 #if DEBUG
-            if (string.IsNullOrEmpty(fieldOrPropName))
-                throw new ArgumentNullException(nameof(fieldOrPropName));
-            if (mValue == null) throw new Exception($"{typeof(O)} is null");
+            ThrowEx.EmptyValue(mValue);
 #endif
             var flags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance;
             var memberInfo = typeof(O).GetMember(fieldOrPropName, flags).FirstOrDefault();
@@ -125,8 +126,8 @@ namespace Panty
         public void Modify<D>(D newValue, Func<O, D> oldValue, Action<O, D> modifyAction)
         {
 #if DEBUG
-            if (modifyAction == null) throw new Exception($"必须设置[modifyAction]");
-            if (mValue == null) throw new Exception($"{typeof(O)}为空");
+            ThrowEx.EmptyCallback(modifyAction);
+            ThrowEx.EmptyValue(mValue);
 #endif
             if (EqualityComparer<D>.Default.Equals(oldValue(mValue), newValue)) return;
             modifyAction(mValue, newValue);

@@ -195,7 +195,7 @@ namespace Panty
         public static void FindChildrenControl<T>(this Component mono, Action<string, T> callback = null) where T : Component
         {
 #if UNITY_EDITOR
-            if (callback == null) throw new Exception("无效回调");
+            ThrowEx.EmptyCallback(callback);
 #endif
             T[] controls = mono.GetComponentsInChildren<T>(true);
             if (controls.Length == 0) return;

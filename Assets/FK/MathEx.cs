@@ -46,7 +46,7 @@ namespace Panty
         public static void Swap<T>(this ref T a, ref T b) where T : struct { T c = a; a = b; b = c; }
         public static float Normalize(this float cur, float min, float max) => (max - cur) / (max - min);
     }
-    public static class RandomEx
+    public static class SysRandom
     {
         private static Random random = new Random();
         public static int Range(int max) => random.Next(max);

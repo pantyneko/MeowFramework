@@ -4,23 +4,13 @@ using UnityEngine;
 
 namespace Panty
 {
-    [Flags]
-    public enum Dir4 : byte
-    {
-        Up = 1,
-        Down = 2,
-        Left = 4,
-        Right = 8,
-        All = 16,
-        None = 32,
-    }
     public static class VecEx
     {
         public readonly static float2 Up = new float2(0f, 1f);
         public static float2 RandomVec(this float2 dir, float offset)
         {
             var rad = MathF.Atan2(dir.y, dir.x);
-            rad = RandomEx.NextFloat(rad - offset, rad + offset);
+            rad = UnityEngine.Random.Range(rad - offset, rad + offset);
             dir.x = MathF.Cos(rad);
             dir.y = MathF.Sin(rad);
             return dir;

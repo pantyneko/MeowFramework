@@ -3,6 +3,16 @@ using System.Collections.Generic;
 
 namespace Panty
 {
+    [Flags]
+    public enum Dir4 : byte
+    {
+        Up = 1,
+        Down = 2,
+        Left = 4,
+        Right = 8,
+        All = 16,
+        None = 32,
+    }
     // 静态网格
     [Serializable]
     public partial class StGrid
@@ -133,18 +143,35 @@ namespace Panty
         /// <summary>
         /// 根据坐标获取XY索引 起始点到坐标点的差 除以 间距
         /// </summary>
-        public (int r, int c) CoordToCellIndex(float x, float y) =>
-            ((int)((y - yMin) / ch), (int)((x - xMin) / cw));
+        public void CoordToCellIndex(float x, float y, out int r, out int c)
+        {
+            r = (int)((y - yMin) / ch);
+            c = (int)((x - xMin) / cw);
+        }
         public int CellIndexToLinearIndex_RowMajor(int rIndex, int cIndex) =>
             rIndex * colm + cIndex;
         public int CellIndexToLinearIndex_ColMajor(int rIndex, int cIndex) =>
             cIndex * row + rIndex;
-        public (int r, int c) LinearIndexToCellIndex_RowMajor(int index) =>
-            (index / colm, index % colm);
-        public (float x, float y) CellIndexToCoordCenter(int rIndex, int cIndex) =>
-            (xMin + (cIndex + 0.5f) * cw, yMin + (rIndex + 0.5f) * ch);
-        public (float x, float y) CellIndexToWorldCoord(int rIndex, int cIndex) =>
-            (xMin + cIndex * cw, yMin + rIndex * ch);
+        public void LinearIndexToCellIndex_RowMajor(int index, out int r, out int c)
+        {
+            r = index / colm;
+            c = index % colm;
+        }
+        public void LinearIndexToCoordCenter_RowMajor(int index, out float x, out float y)
+        {
+            LinearIndexToCellIndex_RowMajor(index, out int r, out int c);
+            CellIndexToCoordCenter(r, c, out x, out y);
+        }
+        public void CellIndexToCoordCenter(int rIndex, int cIndex, out float x, out float y)
+        {
+            x = xMin + (cIndex + 0.5f) * cw;
+            y = yMin + (rIndex + 0.5f) * ch;
+        }
+        public void CellIndexToWorldCoord(int rIndex, int cIndex, out float x, out float y)
+        {
+            x = xMin + cIndex * cw;
+            y = yMin + rIndex * ch;
+        }
         public Dir4 CheckEdgeCorner(float x, float y, float half)
         {
             // 计算左下角的矩形左下角点
