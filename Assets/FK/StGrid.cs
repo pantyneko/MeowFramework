@@ -11,7 +11,7 @@ namespace Panty
         Left = 4,
         Right = 8,
         All = 16,
-        None = 32,
+        None = 0,
     }
     // 静态网格
     [Serializable]
@@ -21,6 +21,9 @@ namespace Panty
         public float xMin, yMin, cw, ch;
         // 行数和列数
         public int row, colm;
+        public int Size => row * colm;
+        public int SubRow => row >> 1;
+        public int SubColm => colm >> 1;
         public float W => colm * cw;
         public float H => row * ch;
         public float CenterX => xMin + W * 0.5f;
@@ -30,12 +33,20 @@ namespace Panty
         // 获取网格的斜边长度
         public float Hypotenuse => MathF.Sqrt(cw * cw + ch * ch);
 
-        public StGrid(int row, int colm, float gw, float gh)
+        public StGrid(int row, int colm, float gw, float gh, bool isCenter = true)
         {
             this.row = row;
             this.colm = colm;
-            xMin = -gw * 0.5f;
-            yMin = -gh * 0.5f;
+            if (isCenter)
+            {
+                xMin = -gw * 0.5f;
+                yMin = -gh * 0.5f;
+            }
+            else
+            {
+                xMin = 0f;
+                yMin = 0f;
+            }
             cw = gw / colm;
             ch = gh / row;
         }
@@ -48,7 +59,11 @@ namespace Panty
             colm = numX;
             row = numY;
         }
-        public void ResizeByCenter(float deltaX, float deltaY)
+        public int CenterIndex_RowMajor()
+        {
+            return CellIndexToLinearIndex_RowMajor(row >> 1, colm >> 1);
+        }
+        public void ScaleFromCenter(float deltaX, float deltaY)
         {
             float w = W;
             float h = H;
@@ -140,6 +155,67 @@ namespace Panty
                     break;
             }
         }
+        public bool GetNeighborIndex(ref int r, ref int c, Dir4 direction)
+        {
+            switch (direction)
+            {
+                case Dir4.Up: r += 1; break;
+                case Dir4.Down: r -= 1; break;
+                case Dir4.Left: c -= 1; break;
+                case Dir4.Right: c += 1; break;
+                case Dir4.Left | Dir4.Up:
+                    r += 1;
+                    c -= 1;
+                    break;
+                case Dir4.Left | Dir4.Down:
+                    r -= 1;
+                    c -= 1;
+                    break;
+                case Dir4.Right | Dir4.Up:
+                    r += 1;
+                    c += 1;
+                    break;
+                case Dir4.Right | Dir4.Down:
+                    r -= 1;
+                    c += 1;
+                    break;
+                default: return false;
+            }
+            return r >= 0 && r < row && c >= 0 && c < colm;
+        }
+        public void GetWrappedNeighborIndex(ref int index, Dir4 direction)
+        {
+            LinearIndexToCellIndex_RowMajor(index, out int r, out int c);
+            GetWrappedNeighborIndex(ref r, ref c, direction);
+            index = CellIndexToLinearIndex_RowMajor(r, c);
+        }
+        public void GetWrappedNeighborIndex(ref int r, ref int c, Dir4 direction)
+        {
+            switch (direction)
+            {
+                case Dir4.Up: r = (r + 1) % row; break;
+                case Dir4.Down: r = (r - 1 + row) % row; break;
+                case Dir4.Left: c = (c - 1 + colm) % colm; break;
+                case Dir4.Right: c = (c + 1) % colm; break;
+
+                case Dir4.Left | Dir4.Up:
+                    r = (r + 1) % row;
+                    c = (c - 1 + colm) % colm;
+                    break;
+                case Dir4.Left | Dir4.Down:
+                    r = (r - 1 + row) % row;
+                    c = (c - 1 + colm) % colm;
+                    break;
+                case Dir4.Right | Dir4.Up:
+                    r = (r + 1) % row;
+                    c = (c + 1) % colm;
+                    break;
+                case Dir4.Right | Dir4.Down:
+                    r = (r - 1 + row) % row;
+                    c = (c + 1) % colm;
+                    break;
+            }
+        }
         /// <summary>
         /// 根据坐标获取XY索引 起始点到坐标点的差 除以 间距
         /// </summary>
@@ -148,6 +224,8 @@ namespace Panty
             r = (int)((y - yMin) / ch);
             c = (int)((x - xMin) / cw);
         }
+        public int InvCellIndexToLinearIndex_RowMajor(int rIndex, int cIndex) =>
+                    (row - 1 - rIndex) * colm + cIndex;
         public int CellIndexToLinearIndex_RowMajor(int rIndex, int cIndex) =>
             rIndex * colm + cIndex;
         public int CellIndexToLinearIndex_ColMajor(int rIndex, int cIndex) =>
@@ -214,6 +292,12 @@ namespace Panty
         public IEnumerable<(int r, int c)> RowMajorIndices()
         {
             for (int r = 0; r < row; r++)
+                for (int c = 0; c < colm; c++)
+                    yield return (r, c);
+        }
+        public IEnumerable<(int r, int c)> RowMajorIndicesByLeftUp()
+        {
+            for (int r = row - 1; r >= 0; r--)
                 for (int c = 0; c < colm; c++)
                     yield return (r, c);
         }

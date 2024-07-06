@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -11,65 +12,150 @@ namespace Panty
         public int Count => N;
         public int Capacity => arr.Length;
         public bool IsEmpty => N == 0;
-        public T First => arr[first];
-        public T Last => arr[(first + N - 1) % N];
+        public T this[int index]
+        {
+            get
+            {
+#if DEBUG
+                ThrowEx.EmptyItem<T>(N);
+                ThrowEx.InvalidIndex(index, N);
+#endif
+                return arr[(first + index) % arr.Length];
+            }
+            set
+            {
+#if DEBUG
+                ThrowEx.EmptyItem<T>(N);
+                ThrowEx.InvalidIndex(index, N);
+#endif
+                arr[(first + index) % arr.Length] = value;
+            }
+        }
+        public T First
+        {
+            get
+            {
+#if DEBUG
+                ThrowEx.EmptyItem<T>(N);
+#endif
+                return arr[first];
+            }
+            set
+            {
+#if DEBUG
+                ThrowEx.EmptyItem<T>(N);
+#endif
+                arr[first] = value;
+            }
+        }
+        public T Last
+        {
+            get
+            {
+#if DEBUG
+                ThrowEx.EmptyItem<T>(N);
+#endif
+                return this[N - 1];
+            }
+            set
+            {
+#if DEBUG
+                ThrowEx.EmptyItem<T>(N);
+#endif
+                this[N - 1] = value;
+            }
+        }
         /// <summary>
         /// 构造函数
         /// </summary>
         /// <param name="capacity">初始容量</param>
-        public LoopList(T e, int capacity = 4)
+        public LoopList(int capacity = 4)
         {
 #if DEBUG
             ThrowEx.InvalidCapacity(capacity);
 #endif
             arr = new T[capacity];
-            arr[first] = e;
-            N = 1;
         }
         public void AddFirst(T e)
         {
             if (N == arr.Length)
                 Resize(N << 1);
-            LoopNegN(); N++;
+            LoopNeg(); N++;
             arr[first] = e;
         }
         public void AddLast(T e)
         {
             if (N == arr.Length) Resize(N << 1);
-            arr[(first + N++) % arr.Length] = e;
+            this[N++] = e;
         }
         public void PosMove()
         {
-            arr[(first + N) % N] = arr[first];
-            LoopPosN();
+#if DEBUG
+            ThrowEx.EmptyItem<T>(N);
+#endif
+            this[N] = arr[first];
+            LoopPos();
         }
         public void NegMove()
         {
+#if DEBUG
+            ThrowEx.EmptyItem<T>(N);
+#endif
             T e = Last;
-            LoopNegN();
+            LoopNeg();
             arr[first] = e;
+        }
+        public void Slice(int start, int count)
+        {
+            first = start;
+            N = count;
         }
         private void Resize(int newSize)
         {
             // 如果长度相等 不需要变容量
-            if (newSize == 0) return;
+            if (newSize <= N) return;
             T[] newArr = new T[newSize];
             for (int i = 0; i < N; i++)
-                newArr[i] = arr[(first + i) % N];
+                newArr[i] = this[i];
             first = 0;
             arr = newArr;
         }
-        public void LoopPosN() => first = (first + 1) % N;
-        public void LoopNegN() => first = (first + N - 1) % N;
-        IEnumerator<T> IEnumerable<T>.GetEnumerator()
+        public int FindIndex(Predicate<T> match)
         {
-            for (int i = first, len = i + N; i < len; i++)
-                yield return arr[i % N];
+            for (int i = 0; i < N; i++)
+            {
+                if (match(this[i])) return i;
+            }
+            return -1;
         }
-        public IEnumerator GetEnumerator()
+        /// <summary>
+        /// 只重置游标 不释放数据
+        /// </summary>
+        public void ToFirst() => N = 0;
+        public void LoopPos() => first = (first + 1) % arr.Length;
+        public void LoopNeg()
+        {
+#if DEBUG
+            ThrowEx.EmptyItem<T>(N);
+#endif
+            first = (first + N - 1) % arr.Length;
+        }
+        public IEnumerator<T> GetEnumerator()
         {
             for (int i = first, len = i + N; i < len; i++)
-                yield return arr[i % N];
+                yield return arr[i % arr.Length];
+        }
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            for (int i = first, len = i + N; i < len; i++)
+                yield return arr[i % arr.Length];
+        }
+        public override string ToString()
+        {
+            var sb = new StringBuilder($"{nameof(PArray<T>)},Count:{N},Items:\r\n");
+            for (int i = first, len = i + N; i < len; i++)
+                sb.Append($"[{arr[i % arr.Length]}],");
+            return sb.ToString();
         }
     }
     /// <summary>
@@ -83,22 +169,67 @@ namespace Panty
         public int Count => N;
         public int Capacity => arr.Length;
         public bool IsEmpty => N == 0;
-        public T[] Self => arr;
-        public T First => arr[0];
-        public T Last => arr[N - 1];
+        public T[] Self
+        {
+            get => arr;
+            set
+            {
+#if DEBUG
+                ThrowEx.EmptyArray<T>(value);
+#endif
+                N = value.Length;
+                arr = value;
+            }
+        }
+        public T First
+        {
+            get
+            {
+#if DEBUG
+                ThrowEx.EmptyItem<T>(N);
+#endif
+                return arr[0];
+            }
+            set
+            {
+#if DEBUG
+                ThrowEx.EmptyItem<T>(N);
+#endif
+                arr[0] = value;
+            }
+        }
+        public T Last
+        {
+            get
+            {
+#if DEBUG
+                ThrowEx.EmptyItem<T>(N);
+#endif
+                return arr[N - 1];
+            }
+            set
+            {
+#if DEBUG
+                ThrowEx.EmptyItem<T>(N);
+#endif
+                arr[N - 1] = value;
+            }
+        }
         public T this[int index]
         {
             get
             {
 #if DEBUG
-                ThrowEx.IsIndexLegal(index, N);
+                ThrowEx.EmptyItem<T>(N);
+                ThrowEx.InvalidIndex(index, N);
 #endif
                 return arr[index];
             }
             set
             {
 #if DEBUG
-                ThrowEx.IsIndexLegal(index, N);
+                ThrowEx.EmptyItem<T>(N);
+                ThrowEx.InvalidIndex(index, N);
 #endif
                 arr[index] = value;
             }
@@ -106,9 +237,11 @@ namespace Panty
         public bool SetIfChanged(int index, T newValue)
         {
 #if DEBUG
-            ThrowEx.IsIndexLegal(index, N);
+            ThrowEx.EmptyItem<T>(N);
+            ThrowEx.InvalidIndex(index, N);
 #endif
-            if (EqualityComparer<T>.Default.Equals(arr[index], newValue)) return false;
+            if (EqualityComparer<T>.Default
+                .Equals(arr[index], newValue)) return false;
             arr[index] = newValue;
             return true;
         }
@@ -117,7 +250,7 @@ namespace Panty
         /// </summary>
         /// <param name="capacity">初始容量</param>
         /// <param name="isFill">使用默认数据填满</param>
-        public PArray(int capacity = 4, bool isFill = false)
+        public PArray(int capacity = 2, bool isFill = false)
         {
 #if DEBUG
             ThrowEx.InvalidCapacity(capacity);
@@ -139,7 +272,13 @@ namespace Panty
                 Resize(N << 1);
             AddLast(e);
         }
-        public T Pop() => arr[--N];
+        public T Pop()
+        {
+#if DEBUG
+            ThrowEx.EmptyItem<T>(N);
+#endif
+            return arr[--N];
+        }
         public void AddLast(T e) => arr[N++] = e;
         public void RmvLast() => N -= (N == 0 ? 0 : 1);
         public void LoopPosN(ref int c) => c = (c + 1) % N;
@@ -153,22 +292,20 @@ namespace Panty
 #endif
             return arr[SysRandom.Range(N)];
         }
-        public T RandomPopToLast()
+        public void RandomPop(out T e)
         {
 #if DEBUG
             ThrowEx.EmptyItem<T>(N);
-#endif
+#endif        
             if (N == 1)
             {
-                return arr[--N];
+                e = arr[--N];
             }
             else
             {
-                int index = SysRandom.Range(N--);
-                T e = arr[index];
-                arr[index] = arr[N];
-                arr[N] = e;
-                return e;
+                int index = SysRandom.Range(N);
+                e = arr[index];
+                arr[index] = arr[--N];
             }
         }
         /// <summary>
@@ -177,15 +314,34 @@ namespace Panty
         public void RmvAt(int index)
         {
 #if DEBUG
-            ThrowEx.IsIndexLegal(index, N);
+            ThrowEx.EmptyItem<T>(N);
+            ThrowEx.InvalidIndex(index, N);
 #endif
             if (index == --N) return;
             arr[index] = arr[N];
+        }
+        public void Rmv(T e)
+        {
+#if DEBUG
+            ThrowEx.EmptyItem<T>(N);
+#endif
+            RmvAt(Array.IndexOf<T>(arr, e, 0, N));
+        }
+        public bool TryRmv(T e)
+        {
+            int index = IndexOf(e);
+            if (index >= 0) RmvAt(index);
+            return index >= 0;
         }
         public void Sort(IComparer<T> comparer)
         {
             if (N == 0) return;
             Array.Sort<T>(arr, 0, N, comparer);
+        }
+        public void Sort()
+        {
+            if (N == 0) return;
+            Array.Sort<T>(arr, 0, N);
         }
         public bool Find(Predicate<T> match, out T r)
         {
@@ -229,7 +385,7 @@ namespace Panty
         private void Resize(int newSize)
         {
             // 如果长度相等 不需要变容量
-            if (newSize == 0) return;
+            if (newSize <= N) return;
             T[] newArr = new T[newSize];
             Array.Copy(arr, 0, newArr, 0, N);
             arr = newArr;

@@ -59,7 +59,7 @@ namespace Panty
         public override string ToString() => mValue.ToString();
         public override int GetHashCode() => mValue.GetHashCode();
     }
-    public class StringBinder : PnBinder<string>
+    public class StrBinder : PnBinder<string>
     {
         public string Value
         {
@@ -71,18 +71,18 @@ namespace Panty
                 mCallBack?.Invoke(value);
             }
         }
-        public StringBinder(string value = default) => mValue = value;
-        public static bool operator ==(StringBinder binder, string value) => binder.mValue == value;
-        public static bool operator !=(StringBinder binder, string value) => binder.mValue != value;
-        public static implicit operator StringBinder(string value)
+        public StrBinder(string value = default) => mValue = value;
+        public static bool operator ==(StrBinder binder, string value) => binder.mValue == value;
+        public static bool operator !=(StrBinder binder, string value) => binder.mValue != value;
+        public static implicit operator StrBinder(string value)
         {
 #if DEBUG
             $"{value} => Binder".Log();
 #endif
-            return new StringBinder(value);
+            return new StrBinder(value);
         }
         public override bool Equals(object obj) =>
-            obj is StringBinder binder && mValue == binder.mValue;
+            obj is StrBinder binder && mValue == binder.mValue;
         public override string ToString() => mValue;
         public override int GetHashCode() => mValue == null ? 0 : mValue.GetHashCode();
     }

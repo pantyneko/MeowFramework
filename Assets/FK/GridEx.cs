@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Panty
@@ -16,9 +17,12 @@ namespace Panty
             xMin = center.x - totalWidth * 0.5f;
             yMin = center.y - totalHeight * 0.5f;
         }
+        public StGrid(Vector2 center, float totalSize, int num) :
+            this(center, totalSize, totalSize, num, num)
+        { }
         public Vector2 RandomPos()
         {
-            CellIndexToWorldCoord(Random.Range(0, row), Random.Range(0, colm), out float x, out float y);
+            CellIndexToWorldCoord(SysRandom.Range(row), SysRandom.Range(colm), out float x, out float y);
             return new Vector2(x, y);
         }
         public Vector2 GetCorner(Dir4 dir)
@@ -31,6 +35,17 @@ namespace Panty
                 Dir4.Right | Dir4.Up => new Vector2(xMax, yMax),
                 _ => Vector2.zero
             };
+        }
+        public void DrawValuesByLeft_RowMajor<T>(T[] values)
+        {
+            int len = values.Length;
+            for (int i = 0; i < len; i++)
+            {
+                LinearIndexToCellIndex_RowMajor(i, out int r, out int c);
+                CellIndexToCoordCenter(row - r - 1, c, out float x, out float y);
+                Vector2 p = Camera.main.WorldToScreenPoint(new Vector2(x, y));
+                GUI.Label(new Rect(p, p), values[i].ToString());
+            }
         }
         public void CoordToCellIndex(Vector2 p, out int r, out int c) => CoordToCellIndex(p.x, p.y, out r, out c);
         public bool ContainsByLeftUp(Vector2 p, int r, int c, float w, float h)
@@ -66,14 +81,11 @@ namespace Panty
                 }
             }
         }
-        public void DrawTile(Vector2 p)
+        public void DrawTile(Vector2 p, bool isWire = true)
         {
-            if (Contains(p.x, p.y))
-            {
-                CoordToCellIndex(p.x, p.y, out int r, out int c);
-                CellIndexToWorldCoord(r, c, out float x, out float y);
-                GLKit.DrawRectLeft(x, y, cw, ch, 0f, true);
-            }
+            CoordToCellIndex(p.x, p.y, out int r, out int c);
+            CellIndexToWorldCoord(r, c, out float x, out float y);
+            GLKit.DrawRectLeft(x, y, cw, ch, 0f, isWire);
         }
     }
 }

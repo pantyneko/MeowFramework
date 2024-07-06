@@ -15,9 +15,9 @@ namespace Panty
             if (count == 0)
                 throw new Exception($"{typeof(T)}无元素");
         }
-        public static void IsIndexLegal(int index, int count)
+        public static void InvalidIndex(int index, int count)
         {
-            if (index >= count)
+            if (index < 0 || index >= count)
                 throw new Exception($"索引越界 Index:{index},N:{count}");
         }
         public static void EmptyArray<T>(T[] arr)
