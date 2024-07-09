@@ -5,8 +5,8 @@ namespace Panty
 {
     public partial class StGrid
     {
-        public void DrawGrid() =>
-            GLKit.DrawGrid(xMin, yMin, row, colm, cw, ch, 0f);
+        public void DrawGrid() => GLKit.DrawGrid(xMin, yMin, row, colm, cw, ch, 0f);
+        public void DrawGridGizmos() => GLKit.DrawGridGizmos(xMin, yMin, row, colm, cw, ch, 0f);
         public bool Contains(Vector2 p) => Contains(p.x, p.y);
         public StGrid(Vector2 center, float totalWidth, float totalHeight, int row, int colm)
         {

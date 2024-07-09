@@ -124,6 +124,59 @@ namespace Panty
             }
             GL.End();
         }
+        public static void DrawGridGizmos(int sx, int sy, int row, int colm, float z = 0f)
+        {
+            float tmp;
+            float e = sy + row;
+            int i = 0;
+            // 绘制列线
+            while (i <= colm)
+            {
+                tmp = sx + i++;
+                Gizmos.DrawLine(new Vector3(tmp, sy, z), new Vector3(tmp, e, z));
+            }
+            i = 0;
+            e = sx + colm;
+            // 绘制行线
+            while (i <= row)
+            {
+                tmp = sy + i++;
+                Gizmos.DrawLine(new Vector3(sx, tmp, z), new Vector3(e, tmp, z));
+            }
+        }
+        /// <summary>
+        /// 绘制网格
+        /// </summary>
+        /// <param name="sx">左侧起始x</param>
+        /// <param name="sy">下侧起始y</param>
+        /// <param name="row">多少行</param>
+        /// <param name="colm">多少列</param>
+        /// <param name="cw">单元格宽度</param>
+        /// <param name="ch">单元格高度</param>
+        /// <param name="z">z轴坐标</param>
+        public static void DrawGridGizmos(float sx, float sy, int row, int colm, float cw, float ch, float z = 0f)
+        {
+            float tmp;
+            float e = sy + row * ch;
+            int i = 0;
+
+            // 绘制列线
+            while (i <= colm)
+            {
+                tmp = sx + i++ * cw;
+                Gizmos.DrawLine(new Vector3(tmp, sy, z), new Vector3(tmp, e, z));
+            }
+
+            i = 0;
+            e = sx + colm * cw;
+
+            // 绘制行线
+            while (i <= row)
+            {
+                tmp = sy + i++ * ch;
+                Gizmos.DrawLine(new Vector3(sx, tmp, z), new Vector3(e, tmp, z));
+            }
+        }
         /// <summary>
         /// 绘制网格
         /// </summary>
