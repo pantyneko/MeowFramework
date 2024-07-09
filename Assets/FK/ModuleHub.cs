@@ -126,7 +126,7 @@ namespace Panty
     public static partial class HubTool
     {
 #if DEBUG
-        public const string version = "1.1.3";
+        public const string version = "1.1.4";
         /// <summary>
         /// 在调试模式下 将对象信息输出到控制台 可支持多个平台。
         /// </summary>
@@ -158,20 +158,20 @@ namespace Panty
         /// <summary>
         /// 将委托添加到字典中 
         /// </summary>
-        public static void Combine(this Dictionary<Type, Delegate> events, Type type, Delegate evt)
+        public static void Combine<T>(this Dictionary<T, Delegate> events, T key, Delegate evt)
         {
-            events[type] = events.TryGetValue(type, out var methods) ? Delegate.Combine(methods, evt) : evt;
+            events[key] = events.TryGetValue(key, out var methods) ? Delegate.Combine(methods, evt) : evt;
         }
         /// <summary>
         /// 将委托从字典中移除
         /// </summary>
-        public static void Separate(this Dictionary<Type, Delegate> events, Type type, Delegate evt)
+        public static void Separate<T>(this Dictionary<T, Delegate> events, T key, Delegate evt)
         {
-            if (events.TryGetValue(type, out var methods))
+            if (events.TryGetValue(key, out var methods))
             {
                 methods = Delegate.Remove(methods, evt);
-                if (methods == null) events.Remove(type);
-                else events[type] = methods;
+                if (methods == null) events.Remove(key);
+                else events[key] = methods;
             }
         }
     }
@@ -223,18 +223,6 @@ namespace Panty
         private Action call;
         public CustomRmv(Action call) => this.call = call;
         void IRmv.Do() => call?.Invoke();
-    }
-    // 实现字典中移除委托
-    public class DelegateDicRmv<T> : IRmv where T : struct
-    {
-        private Dictionary<Type, Delegate> mEvents;
-        private Delegate call;
-        void IRmv.Do() => mEvents.Separate(typeof(T), call);
-        public DelegateDicRmv(Dictionary<Type, Delegate> events, Delegate e)
-        {
-            mEvents = events;
-            call = e;
-        }
     }
     public abstract partial class ModuleHub<H> : IModuleHub where H : ModuleHub<H>, new()
     {
@@ -310,8 +298,10 @@ namespace Panty
             if (evt == null) $"{evt} 不可为Null".Log();
 #endif
             mEvents.Combine(typeof(E), evt);
-            return new DelegateDicRmv<E>(mEvents, evt);
+            return new CustomRmv(() => mEvents.Separate(typeof(E), evt));
         }
+        void IModuleHub.RmvEvent<E>(Action<E> evt) =>
+            mEvents.Separate(typeof(E), evt);
         void IModuleHub.SendEvent<E>(E e)
         {
             if (mEvents.TryGetValue(typeof(E), out var methods))
@@ -334,9 +324,6 @@ namespace Panty
             $"{typeof(E)} 事件未注册".Log();
 #endif
         }
-        void IModuleHub.RmvEvent<E>(Action<E> evt) =>
-            mEvents.Separate(typeof(E), evt);
-
         void IModuleHub.SendCmd<C>() => SendCmd(new C());
         void IModuleHub.SendCmd<C, P>(P info) => SendCmd(new C(), info);
         // 可重写的命令 架构子类可对该命令逻辑进行重写 例如在命令前后记录日志
