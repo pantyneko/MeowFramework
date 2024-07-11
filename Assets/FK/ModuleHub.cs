@@ -173,6 +173,9 @@ namespace Panty
                 if (methods == null) events.Remove(key);
                 else events[key] = methods;
             }
+#if DEBUG
+            else $"{key} 事件Key不存在".Log();
+#endif
         }
     }
     public static partial class HubEx
@@ -305,23 +308,17 @@ namespace Panty
         void IModuleHub.SendEvent<E>(E e)
         {
             if (mEvents.TryGetValue(typeof(E), out var methods))
-            {
                 (methods as Action<E>).Invoke(e);
-                return;
-            }
 #if DEBUG
-            $"{typeof(E)} 事件未注册".Log();
+            else $"{typeof(E)} 事件未注册".Log();
 #endif
         }
         void IModuleHub.SendEvent<E>()
         {
             if (mEvents.TryGetValue(typeof(E), out var methods))
-            {
                 (methods as Action<E>).Invoke(default);
-                return;
-            }
 #if DEBUG
-            $"{typeof(E)} 事件未注册".Log();
+            else $"{typeof(E)} 事件未注册".Log();
 #endif
         }
         void IModuleHub.SendCmd<C>() => SendCmd(new C());

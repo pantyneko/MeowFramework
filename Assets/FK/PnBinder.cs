@@ -50,7 +50,7 @@ namespace Panty
         public static implicit operator ValueBinder<V>(V value)
         {
 #if DEBUG
-            $"{value} => Binder".Log();
+            $"{typeof(V)}Binder => {value}".Log();
 #endif
             return new ValueBinder<V>(value);
         }
@@ -77,7 +77,7 @@ namespace Panty
         public static implicit operator StrBinder(string value)
         {
 #if DEBUG
-            $"{value} => Binder".Log();
+            $"StringBinder => {value}".Log();
 #endif
             return new StrBinder(value);
         }

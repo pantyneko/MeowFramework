@@ -93,7 +93,7 @@ namespace Panty
                 win.minSize = new Vector2(360f, 40f);
             }
         }
-        [MenuItem("PnTool/Quick/AddBind &B")]
+        [MenuItem("PnTool/Quick/AddBind &S")]
         private static void AddBind()
         {
             if (Selection.objects.Length == 0) return;
