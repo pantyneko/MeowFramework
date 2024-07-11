@@ -11,6 +11,10 @@ using System.Linq;
 using UnityEditor.SceneManagement;
 using System.Reflection;
 
+#if !TMP_PRESENT
+using TMPro;
+#endif
+
 namespace Panty
 {
     public class TextDialog : EditorWindow
@@ -142,6 +146,12 @@ namespace Panty
                 Bind.E_Type.ScrollRect => "scrlRt",
                 Bind.E_Type.InputField => "inpFld",
                 Bind.E_Type.RawImage => "rwImg",
+#if !TMP_PRESENT
+                Bind.E_Type.TextMeshPro => "tmpTxt",
+                Bind.E_Type.TextMeshProUGUI => "tmpTxtUGUI",
+                Bind.E_Type.TMP_InputField => "tmp_InpFld",
+                Bind.E_Type.TMP_Dropdown => "tmp_DrpDwn",
+#endif
                 _ => ""
             };
         }
@@ -153,7 +163,7 @@ namespace Panty
         }
         private static void AddUIRoot(GameObject go)
         {
-            var binds = go.GetComponentsInChildren<Bind>();
+            var binds = go.GetComponentsInChildren<Bind>(true);
             if (binds.Length == 0)
             {
                 "没有可绑定对象".Log();

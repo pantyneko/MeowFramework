@@ -2,6 +2,10 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+#if !TMP_PRESENT
+using TMPro;
+#endif
+
 namespace Panty
 {
     public class Bind : MonoBehaviour
@@ -23,6 +27,12 @@ namespace Panty
                 E_Type.Scrollbar => typeof(Scrollbar),
                 E_Type.ScrollRect => typeof(ScrollRect),
                 E_Type.InputField => typeof(InputField),
+#if !TMP_PRESENT
+                E_Type.TextMeshPro => typeof(TextMeshPro),
+                E_Type.TextMeshProUGUI => typeof(TextMeshProUGUI),
+                E_Type.TMP_InputField => typeof(TMP_InputField),
+                E_Type.TMP_Dropdown => typeof(TMP_Dropdown),
+#endif
                 _ => typeof(Transform),
             };
         }
@@ -39,7 +49,13 @@ namespace Panty
             Dropdown,
             Scrollbar,
             ScrollRect,
-            RawImage
+            RawImage,
+#if !TMP_PRESENT
+            TextMeshPro,
+            TextMeshProUGUI,
+            TMP_InputField,
+            TMP_Dropdown,
+#endif
         }
         public bool usePrefix = true;
         public E_Type type;
