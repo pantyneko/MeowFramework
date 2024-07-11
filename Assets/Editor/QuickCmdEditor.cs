@@ -11,10 +11,6 @@ using System.Linq;
 using UnityEditor.SceneManagement;
 using System.Reflection;
 
-#if !TMP_PRESENT
-using TMPro;
-#endif
-
 namespace Panty
 {
     public class TextDialog : EditorWindow
@@ -146,12 +142,11 @@ namespace Panty
                 Bind.E_Type.ScrollRect => "scrlRt",
                 Bind.E_Type.InputField => "inpFld",
                 Bind.E_Type.RawImage => "rwImg",
-#if !TMP_PRESENT
+
                 Bind.E_Type.TextMeshPro => "tmpTxt",
                 Bind.E_Type.TextMeshProUGUI => "tmpTxtUGUI",
                 Bind.E_Type.TMP_InputField => "tmp_InpFld",
                 Bind.E_Type.TMP_Dropdown => "tmp_DrpDwn",
-#endif
                 _ => ""
             };
         }
@@ -217,7 +212,15 @@ namespace Panty
                     else if (bind.root == go)
                     {
                         if (i > 1) bd.Append("\t\t");
-                        bd.Append($"[SerializeField] private {bind.type} {HandleBind(bind)};");
+                        var str = bind.type switch
+                        {
+                            Bind.E_Type.TextMeshPro => "TMPro.",
+                            Bind.E_Type.TextMeshProUGUI => "TMPro.",
+                            Bind.E_Type.TMP_Dropdown => "TMPro.",
+                            Bind.E_Type.TMP_InputField => "TMPro.",
+                            _ => ""
+                        };
+                        bd.Append($"[SerializeField] private {str}{bind.type} {HandleBind(bind)};");
                         if (i < len - 1) bd.Append("\r\n");
                     }
                     else $"{bind.root}不属于当前父级".Log();
@@ -242,7 +245,8 @@ namespace Panty
                     var info = fields.FirstOrDefault(t => t.Name == n);
                     if (info == null) continue;
                     var bindCp = bind.GetComponent(info.FieldType);
-                    info.SetValue(cmpnt, Convert.ChangeType(bindCp, info.FieldType));
+                    if (bindCp) info.SetValue(cmpnt, Convert.ChangeType(bindCp, info.FieldType));
+                    else $"无法找到{bind.root}下{info.FieldType}脚本".Log();
                 }
             }
             EditorUtility.SetDirty(cmpnt);
