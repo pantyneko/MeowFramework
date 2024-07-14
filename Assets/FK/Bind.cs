@@ -47,8 +47,18 @@ namespace Panty
             TMP_Dropdown,
         }
         public bool usePrefix = true;
-        public E_Type type;
-        public GameObject root;
+        private E_Type type;
+        public E_Type CType => type;
+        private GameObject root;
+        public GameObject Root => root;
+        public void Init(GameObject root)
+        {
+            this.root = root;
+            if (GetComponent<Image>()) type = E_Type.Image;
+            else if (GetComponent<Text>()) type = E_Type.Text;
+            else if (GetComponent<RawImage>()) type = E_Type.RawImage;
+            else type = E_Type.Transform;
+        }
         private void OnValidate()
         {
             if (ToType(type) == null)

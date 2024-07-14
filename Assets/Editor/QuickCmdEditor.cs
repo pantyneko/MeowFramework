@@ -100,8 +100,8 @@ namespace Panty
             foreach (var go in Selection.objects.OfType<GameObject>())
             {
                 if (go == null) continue;
-                var bind = go.GetOrAddComponent<Bind>();
-                if (mGos.Count == 1) bind.root = mGos[0];
+                if (mGos.Count == 1)
+                    go.GetOrAddComponent<Bind>().Init(mGos[0]);
                 EditorUtility.SetDirty(go);
                 EditorSceneManager.MarkSceneDirty(go.scene);
             }
@@ -207,12 +207,12 @@ namespace Panty
                 for (int i = 0, len = binds.Length; i < len; i++)
                 {
                     var bind = binds[i];
-                    if (bind.root == null)
+                    if (bind.Root == null)
                         $"{bind}的Root is Null".Log();
-                    else if (bind.root == go)
+                    else if (bind.Root == go)
                     {
                         if (i > 1) bd.Append("\t\t");
-                        var str = bind.type switch
+                        var str = bind.CType switch
                         {
                             Bind.E_Type.TextMeshPro => "TMPro.",
                             Bind.E_Type.TextMeshProUGUI => "TMPro.",
@@ -220,10 +220,10 @@ namespace Panty
                             Bind.E_Type.TMP_InputField => "TMPro.",
                             _ => ""
                         };
-                        bd.Append($"[SerializeField] private {str}{bind.type} {HandleBind(bind)};");
+                        bd.Append($"[SerializeField] private {str}{bind.CType} {HandleBind(bind)};");
                         if (i < len - 1) bd.Append("\r\n");
                     }
-                    else $"{bind.root}不属于当前父级".Log();
+                    else $"{bind.Root}不属于当前父级".Log();
                 }
                 bd.Append(data[1]);
                 FileKit.WriteFile(assetPath, bd.ToString());
@@ -238,15 +238,19 @@ namespace Panty
             for (int i = 0, len = binds.Length; i < len; i++)
             {
                 var bind = binds[i];
-                if (bind.root == null) continue;
-                if (bind.root == go)
+                if (bind.Root == null)
+                {
+                    $"{bind}的Root is Null".Log();
+                    continue;
+                }
+                if (bind.Root == go)
                 {
                     string n = HandleBind(bind).Trim();
                     var info = fields.FirstOrDefault(t => t.Name == n);
                     if (info == null) continue;
                     var bindCp = bind.GetComponent(info.FieldType);
                     if (bindCp) info.SetValue(cmpnt, Convert.ChangeType(bindCp, info.FieldType));
-                    else $"无法找到{bind.root}下{info.FieldType}脚本".Log();
+                    else $"无法找到{bind.Root}下{info.FieldType}脚本".Log();
                 }
             }
             EditorUtility.SetDirty(cmpnt);
@@ -257,7 +261,7 @@ namespace Panty
             string goName = bind.gameObject.name;
             if (string.IsNullOrWhiteSpace(goName)) bind.usePrefix = true;
             else goName = goName.RemoveSpecialCharacters();
-            string prefix = GetPrefix(bind.type) + "_";
+            string prefix = GetPrefix(bind.CType) + "_";
             prefix = bind.usePrefix ? prefix : char.IsDigit(goName[0]) ? prefix : "";
             return prefix + goName;
         }
@@ -310,20 +314,6 @@ namespace Panty
             mField.AddManipulator(new ContextualMenuManipulator(BuildContextualMenu));
             // 将TextField添加到根元素
             root.Add(mField);
-        }
-        private void BuildContextualMenu(ContextualMenuPopulateEvent evt)
-        {
-            // 清除现有菜单项
-            evt.menu.MenuItems().Clear();
-            // 添加新的菜单项
-            evt.menu.AppendAction("显示帮助", e => ShowHelp());
-            evt.menu.AppendAction("绑定 UI", e => OnUIBind());
-            evt.menu.AppendAction("基础目录", e => BasicCatalog());
-            evt.menu.AppendAction("检查更新", e => CheckUpdate());
-            evt.menu.AppendAction("清空数据", e =>
-            {
-                if (EditorKit.Dialog("真的要清空数据嘛！")) ClearInfo();
-            });
         }
         private void OnChangeText(ChangeEvent<string> evt) => mCmd = evt.newValue;
         private void ChangeField(string value) => mField.value = value;
@@ -477,6 +467,34 @@ namespace Panty
                 mGos.ToFirst();
             }
         }
+        private void BuildContextualMenu(ContextualMenuPopulateEvent evt)
+        {
+            // 清除现有菜单项
+            evt.menu.MenuItems().Clear();
+            // 添加新的菜单项
+            evt.menu.AppendAction("创建命令/模块层(Module)", e => mField.value = "Module:脚本名");
+            evt.menu.AppendAction("创建命令/系统层(System)", e => mField.value = "System:脚本名");
+            evt.menu.AppendAction("创建命令/数据层(Model)", e => mField.value = "Model:脚本名");
+            evt.menu.AppendSeparator("创建命令/");
+            evt.menu.AppendAction("创建命令/控制脚本(Game)", e => mField.value = "Game:脚本名");
+            evt.menu.AppendAction("创建命令/普通脚本(Mono)", e => mField.value = "Mono:脚本名");
+            evt.menu.AppendAction("创建命令/表现脚本(View)", e => mField.value = "UI:脚本名");
+            evt.menu.AppendAction("创建命令/数据脚本(SO)", e => mField.value = "So:脚本名");
+            evt.menu.AppendAction("创建命令/数据资源(SoIns)", e => mField.value = "SoIns:资源名");
+            evt.menu.AppendSeparator();
+            evt.menu.AppendAction("绑定命令/命名空间(NameSpace)", e => mField.value = "Space:命名空间名");
+            evt.menu.AppendAction("绑定命令/路径(Path)", e => mField.value = "Path:路径名");
+            evt.menu.AppendAction("绑定命令/架构(Hub)", e => mField.value = "Hub:架构名");
+            evt.menu.AppendSeparator();
+            evt.menu.AppendAction("显示帮助", e => ShowHelp());
+            evt.menu.AppendAction("绑定 UI", e => OnUIBind());
+            evt.menu.AppendAction("基础目录", e => BasicCatalog());
+            evt.menu.AppendAction("检查更新", e => CheckUpdate());
+            evt.menu.AppendAction("清空数据", e =>
+            {
+                if (EditorKit.Dialog("真的要清空数据嘛！")) ClearInfo();
+            });
+        }
         private void OnKeyDown(KeyDownEvent evt)
         {
             if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
@@ -490,7 +508,7 @@ namespace Panty
                 // 去除指令头尾
                 string cmd = mCmd.Trim();
                 // 帮助指令
-                if (Eq(cmd, "uiBind", "UI绑定")) OnUIBind();
+                if (Eq(cmd, "Bind", "绑定")) OnUIBind();
                 else if (Eq(cmd, "help", "帮助")) ShowHelp();
                 else if (Eq(cmd, "clear", "清理")) ClearInfo();
                 else if (Eq(cmd, "check", "检查更新")) CheckUpdate();
