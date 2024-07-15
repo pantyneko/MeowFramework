@@ -1,5 +1,4 @@
-using System;
-using UnityEngine;
+ï»¿using UnityEngine;
 
 namespace Panty
 {
@@ -58,10 +57,10 @@ namespace Panty
         }
         public void Rect2GridIndex(Rect rect, out int sr, out int sc, out int er, out int ec)
         {
-            // ½« Rect µÄ×ø±ê×ª»»ÎªÍø¸ñË÷Òý
+            // å°† Rect çš„åæ ‡è½¬æ¢ä¸ºç½‘æ ¼ç´¢å¼•
             CoordToCellIndex(rect.xMin, rect.yMin, out sr, out sc);
             CoordToCellIndex(rect.xMax, rect.yMax, out er, out ec);
-            // È·±£Ë÷ÒýÔÚÓÐÐ§·¶Î§ÄÚ
+            // ç¡®ä¿ç´¢å¼•åœ¨æœ‰æ•ˆèŒƒå›´å†…
             sr.Clamp(0, row - 1);
             er.Clamp(0, row - 1);
             sc.Clamp(0, colm - 1);
@@ -71,7 +70,7 @@ namespace Panty
         {
             Rect2GridIndex(rect, out int sr, out int sc, out int er, out int ec);
             indices.ToFirst();
-            // ±éÀúËùÓÐÔÚ Rect ÄÚµÄÍø¸ñµ¥Ôª
+            // éåŽ†æ‰€æœ‰åœ¨ Rect å†…çš„ç½‘æ ¼å•å…ƒ
             for (int index; er >= sr; er--)
             {
                 for (int c = sc; c <= ec; c++)

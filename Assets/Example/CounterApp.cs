@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using UnityEngine;
 
 namespace Panty.Test
@@ -19,12 +19,12 @@ namespace Panty.Test
 
         protected override void OnInit()
         {
-            "µÚÒ»´Îµ÷ÓÃ ¸ÃÄ£¿é Ê± Ö´ĞĞ".Log();
+            "ç¬¬ä¸€æ¬¡è°ƒç”¨ è¯¥æ¨¡å— æ—¶ æ‰§è¡Œ".Log();
             Items = new string[] { "+", "-", "*", "/" };
         }
         protected override void OnDeInit()
         {
-            "µ±Ó¦ÓÃ»ò±à¼­Æ÷ÍË³ö Ê± Ö´ĞĞ".Log();
+            "å½“åº”ç”¨æˆ–ç¼–è¾‘å™¨é€€å‡º æ—¶ æ‰§è¡Œ".Log();
         }
         string ICounterModel.GetOpIcon(int id)
         {
@@ -66,7 +66,7 @@ namespace Panty.Test
                 CounterApp.Op.Sub => a - b,
                 CounterApp.Op.Mul => a * b,
                 CounterApp.Op.Div => a / b,
-                _ => throw new Exception("Î´Ê¶±ğÔËËã·û"),
+                _ => throw new Exception("æœªè¯†åˆ«è¿ç®—ç¬¦"),
             };
         }
     }
@@ -108,11 +108,11 @@ namespace Panty.Test
         }
         private void OnOperationSuccessful(OperationSuccessfulNotify e)
         {
-            "²Ù×÷³É¹¦".Log();
+            "æ“ä½œæˆåŠŸ".Log();
         }
         private void OnOperationFailed(OperationFailedNotify e)
         {
-            "²Ù×÷Ê§°Ü".Log();
+            "æ“ä½œå¤±è´¥".Log();
         }
         private void OnChangeOp(ChangeOpIconEvent e)
         {

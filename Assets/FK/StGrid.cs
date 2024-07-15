@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 
 namespace Panty
@@ -11,40 +11,40 @@ namespace Panty
         Down = 2,
         Left = 4,
         Right = 8,
-        All = 16,
+        All = 15,
     }
-    // ¾²Ì¬Íø¸ñ
+    // é™æ€ç½‘æ ¼
     [Serializable]
     public partial class StGrid
     {
-        // Íø¸ñ×óÏÂ½ÇµÄ×ø±êºÍÃ¿¸ö¸ñ×ÓµÄ¿í¶È¡¢¸ß¶È
+        // ç½‘æ ¼å·¦ä¸‹è§’çš„åæ ‡å’Œæ¯ä¸ªæ ¼å­çš„å®½åº¦ã€é«˜åº¦
         public float xMin, yMin, cw, ch;
-        // Íø¸ñµÄĞĞÊıºÍÁĞÊı
+        // ç½‘æ ¼çš„è¡Œæ•°å’Œåˆ—æ•°
         public int row, colm;
-        // ¼ÆËãÍø¸ñµÄ×Ü´óĞ¡£¨ĞĞÊı*ÁĞÊı£©
+        // è®¡ç®—ç½‘æ ¼çš„æ€»å¤§å°ï¼ˆè¡Œæ•°*åˆ—æ•°ï¼‰
         public int Size => row * colm;
-        // ¼ÆËãÍø¸ñµÄÒ»°ëĞĞÊıºÍÁĞÊı
+        // è®¡ç®—ç½‘æ ¼çš„ä¸€åŠè¡Œæ•°å’Œåˆ—æ•°
         public int SubRow => row >> 1;
         public int SubColm => colm >> 1;
-        // ¼ÆËãÍø¸ñµÄ×Ü¿í¶ÈºÍ¸ß¶È
+        // è®¡ç®—ç½‘æ ¼çš„æ€»å®½åº¦å’Œé«˜åº¦
         public float W => colm * cw;
         public float H => row * ch;
-        // ¼ÆËãÍø¸ñÖĞĞÄµÄXºÍY×ø±ê
+        // è®¡ç®—ç½‘æ ¼ä¸­å¿ƒçš„Xå’ŒYåæ ‡
         public float CenterX => xMin + W * 0.5f;
         public float CenterY => yMin + H * 0.5f;
-        // ¼ÆËãÍø¸ñÓÒÉÏ½ÇµÄXºÍY×ø±ê
+        // è®¡ç®—ç½‘æ ¼å³ä¸Šè§’çš„Xå’ŒYåæ ‡
         public float xMax => xMin + W;
         public float yMax => yMin + H;
-        // ¼ÆËãÍø¸ñµÄ¶Ô½ÇÏß³¤¶È
+        // è®¡ç®—ç½‘æ ¼çš„å¯¹è§’çº¿é•¿åº¦
         public float Hypotenuse => MathF.Sqrt(cw * cw + ch * ch);
         /// <summary>
-        /// ¹¹Ôìº¯Êı£¬³õÊ¼»¯Íø¸ñµÄĞĞÁĞÊıºÍÃ¿¸ö¸ñ×ÓµÄ¿í¶È¡¢¸ß¶È
+        /// æ„é€ å‡½æ•°ï¼Œåˆå§‹åŒ–ç½‘æ ¼çš„è¡Œåˆ—æ•°å’Œæ¯ä¸ªæ ¼å­çš„å®½åº¦ã€é«˜åº¦
         /// </summary>
-        /// <param name="row">ĞĞÊı</param>
-        /// <param name="colm">ÁĞÊı</param>
-        /// <param name="gw">Íø¸ñ×Ü¿í¶È</param>
-        /// <param name="gh">Íø¸ñ×Ü¸ß¶È</param>
-        /// <param name="isCenter">ÊÇ·ñÒÔÖĞĞÄÎªÔ­µã</param>
+        /// <param name="row">è¡Œæ•°</param>
+        /// <param name="colm">åˆ—æ•°</param>
+        /// <param name="gw">ç½‘æ ¼æ€»å®½åº¦</param>
+        /// <param name="gh">ç½‘æ ¼æ€»é«˜åº¦</param>
+        /// <param name="isCenter">æ˜¯å¦ä»¥ä¸­å¿ƒä¸ºåŸç‚¹</param>
         public StGrid(int row, int colm, float gw, float gh, bool isCenter = true)
         {
             this.row = row;
@@ -63,14 +63,14 @@ namespace Panty
             ch = gh / row;
         }
         /// <summary>
-        /// ÁíÒ»¸ö¹¹Ôìº¯Êı£¬Ê¹ÓÃ×óÏÂ½Ç×ø±êºÍÃ¿¸ö¸ñ×ÓµÄ¿í¶È¡¢¸ß¶È³õÊ¼»¯Íø¸ñ
+        /// å¦ä¸€ä¸ªæ„é€ å‡½æ•°ï¼Œä½¿ç”¨å·¦ä¸‹è§’åæ ‡å’Œæ¯ä¸ªæ ¼å­çš„å®½åº¦ã€é«˜åº¦åˆå§‹åŒ–ç½‘æ ¼
         /// </summary>
-        /// <param name="xMin">×óÏÂ½ÇX×ø±ê</param>
-        /// <param name="yMin">×óÏÂ½ÇY×ø±ê</param>
-        /// <param name="cellW">Ã¿¸ö¸ñ×ÓµÄ¿í¶È</param>
-        /// <param name="cellH">Ã¿¸ö¸ñ×ÓµÄ¸ß¶È</param>
-        /// <param name="numX">ÁĞÊı</param>
-        /// <param name="numY">ĞĞÊı</param>
+        /// <param name="xMin">å·¦ä¸‹è§’Xåæ ‡</param>
+        /// <param name="yMin">å·¦ä¸‹è§’Yåæ ‡</param>
+        /// <param name="cellW">æ¯ä¸ªæ ¼å­çš„å®½åº¦</param>
+        /// <param name="cellH">æ¯ä¸ªæ ¼å­çš„é«˜åº¦</param>
+        /// <param name="numX">åˆ—æ•°</param>
+        /// <param name="numY">è¡Œæ•°</param>
         public StGrid(float xMin, float yMin, float cellW, float cellH, int numX, int numY)
         {
             this.xMin = xMin;
@@ -81,44 +81,44 @@ namespace Panty
             row = numY;
         }
         /// <summary>
-        /// »ñÈ¡Íø¸ñÖĞĞÄµãµÄÏßĞÔË÷Òı
+        /// è·å–ç½‘æ ¼ä¸­å¿ƒç‚¹çš„çº¿æ€§ç´¢å¼•
         /// </summary>
-        /// <returns>Íø¸ñÖĞĞÄµãµÄÏßĞÔË÷Òı</returns>
+        /// <returns>ç½‘æ ¼ä¸­å¿ƒç‚¹çš„çº¿æ€§ç´¢å¼•</returns>
         public int CenterIndex_RowMajor()
         {
             return CellIndexToLinearIndex_RowMajor(row >> 1, colm >> 1);
         }
         /// <summary>
-        /// ´ÓÍø¸ñÖĞĞÄµãËõ·ÅÍø¸ñ´óĞ¡
+        /// ä»ç½‘æ ¼ä¸­å¿ƒç‚¹ç¼©æ”¾ç½‘æ ¼å¤§å°
         /// </summary>
-        /// <param name="deltaX">X·½ÏòµÄËõ·Å±ÈÀı</param>
-        /// <param name="deltaY">Y·½ÏòµÄËõ·Å±ÈÀı</param>
+        /// <param name="deltaX">Xæ–¹å‘çš„ç¼©æ”¾æ¯”ä¾‹</param>
+        /// <param name="deltaY">Yæ–¹å‘çš„ç¼©æ”¾æ¯”ä¾‹</param>
         public void ScaleFromCenter(float deltaX, float deltaY)
         {
             float w = W;
             float h = H;
-            // Ê¹ÓÃÏòÁ¿µÄÆ½·½ºÍÀ´±ÜÃâ¿ª¸ùºÅ
+            // ä½¿ç”¨å‘é‡çš„å¹³æ–¹å’Œæ¥é¿å…å¼€æ ¹å·
             float dragMagnitudeSquared = deltaX * deltaX + deltaY * deltaY;
-            // Í¨¹ı±È½ÏÆ½·½ºÍÀ´¾ö¶¨ÊÇËõĞ¡»¹ÊÇ·Å´ó ÕıÏò·Å´ó£¬·´ÏòËõĞ¡
+            // é€šè¿‡æ¯”è¾ƒå¹³æ–¹å’Œæ¥å†³å®šæ˜¯ç¼©å°è¿˜æ˜¯æ”¾å¤§ æ­£å‘æ”¾å¤§ï¼Œåå‘ç¼©å°
             int sign = (deltaX * w + deltaY * h > 0 ? 1 : -1);
-            // ¼ÆËãËõ·Å±ÈÀı£¬±ÜÃâ¿ª¸ùºÅ£¬Ö±½ÓÓÃÆ½·½µÄ±ÈÀıÀ´¼ÆËã
+            // è®¡ç®—ç¼©æ”¾æ¯”ä¾‹ï¼Œé¿å…å¼€æ ¹å·ï¼Œç›´æ¥ç”¨å¹³æ–¹çš„æ¯”ä¾‹æ¥è®¡ç®—
             float scale = sign * MathF.Sqrt(dragMagnitudeSquared / (w * w + h * h)) + 1;
-            // Ó¦ÓÃËõ·Å
+            // åº”ç”¨ç¼©æ”¾
             float newWidth = w * scale;
             float newHeight = h * scale;
-            // ¸üĞÂÍø¸ñ´óĞ¡
+            // æ›´æ–°ç½‘æ ¼å¤§å°
             cw = newWidth / colm;
             ch = newHeight / row;
-            // ¸ù¾İµ÷Õû·½Ïò¸üĞÂÆğÊ¼µã
+            // æ ¹æ®è°ƒæ•´æ–¹å‘æ›´æ–°èµ·å§‹ç‚¹
             xMin = xMin + w * 0.5f - newWidth * 0.5f;
             yMin = yMin + h * 0.5f - newHeight * 0.5f;
         }
         /// <summary>
-        /// ÍÏ¶¯µ÷ÕûÍø¸ñ´óĞ¡
+        /// æ‹–åŠ¨è°ƒæ•´ç½‘æ ¼å¤§å°
         /// </summary>
-        /// <param name="dir">µ÷ÕûµÄ·½Ïò</param>
-        /// <param name="deltaX">X·½ÏòµÄÍÏ¶¯¾àÀë</param>
-        /// <param name="deltaY">Y·½ÏòµÄÍÏ¶¯¾àÀë</param>
+        /// <param name="dir">è°ƒæ•´çš„æ–¹å‘</param>
+        /// <param name="deltaX">Xæ–¹å‘çš„æ‹–åŠ¨è·ç¦»</param>
+        /// <param name="deltaY">Yæ–¹å‘çš„æ‹–åŠ¨è·ç¦»</param>
         public void DragResize(Dir4 dir, float deltaX, float deltaY)
         {
             switch (dir)
@@ -146,97 +146,47 @@ namespace Panty
             }
         }
         /// <summary>
-        /// Ö±½Óµ÷ÕûÍø¸ñ´óĞ¡
+        /// ç›´æ¥è°ƒæ•´ç½‘æ ¼å¤§å°
         /// </summary>
-        /// <param name="dir">µ÷ÕûµÄ·½Ïò</param>
-        /// <param name="deltaX">X·½ÏòµÄµ÷ÕûÁ¿</param>
-        /// <param name="deltaY">Y·½ÏòµÄµ÷ÕûÁ¿</param>
+        /// <param name="dir">è°ƒæ•´çš„æ–¹å‘</param>
+        /// <param name="deltaX">Xæ–¹å‘çš„è°ƒæ•´é‡</param>
+        /// <param name="deltaY">Yæ–¹å‘çš„è°ƒæ•´é‡</param>
         public void Resize(Dir4 dir, float deltaX, float deltaY)
         {
-            switch (dir)
+            if (dir.HasFlag(Dir4.Up)) ch += deltaY / row;
+            if (dir.HasFlag(Dir4.Down)) { ch += deltaY / row; yMin -= deltaY; }
+            if (dir.HasFlag(Dir4.Left)) { cw += deltaX / colm; xMin -= deltaX; }
+            if (dir.HasFlag(Dir4.Right)) cw += deltaX / colm;
+
+            if (dir.HasFlag(Dir4.All))
             {
-                case Dir4.Up:
-                    ch += deltaY / row;
-                    break;
-                case Dir4.Down:
-                    ch += deltaY / row;
-                    yMin -= deltaY;
-                    break;
-                case Dir4.Left:
-                    cw += deltaX / colm;
-                    xMin -= deltaX;
-                    break;
-                case Dir4.Right:
-                    cw += deltaX / colm;
-                    break;
-                case Dir4.Left | Dir4.Up:
-                    cw += deltaX / colm;
-                    ch += deltaY / row;
-                    xMin -= deltaX;
-                    break;
-                case Dir4.Right | Dir4.Up:
-                    cw += deltaX / colm;
-                    ch += deltaY / row;
-                    break;
-                case Dir4.Left | Dir4.Down:
-                    cw += deltaX / colm;
-                    ch += deltaY / row;
-                    xMin -= deltaX;
-                    yMin -= deltaY;
-                    break;
-                case Dir4.Right | Dir4.Down:
-                    cw += deltaX / colm;
-                    ch += deltaY / row;
-                    yMin -= deltaY;
-                    break;
-                case Dir4.All:
-                    cw += deltaX * 2f / colm;
-                    ch += deltaY * 2f / row;
-                    xMin -= deltaX;
-                    yMin -= deltaY;
-                    break;
+                cw += deltaX * 2f / colm;
+                ch += deltaY * 2f / row;
+                xMin -= deltaX;
+                yMin -= deltaY;
             }
         }
         /// <summary>
-        /// »ñÈ¡Ä³¸ö·½ÏòÉÏµÄÁÚ¾ÓË÷Òı
+        /// è·å–æŸä¸ªæ–¹å‘ä¸Šçš„é‚»å±…ç´¢å¼•
         /// </summary>
-        /// <param name="r">ĞĞË÷Òı</param>
-        /// <param name="c">ÁĞË÷Òı</param>
-        /// <param name="direction">·½Ïò</param>
-        /// <returns>ÊÇ·ñ´æÔÚÁÚ¾ÓË÷Òı</returns>
+        /// <param name="r">è¡Œç´¢å¼•</param>
+        /// <param name="c">åˆ—ç´¢å¼•</param>
+        /// <param name="direction">æ–¹å‘</param>
+        /// <returns>æ˜¯å¦å­˜åœ¨é‚»å±…ç´¢å¼•</returns>
         public bool GetNeighborIndex(ref int r, ref int c, Dir4 direction)
         {
-            switch (direction)
-            {
-                case Dir4.Up: r += 1; break;
-                case Dir4.Down: r -= 1; break;
-                case Dir4.Left: c -= 1; break;
-                case Dir4.Right: c += 1; break;
-                case Dir4.Left | Dir4.Up:
-                    r += 1;
-                    c -= 1;
-                    break;
-                case Dir4.Left | Dir4.Down:
-                    r -= 1;
-                    c -= 1;
-                    break;
-                case Dir4.Right | Dir4.Up:
-                    r += 1;
-                    c += 1;
-                    break;
-                case Dir4.Right | Dir4.Down:
-                    r -= 1;
-                    c += 1;
-                    break;
-                default: return false;
-            }
+            if (direction.HasFlag(Dir4.Up)) r += 1;
+            if (direction.HasFlag(Dir4.Down)) r -= 1;
+            if (direction.HasFlag(Dir4.Left)) c -= 1;
+            if (direction.HasFlag(Dir4.Right)) c += 1;
+
             return r >= 0 && r < row && c >= 0 && c < colm;
         }
         /// <summary>
-        /// »ñÈ¡»·ÈÆÍø¸ñµÄÁÚ¾ÓË÷Òı£¨ÓÃÓÚ±ß½ç´©Ô½£©
+        /// è·å–ç¯ç»•ç½‘æ ¼çš„é‚»å±…ç´¢å¼•ï¼ˆç”¨äºè¾¹ç•Œç©¿è¶Šï¼‰
         /// </summary>
-        /// <param name="index">µ±Ç°Ë÷Òı</param>
-        /// <param name="direction">·½Ïò</param>
+        /// <param name="index">å½“å‰ç´¢å¼•</param>
+        /// <param name="direction">æ–¹å‘</param>
         public void GetWrappedNeighborIndex(ref int index, Dir4 direction)
         {
             LinearIndexToCellIndex_RowMajor(index, out int r, out int c);
@@ -244,102 +194,92 @@ namespace Panty
             index = CellIndexToLinearIndex_RowMajor(r, c);
         }
         /// <summary>
-        /// »ñÈ¡»·ÈÆÍø¸ñµÄÁÚ¾ÓË÷Òı£¨ÓÃÓÚ±ß½ç´©Ô½£©
+        /// è·å–ç¯ç»•ç½‘æ ¼çš„é‚»å±…ç´¢å¼•ï¼ˆç”¨äºè¾¹ç•Œç©¿è¶Šï¼‰
         /// </summary>
-        /// <param name="r">ĞĞË÷Òı</param>
-        /// <param name="c">ÁĞË÷Òı</param>
-        /// <param name="direction">·½Ïò</param>
+        /// <param name="r">è¡Œç´¢å¼•</param>
+        /// <param name="c">åˆ—ç´¢å¼•</param>
+        /// <param name="direction">æ–¹å‘</param>
         public void GetWrappedNeighborIndex(ref int r, ref int c, Dir4 direction)
         {
-            switch (direction)
-            {
-                case Dir4.Up: r = (r + 1) % row; break;
-                case Dir4.Down: r = (r - 1 + row) % row; break;
-                case Dir4.Left: c = (c - 1 + colm) % colm; break;
-                case Dir4.Right: c = (c + 1) % colm; break;
-
-                case Dir4.Left | Dir4.Up:
-                    r = (r + 1) % row;
-                    c = (c - 1 + colm) % colm;
-                    break;
-                case Dir4.Left | Dir4.Down:
-                    r = (r - 1 + row) % row;
-                    c = (c - 1 + colm) % colm;
-                    break;
-                case Dir4.Right | Dir4.Up:
-                    r = (r + 1) % row;
-                    c = (c + 1) % colm;
-                    break;
-                case Dir4.Right | Dir4.Down:
-                    r = (r - 1 + row) % row;
-                    c = (c + 1) % colm;
-                    break;
-            }
+            if (direction.HasFlag(Dir4.Up)) r = (r + 1) % row;
+            if (direction.HasFlag(Dir4.Down)) r = (r - 1 + row) % row;
+            if (direction.HasFlag(Dir4.Left)) c = (c - 1 + colm) % colm;
+            if (direction.HasFlag(Dir4.Right)) c = (c + 1) % colm;
         }
         /// <summary>
-        /// ½«Êµ¼Ê×ø±ê×ª»»ÎªÍø¸ñÖĞµÄĞĞÁĞË÷Òı
+        /// å°†å®é™…åæ ‡è½¬æ¢ä¸ºç½‘æ ¼ä¸­çš„è¡Œåˆ—ç´¢å¼•
         /// </summary>
-        /// <param name="x">Êµ¼ÊX×ø±ê</param>
-        /// <param name="y">Êµ¼ÊY×ø±ê</param>
-        /// <param name="r">ĞĞË÷Òı</param>
-        /// <param name="c">ÁĞË÷Òı</param>
+        /// <param name="x">å®é™…Xåæ ‡</param>
+        /// <param name="y">å®é™…Yåæ ‡</param>
+        /// <param name="r">è¡Œç´¢å¼•</param>
+        /// <param name="c">åˆ—ç´¢å¼•</param>
         public void CoordToCellIndex(float x, float y, out int r, out int c)
         {
             r = (int)((y - yMin) / ch);
             c = (int)((x - xMin) / cw);
         }
         /// <summary>
-        /// ½«Íø¸ñµÄĞĞÁĞË÷Òı×ª»»ÎªÏßĞÔË÷Òı£¨ĞĞÖ÷Ğò£¬ĞĞË÷Òı´Óµ×²¿¿ªÊ¼¼ÆÊı£©
+        /// å°†ç½‘æ ¼çš„è¡Œåˆ—ç´¢å¼•è½¬æ¢ä¸ºçº¿æ€§ç´¢å¼•ï¼ˆè¡Œä¸»åºï¼Œè¡Œç´¢å¼•ä»åº•éƒ¨å¼€å§‹è®¡æ•°ï¼‰
         /// </summary>
-        /// <param name="rIndex">ĞĞË÷Òı</param>
-        /// <param name="cIndex">ÁĞË÷Òı</param>
-        /// <returns>ÏßĞÔË÷Òı</returns>
-        public int InvCellIndexToLinearIndex_RowMajor(int rIndex, int cIndex) =>
+        /// <param name="rIndex">è¡Œç´¢å¼•</param>
+        /// <param name="cIndex">åˆ—ç´¢å¼•</param>
+        /// <returns>çº¿æ€§ç´¢å¼•</returns>
+        public int CellIndexToLinearIndex_RowMajor_Bot2Top(int rIndex, int cIndex) =>
                     (row - 1 - rIndex) * colm + cIndex;
         /// <summary>
-        /// ½«Íø¸ñµÄĞĞÁĞË÷Òı×ª»»ÎªÏßĞÔË÷Òı£¨ĞĞÖ÷Ğò£©
+        /// å°†ç½‘æ ¼çš„è¡Œåˆ—ç´¢å¼•è½¬æ¢ä¸ºçº¿æ€§ç´¢å¼•ï¼ˆè¡Œä¸»åºï¼‰
         /// </summary>
-        /// <param name="rIndex">ĞĞË÷Òı</param>
-        /// <param name="cIndex">ÁĞË÷Òı</param>
-        /// <returns>ÏßĞÔË÷Òı</returns>
-        public int CellIndexToLinearIndex_RowMajor(int rIndex, int cIndex) =>
-            rIndex * colm + cIndex;
+        /// <param name="rIndex">è¡Œç´¢å¼•</param>
+        /// <param name="cIndex">åˆ—ç´¢å¼•</param>
+        /// <returns>çº¿æ€§ç´¢å¼•</returns>
+        public int CellIndexToLinearIndex_RowMajor(int rIndex, int cIndex) => rIndex * colm + cIndex;
         /// <summary>
-        /// ½«Íø¸ñµÄĞĞÁĞË÷Òı×ª»»ÎªÏßĞÔË÷Òı£¨ÁĞÖ÷Ğò£©
+        /// å°†ç½‘æ ¼çš„è¡Œåˆ—ç´¢å¼•è½¬æ¢ä¸ºçº¿æ€§ç´¢å¼•ï¼ˆåˆ—ä¸»åº è¡Œç´¢å¼•ä»åº•éƒ¨å¼€å§‹è®¡æ•°ï¼‰
         /// </summary>
-        /// <param name="rIndex">ĞĞË÷Òı</param>
-        /// <param name="cIndex">ÁĞË÷Òı</param>
-        /// <returns>ÏßĞÔË÷Òı</returns>
-        public int CellIndexToLinearIndex_ColMajor(int rIndex, int cIndex) =>
-            cIndex * row + rIndex;
+        /// <param name="rIndex">è¡Œç´¢å¼•</param>
+        /// <param name="cIndex">åˆ—ç´¢å¼•</param>
+        /// <returns>çº¿æ€§ç´¢å¼•</returns>
+        public int CellIndexToLinearIndex_ColMajor_Bot2Top(int rIndex, int cIndex) => (colm - 1 - cIndex) * row + rIndex;
         /// <summary>
-        /// ½«ÏßĞÔË÷Òı×ª»»ÎªÍø¸ñµÄĞĞÁĞË÷Òı£¨ĞĞÖ÷Ğò£©
+        /// å°†ç½‘æ ¼çš„è¡Œåˆ—ç´¢å¼•è½¬æ¢ä¸ºçº¿æ€§ç´¢å¼•ï¼ˆåˆ—ä¸»åºï¼‰
         /// </summary>
-        /// <param name="index">ÏßĞÔË÷Òı</param>
-        /// <param name="r">ĞĞË÷Òı</param>
-        /// <param name="c">ÁĞË÷Òı</param>
+        /// <param name="rIndex">è¡Œç´¢å¼•</param>
+        /// <param name="cIndex">åˆ—ç´¢å¼•</param>
+        /// <returns>çº¿æ€§ç´¢å¼•</returns>
+        public int CellIndexToLinearIndex_ColMajor(int rIndex, int cIndex) => cIndex * row + rIndex;
+        /// <summary>
+        /// å°†çº¿æ€§ç´¢å¼•è½¬æ¢ä¸ºç½‘æ ¼çš„è¡Œåˆ—ç´¢å¼•ï¼ˆè¡Œä¸»åºï¼‰
+        /// </summary>
+        /// <param name="index">çº¿æ€§ç´¢å¼•</param>
+        /// <param name="r">è¡Œç´¢å¼•</param>
+        /// <param name="c">åˆ—ç´¢å¼•</param>
         public void LinearIndexToCellIndex_RowMajor(int index, out int r, out int c)
         {
             r = index / colm;
             c = index % colm;
         }
+        public void LinearIndexToCellIndex_ColMajor(int index, out int r, out int c)
+        {
+            r = index % row;
+            c = index / row;
+        }
         /// <summary>
-        /// ½«ÏßĞÔË÷Òı×ª»»ÎªÍø¸ñÖĞĞÄ×ø±ê£¨ĞĞÖ÷Ğò£©
+        /// å°†çº¿æ€§ç´¢å¼•è½¬æ¢ä¸ºç½‘æ ¼ä¸­å¿ƒåæ ‡ï¼ˆè¡Œä¸»åºï¼‰
         /// </summary>
-        /// <param name="index">ÏßĞÔË÷Òı</param>
-        /// <param name="x">X×ø±ê</param>
-        /// <param name="y">Y×ø±ê</param>
+        /// <param name="index">çº¿æ€§ç´¢å¼•</param>
+        /// <param name="x">Xåæ ‡</param>
+        /// <param name="y">Yåæ ‡</param>
         public void LinearIndexToCoordCenter_RowMajor(int index, out float x, out float y)
         {
             LinearIndexToCellIndex_RowMajor(index, out int r, out int c);
             CellIndexToCoordCenter(r, c, out x, out y);
         }
         /// <summary>
-        /// ½«ÏßĞÔË÷Òı×ª»»ÎªÍø¸ñ×óÏÂ½Ç×ø±ê£¨ĞĞÖ÷Ğò£©
+        /// å°†çº¿æ€§ç´¢å¼•è½¬æ¢ä¸ºç½‘æ ¼å·¦ä¸‹è§’åæ ‡ï¼ˆè¡Œä¸»åºï¼‰
         /// </summary>
-        /// <param name="index">ÏßĞÔË÷Òı</param>
-        /// <param name="x">X×ø±ê</param>
-        /// <param name="y">Y×ø±ê</param>
+        /// <param name="index">çº¿æ€§ç´¢å¼•</param>
+        /// <param name="x">Xåæ ‡</param>
+        /// <param name="y">Yåæ ‡</param>
         public void LinearIndexToWorldCoord_RowMajor(int index, out float x, out float y)
         {
             LinearIndexToCellIndex_RowMajor(index, out int r, out int c);
@@ -351,39 +291,39 @@ namespace Panty
             CellIndexToWorldCoord(row - 1 - r, c, out x, out y);
         }
         /// <summary>
-        /// ½«Íø¸ñµÄĞĞÁĞË÷Òı×ª»»ÎªÖĞĞÄ×ø±ê
+        /// å°†ç½‘æ ¼çš„è¡Œåˆ—ç´¢å¼•è½¬æ¢ä¸ºä¸­å¿ƒåæ ‡
         /// </summary>
-        /// <param name="rIndex">ĞĞË÷Òı</param>
-        /// <param name="cIndex">ÁĞË÷Òı</param>
-        /// <param name="x">X×ø±ê</param>
-        /// <param name="y">Y×ø±ê</param>
+        /// <param name="rIndex">è¡Œç´¢å¼•</param>
+        /// <param name="cIndex">åˆ—ç´¢å¼•</param>
+        /// <param name="x">Xåæ ‡</param>
+        /// <param name="y">Yåæ ‡</param>
         public void CellIndexToCoordCenter(int rIndex, int cIndex, out float x, out float y)
         {
             x = xMin + (cIndex + 0.5f) * cw;
             y = yMin + (rIndex + 0.5f) * ch;
         }
         /// <summary>
-        /// ½«Íø¸ñµÄĞĞÁĞË÷Òı×ª»»ÎªÊµ¼Ê×ø±ê
+        /// å°†ç½‘æ ¼çš„è¡Œåˆ—ç´¢å¼•è½¬æ¢ä¸ºå®é™…åæ ‡
         /// </summary>
-        /// <param name="rIndex">ĞĞË÷Òı</param>
-        /// <param name="cIndex">ÁĞË÷Òı</param>
-        /// <param name="x">X×ø±ê</param>
-        /// <param name="y">Y×ø±ê</param>
+        /// <param name="rIndex">è¡Œç´¢å¼•</param>
+        /// <param name="cIndex">åˆ—ç´¢å¼•</param>
+        /// <param name="x">Xåæ ‡</param>
+        /// <param name="y">Yåæ ‡</param>
         public void CellIndexToWorldCoord(int rIndex, int cIndex, out float x, out float y)
         {
             x = xMin + cIndex * cw;
             y = yMin + rIndex * ch;
         }
         /// <summary>
-        /// ¼ì²éÄ³¸ö×ø±êÊÇ·ñÔÚÍø¸ñÄÚ£¬²¢·µ»Ø¶ÔÓ¦µÄ±ß½ÇĞÅÏ¢
+        /// æ£€æŸ¥æŸä¸ªåæ ‡æ˜¯å¦åœ¨ç½‘æ ¼å†…ï¼Œå¹¶è¿”å›å¯¹åº”çš„è¾¹è§’ä¿¡æ¯
         /// </summary>
-        /// <param name="x">X×ø±ê</param>
-        /// <param name="y">Y×ø±ê</param>
-        /// <param name="half">±ß½ÇµÄ¾àÀë</param>
-        /// <returns>·½ÏòĞÅÏ¢</returns>
+        /// <param name="x">Xåæ ‡</param>
+        /// <param name="y">Yåæ ‡</param>
+        /// <param name="half">è¾¹è§’çš„è·ç¦»</param>
+        /// <returns>æ–¹å‘ä¿¡æ¯</returns>
         public Dir4 CheckEdgeCorner(float x, float y, float half)
         {
-            // ¼ÆËã×óÏÂ½ÇµÄ¾ØĞÎ×óÏÂ½Çµã
+            // è®¡ç®—å·¦ä¸‹è§’çš„çŸ©å½¢å·¦ä¸‹è§’ç‚¹
             float minx = xMin - half;
             float miny = yMin - half;
             float maxx = xMin + half;
@@ -412,36 +352,42 @@ namespace Panty
                 Dir4.Right | Dir4.Up : Dir4.None;
         }
         /// <summary>
-        /// ¼ì²éÄ³¸öµãÊÇ·ñÔÚÍø¸ñÄÚ
+        /// æ£€æŸ¥æŸä¸ªç‚¹æ˜¯å¦åœ¨ç½‘æ ¼å†…
         /// </summary>
-        /// <param name="x">X×ø±ê</param>
-        /// <param name="y">Y×ø±ê</param>
-        /// <returns>ÊÇ·ñÔÚÍø¸ñÄÚ</returns>
+        /// <param name="x">Xåæ ‡</param>
+        /// <param name="y">Yåæ ‡</param>
+        /// <returns>æ˜¯å¦åœ¨ç½‘æ ¼å†…</returns>
         public bool Contains(float x, float y) =>
             x >= xMin && x < xMax && y >= yMin && y < yMax;
         /// <summary>
-        /// Ë®Æ½¾µÏñÄ³¸öÁĞË÷Òı
+        /// æ°´å¹³é•œåƒæŸä¸ªåˆ—ç´¢å¼•
         /// </summary>
-        /// <param name="cIndex">ÁĞË÷Òı</param>
+        /// <param name="cIndex">åˆ—ç´¢å¼•</param>
         public void HorMirror(ref int cIndex) => cIndex = colm - 1 - cIndex;
         /// <summary>
-        /// ´¹Ö±¾µÏñÄ³¸öĞĞË÷Òı
+        /// å‚ç›´é•œåƒæŸä¸ªè¡Œç´¢å¼•
         /// </summary>
-        /// <param name="rIndex">ĞĞË÷Òı</param>
+        /// <param name="rIndex">è¡Œç´¢å¼•</param>
         public void VerMirror(ref int rIndex) => rIndex = row - 1 - rIndex;
         /// <summary>
-        /// °´ĞĞÖ÷ĞòÉú³ÉÏßĞÔË÷ÒıµÄÃ¶¾ÙÆ÷
+        /// æŒ‰è¡Œä¸»åºç”Ÿæˆçº¿æ€§ç´¢å¼•çš„æšä¸¾å™¨
         /// </summary>
-        /// <returns>ÏßĞÔË÷ÒıµÄÃ¶¾Ù</returns>
-        public IEnumerable<int> RowMajorLinear()
+        /// <returns>çº¿æ€§ç´¢å¼•çš„æšä¸¾</returns>
+        public IEnumerable<int> LinearIndices()
         {
             for (int i = 0, len = row * colm; i < len; i++)
                 yield return i;
         }
+        public IEnumerable<(int r, int c)> ColMajorIndices()
+        {
+            for (int c = 0; c < colm; c++)
+                for (int r = 0; r < row; r++)
+                    yield return (r, c);
+        }
         /// <summary>
-        /// °´ĞĞÖ÷ĞòÉú³ÉĞĞÁĞË÷ÒıµÄÃ¶¾ÙÆ÷
+        /// æŒ‰è¡Œä¸»åºç”Ÿæˆè¡Œåˆ—ç´¢å¼•çš„æšä¸¾å™¨
         /// </summary>
-        /// <returns>ĞĞÁĞË÷ÒıµÄÃ¶¾Ù</returns>
+        /// <returns>è¡Œåˆ—ç´¢å¼•çš„æšä¸¾</returns>
         public IEnumerable<(int r, int c)> RowMajorIndices()
         {
             for (int r = 0; r < row; r++)
@@ -449,29 +395,9 @@ namespace Panty
                     yield return (r, c);
         }
         /// <summary>
-        /// °´ĞĞÖ÷Ğò´Ó×óÉÏ½Ç¿ªÊ¼Éú³ÉĞĞÁĞË÷ÒıµÄÃ¶¾ÙÆ÷
+        /// æŒ‰è¡Œä¸»åºç”Ÿæˆåæ ‡çš„æšä¸¾å™¨
         /// </summary>
-        /// <returns>ĞĞÁĞË÷ÒıµÄÃ¶¾Ù</returns>
-        public IEnumerable<(int r, int c)> RowMajorIndicesByLeftUp()
-        {
-            for (int r = row - 1; r >= 0; r--)
-                for (int c = 0; c < colm; c++)
-                    yield return (r, c);
-        }
-        /// <summary>
-        /// °´ĞĞÖ÷Ğò´Ó×óÉÏ½Ç¿ªÊ¼Éú³É×ø±êµÄÃ¶¾ÙÆ÷
-        /// </summary>
-        /// <returns>×ø±êµÄÃ¶¾Ù</returns>
-        public IEnumerable<(float x, float y)> RowMajorCoordsByLeftUp()
-        {
-            for (int r = row - 1; r >= 0; r--)
-                for (int c = 0; c < colm; c++)
-                    yield return (xMin + c * cw, yMin + (r + 1) * ch);
-        }
-        /// <summary>
-        /// °´ĞĞÖ÷ĞòÉú³É×ø±êµÄÃ¶¾Ù
-        /// </summary>
-        /// <returns>×ø±êµÄÃ¶¾Ù</returns>
+        /// <returns>åæ ‡çš„æšä¸¾</returns>
         public IEnumerable<(float x, float y)> RowMajorCoords()
         {
             for (int r = 0; r < row; r++)
@@ -479,11 +405,31 @@ namespace Panty
                     yield return (xMin + c * cw, yMin + r * ch);
         }
         /// <summary>
-        /// °´ĞĞÖ÷Ğò´´½¨Ò»Î¬Êı×é
+        /// æŒ‰è¡Œä¸»åºä»å·¦ä¸Šè§’å¼€å§‹ç”Ÿæˆè¡Œåˆ—ç´¢å¼•çš„æšä¸¾å™¨
         /// </summary>
-        /// <typeparam name="T">Êı×éÔªËØÀàĞÍ</typeparam>
-        /// <param name="creator">´´½¨º¯Êı</param>
-        /// <returns>´´½¨µÄÊı×é</returns>
+        /// <returns>è¡Œåˆ—ç´¢å¼•çš„æšä¸¾</returns>
+        public IEnumerable<(int r, int c)> RowMajorIndicesByLeftUp()
+        {
+            for (int r = row - 1; r >= 0; r--)
+                for (int c = 0; c < colm; c++)
+                    yield return (r, c);
+        }
+        /// <summary>
+        /// æŒ‰è¡Œä¸»åºä»å·¦ä¸Šè§’å¼€å§‹ç”Ÿæˆåæ ‡çš„æšä¸¾å™¨
+        /// </summary>
+        /// <returns>åæ ‡çš„æšä¸¾</returns>
+        public IEnumerable<(float x, float y)> RowMajorCoordsByLeftUp()
+        {
+            for (int r = row - 1; r >= 0; r--)
+                for (int c = 0; c < colm; c++)
+                    yield return (xMin + c * cw, yMin + (r + 1) * ch);
+        }
+        /// <summary>
+        /// æŒ‰è¡Œä¸»åºåˆ›å»ºä¸€ç»´æ•°ç»„
+        /// </summary>
+        /// <typeparam name="T">æ•°ç»„å…ƒç´ ç±»å‹</typeparam>
+        /// <param name="creator">åˆ›å»ºå‡½æ•°</param>
+        /// <returns>åˆ›å»ºçš„æ•°ç»„</returns>
         public T[] CreateArrayRowMajor<T>(Func<int, int, T> creator)
         {
             T[] arr = new T[row * colm];
@@ -493,11 +439,11 @@ namespace Panty
             return arr;
         }
         /// <summary>
-        /// °´ĞĞÖ÷Ğò´´½¨¶şÎ¬Êı×é
+        /// æŒ‰è¡Œä¸»åºåˆ›å»ºäºŒç»´æ•°ç»„
         /// </summary>
-        /// <typeparam name="T">Êı×éÔªËØÀàĞÍ</typeparam>
-        /// <param name="creator">´´½¨º¯Êı</param>
-        /// <returns>´´½¨µÄ¶şÎ¬Êı×é</returns>
+        /// <typeparam name="T">æ•°ç»„å…ƒç´ ç±»å‹</typeparam>
+        /// <param name="creator">åˆ›å»ºå‡½æ•°</param>
+        /// <returns>åˆ›å»ºçš„äºŒç»´æ•°ç»„</returns>
         public T[,] Create2DArrayRowMajor<T>(Func<int, int, T> creator)
         {
             T[,] array = new T[row, colm];

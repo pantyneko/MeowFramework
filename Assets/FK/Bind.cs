@@ -47,9 +47,9 @@ namespace Panty
             TMP_Dropdown,
         }
         public bool usePrefix = true;
-        private E_Type type;
+        [SerializeField] private E_Type type;
         public E_Type CType => type;
-        private GameObject root;
+        [SerializeField] private GameObject root;
         public GameObject Root => root;
         public void Init(GameObject root)
         {

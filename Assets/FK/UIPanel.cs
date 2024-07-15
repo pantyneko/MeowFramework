@@ -1,18 +1,18 @@
-using UnityEngine;
+ï»¿using UnityEngine;
 using UnityEngine.UI;
 
 namespace Panty
 {
     /// <summary>
-    /// UI»ùÀà ·â×°ÕÒ×é¼ş¹¦ÄÜ ÒÔ¼° ×¢²áÎ¯ÍĞ¼ò»¯Ê¹ÓÃ[×ÓÀàÊµÏÖ IPermissionProvider ½Ó¿Ú]
-    /// Ìá¹©ÏÔÊ¾»òÒş²ØµÄĞĞÎª Ä¬ÈÏAwake»á×¢²áËùÓĞ×Ó¶ÔÏóµÄ°´Å¥
+    /// UIåŸºç±» å°è£…æ‰¾ç»„ä»¶åŠŸèƒ½ ä»¥åŠ æ³¨å†Œå§”æ‰˜ç®€åŒ–ä½¿ç”¨[å­ç±»å®ç° IPermissionProvider æ¥å£]
+    /// æä¾›æ˜¾ç¤ºæˆ–éšè—çš„è¡Œä¸º é»˜è®¤Awakeä¼šæ³¨å†Œæ‰€æœ‰å­å¯¹è±¡çš„æŒ‰é’®
     /// </summary>
     public class UIPanel : MonoBehaviour
     {
         public enum Layer : byte { Top, Mid, Bot, Sys }
         public virtual void OnShow() { }
         public virtual void OnHide() { }
-        // ÕâÀï×îºÃ²»ÒªĞ´Ïú»Ù
+        // è¿™é‡Œæœ€å¥½ä¸è¦å†™é”€æ¯
         public virtual void Active(bool active) =>
             gameObject.SetActive(active);
         protected virtual void OnClick(string btnName) { }

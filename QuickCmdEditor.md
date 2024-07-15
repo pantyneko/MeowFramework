@@ -1,4 +1,4 @@
-# Panty 工具集使用手册
+﻿# Panty 工具集使用手册
 
 ## 目录
 1. [TextDialog 使用指南](#textdialog-使用指南)

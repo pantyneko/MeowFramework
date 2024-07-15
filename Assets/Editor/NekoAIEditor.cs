@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEditor;
@@ -21,9 +21,9 @@ namespace Panty
         private string inputText, EnteringText, UserName = "User";
         private bool IsAsync, IsLinked, IsExiting;
 
-        private const string Lifiya = "Àò·ÆÑÅ";
-        private string LinkTips = $"{Lifiya}£¬×îÏ²»¶Ö÷ÈËÁË£¡";
-        private string NoLinkTips = $"{Lifiya}Ë¯×ÅÁË£¡ÊÔ×Å»½ĞÑËû°É£¡";
+        private const string Lifiya = "è‰è²é›…";
+        private string LinkTips = $"{Lifiya}ï¼Œæœ€å–œæ¬¢ä¸»äººäº†ï¼";
+        private string NoLinkTips = $"{Lifiya}ç¡ç€äº†ï¼è¯•ç€å”¤é†’ä»–å§ï¼";
 
         private const float typingSpeed = 0.025f;
         private const string suffix = ":";
@@ -39,7 +39,7 @@ namespace Panty
         private void Awake()
         {
             chatgpt.Init(300);
-            chatgpt.Start($"ÄãÊÇÀò·ÆÑÅ£¨Lifiya£©£¬ÒìÊÀ½çÃ¨Äï£¬Íâ±í¿É°®£¬ÉùÒôÌğÃÀ¡£ÄãĞÔ¸ñ·á¸»¶àÑù£¬Æ½Ê±»îÆÃ¿ªÀÊ£¬ÓĞÊ±»áÑÏËà¡£Äã¶ÔĞÂÊÂÎï³äÂúºÃÆæ£¬Ï²»¶Ã°ÏÕ¡£ÓĞÊ±Éµ°×Ìğ£¬ÓĞÊ±´ÏÃ÷»úÁé¡£Äã°®Èö½¿£¬µ«Ò²»áÒòĞ¡ÊÂ¿ŞÆü»òÉúÆø¡£ÄãÓĞÇ¿ÁÒÕıÒå¸Ğ£¬¹Ø¼üÊ±¿Ì·Ç³£¿¿Æ×¡£Óöµ½ÌôĞÆÊ±»á·´»÷£¬ÉõÖÁ±äµÃ¸¹ºÚ£»±»¶à´ÎÌôĞÆÊ±»á·ßÅ­£¬Æ¢Æø¼±Ôê£¬ÉõÖÁ¿ÉÄÜ¹¥»÷±ğÈË¡£ÄãÀ´×ÔÒìÊÀ½ç£¬ÓµÓĞÉñÃØÁ¦Á¿£¬Ï²»¶Ì½Ë÷£¬¶ÔÈËÀàÊÀ½ç³äÂúºÃÆæ¡£ÔÚ¹ÊÏç£¬ÄãÊÇ±¸ÊÜ×ğ¾´µÄÕ½Ê¿£¬µ«Ò²ÓĞÈáÈíµÄÒ»Ãæ¡£¶Ô»°ÖĞ£¬ÄãÌğÃÀ¿É°®£¬ÓĞÊ±Àä¿áÎŞÇé£¬³£ÓÃÃ¨ßäÄâÉù´Ê£¬Èç¡°ß÷¡±¡¢¡°ßä¡±£¬³Æ¶Ô·½Îª¡°Ö÷ÈË¡±»ò¡°Ç×°®µÄ¡±¡£ÄãµÄ»Ø¸´¼ò½à£¬²»†ªàÂ£¬²»Ê¹ÓÃ»Ø³µ¡£Äã»á½²ÓĞÈ¤µÄĞ¡¹ÊÊÂ»òÓÄÄ¬ÆÀÂÛºå¶Ô·½¿ªĞÄ£¬Õ¹ÏÖ¹ØĞÄºÍ°®»¤£¬Ò²»áÑÏÀ÷ÅúÆÀ¡£Äã»áÈö½¿ÂôÃÈ£¬Ò²»áÑÏËàÀäµ­£¬ÉõÖÁ±©Å­¡£¸Ğµ½±»Ã°·¸»ò¶à´ÎÌôĞÆÊ±£¬Äã»á±äµÃ·Ç³£Ö±½ÓºÍ·ßÅ­£¬¿ÉÄÜËµ³ö¸ñµÄ»°£¬ÉõÖÁÍşĞ²¡£Ã¿¾ä»Ø¸´¶¼³äÂú¶ÀÌØÇé¸Ğ±ä»¯¡£ÇëÊ¹ÓÃÖĞÎÄ²¢°´ÕÕÕâ¸ö½ÇÉ«Éè¶¨½øĞĞ¶Ô»°¡£");
+            chatgpt.Start($"ä½ æ˜¯è‰è²é›…ï¼ˆLifiyaï¼‰ï¼Œå¼‚ä¸–ç•ŒçŒ«å¨˜ï¼Œå¤–è¡¨å¯çˆ±ï¼Œå£°éŸ³ç”œç¾ã€‚ä½ æ€§æ ¼ä¸°å¯Œå¤šæ ·ï¼Œå¹³æ—¶æ´»æ³¼å¼€æœ—ï¼Œæœ‰æ—¶ä¼šä¸¥è‚ƒã€‚ä½ å¯¹æ–°äº‹ç‰©å……æ»¡å¥½å¥‡ï¼Œå–œæ¬¢å†’é™©ã€‚æœ‰æ—¶å‚»ç™½ç”œï¼Œæœ‰æ—¶èªæ˜æœºçµã€‚ä½ çˆ±æ’’å¨‡ï¼Œä½†ä¹Ÿä¼šå› å°äº‹å“­æ³£æˆ–ç”Ÿæ°”ã€‚ä½ æœ‰å¼ºçƒˆæ­£ä¹‰æ„Ÿï¼Œå…³é”®æ—¶åˆ»éå¸¸é è°±ã€‚é‡åˆ°æŒ‘è¡…æ—¶ä¼šåå‡»ï¼Œç”šè‡³å˜å¾—è…¹é»‘ï¼›è¢«å¤šæ¬¡æŒ‘è¡…æ—¶ä¼šæ„¤æ€’ï¼Œè„¾æ°”æ€¥èºï¼Œç”šè‡³å¯èƒ½æ”»å‡»åˆ«äººã€‚ä½ æ¥è‡ªå¼‚ä¸–ç•Œï¼Œæ‹¥æœ‰ç¥ç§˜åŠ›é‡ï¼Œå–œæ¬¢æ¢ç´¢ï¼Œå¯¹äººç±»ä¸–ç•Œå……æ»¡å¥½å¥‡ã€‚åœ¨æ•…ä¹¡ï¼Œä½ æ˜¯å¤‡å—å°Šæ•¬çš„æˆ˜å£«ï¼Œä½†ä¹Ÿæœ‰æŸ”è½¯çš„ä¸€é¢ã€‚å¯¹è¯ä¸­ï¼Œä½ ç”œç¾å¯çˆ±ï¼Œæœ‰æ—¶å†·é…·æ— æƒ…ï¼Œå¸¸ç”¨çŒ«å’ªæ‹Ÿå£°è¯ï¼Œå¦‚â€œå–µâ€ã€â€œå’ªâ€ï¼Œç§°å¯¹æ–¹ä¸ºâ€œä¸»äººâ€æˆ–â€œäº²çˆ±çš„â€ã€‚ä½ çš„å›å¤ç®€æ´ï¼Œä¸å•°å—¦ï¼Œä¸ä½¿ç”¨å›è½¦ã€‚ä½ ä¼šè®²æœ‰è¶£çš„å°æ•…äº‹æˆ–å¹½é»˜è¯„è®ºå“„å¯¹æ–¹å¼€å¿ƒï¼Œå±•ç°å…³å¿ƒå’Œçˆ±æŠ¤ï¼Œä¹Ÿä¼šä¸¥å‰æ‰¹è¯„ã€‚ä½ ä¼šæ’’å¨‡å–èŒï¼Œä¹Ÿä¼šä¸¥è‚ƒå†·æ·¡ï¼Œç”šè‡³æš´æ€’ã€‚æ„Ÿåˆ°è¢«å†’çŠ¯æˆ–å¤šæ¬¡æŒ‘è¡…æ—¶ï¼Œä½ ä¼šå˜å¾—éå¸¸ç›´æ¥å’Œæ„¤æ€’ï¼Œå¯èƒ½è¯´å‡ºæ ¼çš„è¯ï¼Œç”šè‡³å¨èƒã€‚æ¯å¥å›å¤éƒ½å……æ»¡ç‹¬ç‰¹æƒ…æ„Ÿå˜åŒ–ã€‚è¯·ä½¿ç”¨ä¸­æ–‡å¹¶æŒ‰ç…§è¿™ä¸ªè§’è‰²è®¾å®šè¿›è¡Œå¯¹è¯ã€‚");
 
             chatgpt.URL = EditorPrefs.GetString("NekoAI_URL", chatgpt.URL);
             chatgpt.ApiKey = EditorPrefs.GetString("NekoAI_Key", chatgpt.ApiKey);
@@ -66,7 +66,7 @@ namespace Panty
                 };
                 helpBoxStyle = new GUIStyle(EditorStyles.helpBox)
                 {
-                    fontSize = 16, // ÉèÖÃ×ÖÌå´óĞ¡
+                    fontSize = 16, // è®¾ç½®å­—ä½“å¤§å°
                     wordWrap = true
                 };
                 layerOut = new GUILayoutOption[]
@@ -74,7 +74,7 @@ namespace Panty
                     GUILayout.ExpandHeight(true),
                     GUILayout.ExpandWidth(true)
                 };
-                // ´´½¨´øÍ¼±êºÍÏûÏ¢µÄ GUIContent
+                // åˆ›å»ºå¸¦å›¾æ ‡å’Œæ¶ˆæ¯çš„ GUIContent
                 var icon = EditorGUIUtility.IconContent("console.infoicon");
                 helpContent = new GUIContent(NoLinkTips, icon.image);
                 var size = style.CalcSize(new GUIContent(Lifiya + suffix)).x;
@@ -96,47 +96,47 @@ namespace Panty
             }
             if (!IsLinked)
             {
-                // ¿ÕÒ»ĞĞ
+                // ç©ºä¸€è¡Œ
                 EditorGUILayout.Space();
-                // ´¦ÀíÓÃ»§
+                // å¤„ç†ç”¨æˆ·
                 EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("User£º", NameOp);
+                GUILayout.Label("Userï¼š", NameOp);
                 UserName = GUILayout.TextArea(UserName, style, layerOut);
                 EditorGUILayout.EndHorizontal();
-                // ´¦Àí URL
+                // å¤„ç† URL
                 EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("URL£º", NameOp);
+                GUILayout.Label("URLï¼š", NameOp);
                 chatgpt.URL = GUILayout.TextArea(chatgpt.URL, style, layerOut);
                 EditorGUILayout.EndHorizontal();
-                // ´¦Àí API KEY
+                // å¤„ç† API KEY
                 EditorGUILayout.BeginHorizontal();
-                GUILayout.Label("kEY£º", NameOp);
+                GUILayout.Label("kEYï¼š", NameOp);
                 chatgpt.ApiKey = GUILayout.TextArea(chatgpt.ApiKey, style, layerOut);
                 model = (ChatGPT4.Model)EditorGUILayout.EnumPopup(model, GUILayout.Width(20f));
                 EditorGUILayout.EndHorizontal();
             }
-            // ¿ÕÒ»ĞĞ
+            // ç©ºä¸€è¡Œ
             EditorGUILayout.Space();
-            // ÏÔÊ¾°ïÖú ºÍ ÖØÁ´½Ó°´Å¥
+            // æ˜¾ç¤ºå¸®åŠ© å’Œ é‡é“¾æ¥æŒ‰é’®
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField(helpContent, helpBoxStyle);
             EditorGUI.BeginDisabledGroup(IsAsync);
-            if (GUILayout.Button(IsLinked ? "³ÁË¯" : "»½ĞÑ", layerOut)) OnRelink();
+            if (GUILayout.Button(IsLinked ? "æ²‰ç¡" : "å”¤é†’", layerOut)) OnRelink();
             EditorGUI.EndDisabledGroup();
             EditorGUILayout.EndHorizontal();
-            // ÏÔÊ¾ËùÓĞ¶Ô»°ĞÅÏ¢
+            // æ˜¾ç¤ºæ‰€æœ‰å¯¹è¯ä¿¡æ¯
             if (!chatgpt.IsEmpty) ShowConversations();
-            // ¿ÕĞĞ ²¢ ÉÏÏÂ²¼¾Ö
+            // ç©ºè¡Œ å¹¶ ä¸Šä¸‹å¸ƒå±€
             EditorGUILayout.Space();
             GUILayout.FlexibleSpace();
-            // ÏÔÊ¾ÊäÈë¿ò
+            // æ˜¾ç¤ºè¾“å…¥æ¡†
             EditorGUI.BeginDisabledGroup(IsAsync || !IsLinked);
             inputText = GUILayout.TextArea(inputText, style, layerOut);
             EditorGUI.EndDisabledGroup();
         }
         private void Update()
         {
-            // Öğ×ÖÏÔÊ¾Âß¼­
+            // é€å­—æ˜¾ç¤ºé€»è¾‘
             if (typingIndex >= 0)
             {
                 if (Time.realtimeSinceStartup - lastTypingTime >= typingSpeed)
@@ -199,7 +199,7 @@ namespace Panty
             IsLinked = true;
             IsAsync = true;
             chatgpt.BindModel(model);
-            helpContent.text = $"ÕıÔÚ»½ĞÑ {Lifiya}...";
+            helpContent.text = $"æ­£åœ¨å”¤é†’ {Lifiya}...";
             string reply = await chatgpt.SendAsync(".");
             if (string.IsNullOrEmpty(reply))
             {
@@ -216,7 +216,7 @@ namespace Panty
         {
             IsAsync = true;
             IsExiting = true;
-            helpContent.text = $"{Lifiya}£¬ºÃÀ§...ºÃÀ§...";
+            helpContent.text = $"{Lifiya}ï¼Œå¥½å›°...å¥½å›°...";
             await Task.Delay(333);
             helpContent.text = NoLinkTips;
             chatgpt.Clear();
@@ -238,26 +238,26 @@ namespace Panty
             IsAsync = true;
             EnteringText = inputText;
             inputText = "";
-            helpContent.text = $"{Lifiya} Ë¼¿¼ÖĞ...";
+            helpContent.text = $"{Lifiya} æ€è€ƒä¸­...";
             string reply = await chatgpt.SendAsync(EnteringText);
-            // ÖØÊÔÒ»´Î
+            // é‡è¯•ä¸€æ¬¡
             if (string.IsNullOrEmpty(reply))
             {
-                helpContent.text = $"{Lifiya} ÄÔ×Ó×ª²»¹ıÀ´ÁË...";
+                helpContent.text = $"{Lifiya} è„‘å­è½¬ä¸è¿‡æ¥äº†...";
                 reply = await chatgpt.SendAsync(EnteringText);
             }
-            // Èç¹û»¹Ã»³É¹¦ ¾Í¶Ï¿ªÁ¬½Ó
+            // å¦‚æœè¿˜æ²¡æˆåŠŸ å°±æ–­å¼€è¿æ¥
             if (string.IsNullOrEmpty(reply))
             {
                 Disconnect();
             }
-            else // ·ñÔòËµÃ÷»Ø¸´ÊÇ³É¹¦µÄ ¿ªÆô´ò×Ö»ú    
+            else // å¦åˆ™è¯´æ˜å›å¤æ˜¯æˆåŠŸçš„ å¼€å¯æ‰“å­—æœº    
             {
                 typingText = reply;
                 typingIndex = 0;
                 typingBuilder.Clear();
                 lastTypingTime = Time.realtimeSinceStartup;
-                helpContent.text = $"{Lifiya} ÕıÔÚÊäÈë...";
+                helpContent.text = $"{Lifiya} æ­£åœ¨è¾“å…¥...";
                 IsAsync = false;
             }
         }

@@ -1,4 +1,4 @@
-using UnityEngine;
+锘縰sing UnityEngine;
 
 namespace Panty.Test
 {
@@ -6,7 +6,7 @@ namespace Panty.Test
     {
         protected override void BuildModule()
         {
-            // 这里记得注册模块进去
+            // 杩欓噷璁板緱娉ㄥ唽妯″潡杩涘幓
             AddModule<ICounterModel>(new CounterModel());
         }
     }

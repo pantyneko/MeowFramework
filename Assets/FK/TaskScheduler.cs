@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
@@ -24,7 +24,7 @@ namespace Panty
         public void Execute() => mTask?.Invoke();
         public void Clear() => mTask = null;
         /// <summary>
-        /// ³õÊ¼»¯ÈÎÎñ ¸Ã½×¶Î»á×Ô¶¯µ÷ÓÃ Reset
+        /// åˆå§‹åŒ–ä»»åŠ¡ è¯¥é˜¶æ®µä¼šè‡ªåŠ¨è°ƒç”¨ Reset
         /// </summary>
         public DelayTask Init(float delayTime, bool isLoop)
         {
@@ -94,7 +94,7 @@ namespace Panty
                 else a.Update(delta);
             }
         }
-        // µ¥´¿µÈ´ıÌõ¼ş´¥·¢
+        // å•çº¯ç­‰å¾…æ¡ä»¶è§¦å‘
         private class WaitAction : IAction
         {
             private Func<bool> exitCondition;
@@ -110,7 +110,7 @@ namespace Panty
             public void Reset() { }
             public void Update(float delta) { }
         }
-        // µ¥´¿ÑÓ³ÙNÃë´¥·¢
+        // å•çº¯å»¶è¿ŸNç§’è§¦å‘
         private class DelayAction : IAction
         {
             private float duration, cur;
@@ -120,7 +120,7 @@ namespace Panty
             public void Reset() => cur = 0;
             public void Update(float delta) => cur += delta;
         }
-        // Ö¸¶¨´ÎÊıÄÚÖØ¸´Ö´ĞĞµÄÈÎÎñ
+        // æŒ‡å®šæ¬¡æ•°å†…é‡å¤æ‰§è¡Œçš„ä»»åŠ¡
         private class RepeatAction : IAction
         {
             private Action call;
@@ -141,7 +141,7 @@ namespace Panty
                 currentCount++;
             }
         }
-        // ÔÚÌõ¼şÄÚÖØ¸´Ö´ĞĞ
+        // åœ¨æ¡ä»¶å†…é‡å¤æ‰§è¡Œ
         private class UntilConditionAction : IAction
         {
             private Action call;
@@ -159,7 +159,7 @@ namespace Panty
             public void Reset() { }
             public void Update(float delta) => call.Invoke();
         }
-        // ÖÜÆÚÄÚÖØ¸´Ö´ĞĞÈÎÎñ
+        // å‘¨æœŸå†…é‡å¤æ‰§è¡Œä»»åŠ¡
         private class PeriodicAction : IAction
         {
             private Action call;
@@ -180,7 +180,7 @@ namespace Panty
                 call?.Invoke();
             }
         }
-        // Ö±½ÓÖ´ĞĞÒ»¸öÂß¼­
+        // ç›´æ¥æ‰§è¡Œä¸€ä¸ªé€»è¾‘
         private class DoAction : IAction
         {
             private Action call;
@@ -199,7 +199,7 @@ namespace Panty
             public void Reset() { }
             public void Update(float delta) { }
         }
-        // Ëæ»úÖ´ĞĞ×é Ã¿´Î´Ó×éÖĞËæ»úÒ»¸ö·½·¨Ö´ĞĞ
+        // éšæœºæ‰§è¡Œç»„ æ¯æ¬¡ä»ç»„ä¸­éšæœºä¸€ä¸ªæ–¹æ³•æ‰§è¡Œ
         private class RandomGroup : IAction
         {
             private readonly PArray<IAction> actions;
@@ -217,7 +217,7 @@ namespace Panty
                 select.Reset();
             }
         }
-        // ÖØ¸´×é ½«×éÄÚµÄÂß¼­ ÖØ¸´Ö´ĞĞN´Î
+        // é‡å¤ç»„ å°†ç»„å†…çš„é€»è¾‘ é‡å¤æ‰§è¡ŒNæ¬¡
         private class RepeatGroup : IAction
         {
             private readonly PArray<IAction> actions;
@@ -251,7 +251,7 @@ namespace Panty
                 else sq.Update(delta);
             }
         }
-        // ²¢ĞĞ×é ½«×éÄÚµÄÂß¼­Í¬²½Ö´ĞĞ Ö±µ½¶¼Íê³É
+        // å¹¶è¡Œç»„ å°†ç»„å†…çš„é€»è¾‘åŒæ­¥æ‰§è¡Œ ç›´åˆ°éƒ½å®Œæˆ
         private class ParallelGroup : IAction
         {
             private readonly PArray<IAction> actions = new PArray<IAction>();
@@ -260,7 +260,7 @@ namespace Panty
             public void Reset() { foreach (var s in actions) s.Reset(); }
             public void Update(float delta) { foreach (var s in actions) s.Update(delta); }
         }
-        // Ñ­»·×é ÔÚÌõ¼şÎ´Âú×ãµÄÊ±ºò Ë³ĞòÖ´ĞĞ×éÄÚ¶¯×÷
+        // å¾ªç¯ç»„ åœ¨æ¡ä»¶æœªæ»¡è¶³çš„æ—¶å€™ é¡ºåºæ‰§è¡Œç»„å†…åŠ¨ä½œ
         private class LoopGroup : IAction
         {
             private int cur = 0;
@@ -310,7 +310,7 @@ namespace Panty
                 E_Type.Loop => new LoopGroup(cache, mOnExit),
                 E_Type.Parallel => new ParallelGroup(cache),
                 E_Type.Random => new RandomGroup(cache),
-                _ => throw new Exception("Î´Öª¶¯×÷"),
+                _ => throw new Exception("æœªçŸ¥åŠ¨ä½œ"),
             };
         }
         public class Step
@@ -324,12 +324,12 @@ namespace Panty
                 this.ignoreTimeScale = ignoreTimeScale;
             }
             /// <summary>
-            /// »º´æÒ»¸öÈÎÎñ ÔÚÏÂÒ»´Îµ÷ÓÃÇ° ¹á´©µ±Ç°ĞòÁĞÊ¹ÓÃ
+            /// ç¼“å­˜ä¸€ä¸ªä»»åŠ¡ åœ¨ä¸‹ä¸€æ¬¡è°ƒç”¨å‰ è´¯ç©¿å½“å‰åºåˆ—ä½¿ç”¨
             /// </summary>
             public Step Cache(Action evt)
             { this.evt = evt; return this; }
             /// <summary>
-            /// ²åÈëÒ»¸öµÈ´ıÊÂ¼ş µÈ´ı²»ĞèÒªÖ´ĞĞÄÚÈİ
+            /// æ’å…¥ä¸€ä¸ªç­‰å¾…äº‹ä»¶ ç­‰å¾…ä¸éœ€è¦æ‰§è¡Œå†…å®¹
             /// </summary>
             public Step Wait(Func<bool> onExit)
             {
@@ -337,7 +337,7 @@ namespace Panty
                 return this;
             }
             /// <summary>
-            /// ²åÈëÒ»¸öÑÓ³ÙÊÂ¼ş 
+            /// æ’å…¥ä¸€ä¸ªå»¶è¿Ÿäº‹ä»¶ 
             /// </summary>
             public Step Delay(float duration)
             {
@@ -345,7 +345,7 @@ namespace Panty
                 return this;
             }
             /// <summary>
-            /// ²åÈëÒ»¸öÊÂ¼ş
+            /// æ’å…¥ä¸€ä¸ªäº‹ä»¶
             /// </summary>
             public Step Event(Action call)
             {
@@ -353,11 +353,11 @@ namespace Panty
                 return this;
             }
             /// <summary>
-            /// ²åÈëÒ»¸ö¿ÉÖ´ĞĞÊÂ¼ş Ê¹ÓÃÈ«¾ÖÊÂ¼ş
+            /// æ’å…¥ä¸€ä¸ªå¯æ‰§è¡Œäº‹ä»¶ ä½¿ç”¨å…¨å±€äº‹ä»¶
             /// </summary>
             public Step Event() => Event(evt);
             /// <summary>
-            /// ²åÈëÒ»¸öÖØ¸´´ÎÊıÊÂ¼ş
+            /// æ’å…¥ä¸€ä¸ªé‡å¤æ¬¡æ•°äº‹ä»¶
             /// </summary>
             public Step Repeat(byte repeatCount, Action call)
             {
@@ -365,11 +365,11 @@ namespace Panty
                 return this;
             }
             /// <summary>
-            /// ²åÈëÒ»¸öÖØ¸´´ÎÊıÊÂ¼ş Ê¹ÓÃÈ«¾ÖÊÂ¼ş
+            /// æ’å…¥ä¸€ä¸ªé‡å¤æ¬¡æ•°äº‹ä»¶ ä½¿ç”¨å…¨å±€äº‹ä»¶
             /// </summary>
             public Step Repeat(byte repeatCount) => Repeat(repeatCount, evt);
             /// <summary>
-            /// ²åÈëÒ»¸öÔÚÌõ¼şÎ´³ÉÁ¢Ê±ÖØ¸´Ö´ĞĞµÄÊÂ¼ş
+            /// æ’å…¥ä¸€ä¸ªåœ¨æ¡ä»¶æœªæˆç«‹æ—¶é‡å¤æ‰§è¡Œçš„äº‹ä»¶
             /// </summary>
             public Step Until(Func<bool> exit, Action call)
             {
@@ -377,11 +377,11 @@ namespace Panty
                 return this;
             }
             /// <summary>
-            /// ²åÈëÒ»¸öÔÚÌõ¼şÎ´³ÉÁ¢Ê±ÖØ¸´Ö´ĞĞµÄÊÂ¼ş Ê¹ÓÃÈ«¾ÖµÄÊÂ¼ş
+            /// æ’å…¥ä¸€ä¸ªåœ¨æ¡ä»¶æœªæˆç«‹æ—¶é‡å¤æ‰§è¡Œçš„äº‹ä»¶ ä½¿ç”¨å…¨å±€çš„äº‹ä»¶
             /// </summary>
             public Step Until(Func<bool> exit) => Until(exit, evt);
             /// <summary>
-            /// ²åÈëÒ»¸öÖÜÆÚÄÚÖØ¸´Ö´ĞĞÈÎÎñ
+            /// æ’å…¥ä¸€ä¸ªå‘¨æœŸå†…é‡å¤æ‰§è¡Œä»»åŠ¡
             /// </summary>
             public Step Periodic(float duration, Action call)
             {
@@ -389,11 +389,11 @@ namespace Panty
                 return this;
             }
             /// <summary>
-            /// ²åÈëÒ»¸öÖÜÆÚÄÚÖØ¸´Ö´ĞĞÈÎÎñ Ê¹ÓÃÈ«¾ÖÊÂ¼ş
+            /// æ’å…¥ä¸€ä¸ªå‘¨æœŸå†…é‡å¤æ‰§è¡Œä»»åŠ¡ ä½¿ç”¨å…¨å±€äº‹ä»¶
             /// </summary>
             public Step Periodic(float duration) => Periodic(duration, evt);
             /// <summary>
-            /// ¿ªÊ¼´¦ÀíËæ»ú×é ÔÚEndµ÷ÓÃÇ° ½«»áÒÔ»º´æÀ´´¦ÀíÃ¿´ÎµÄÈÎÎñ
+            /// å¼€å§‹å¤„ç†éšæœºç»„ åœ¨Endè°ƒç”¨å‰ å°†ä¼šä»¥ç¼“å­˜æ¥å¤„ç†æ¯æ¬¡çš„ä»»åŠ¡
             /// </summary>
             public Step RandomGroup()
             {
@@ -401,8 +401,8 @@ namespace Panty
                 return this;
             }
             /// <summary>
-            /// ÆôÓÃÁ¬ĞøÑ­»·Ä£Ê½ ÔÚEndµ÷ÓÃÇ° ½«»áÒÔ»º´æÀ´´¦ÀíÃ¿´ÎµÄÈÎÎñ
-            /// ×¢Òâ £ºonExit²»ÄÜÎªnull
+            /// å¯ç”¨è¿ç»­å¾ªç¯æ¨¡å¼ åœ¨Endè°ƒç”¨å‰ å°†ä¼šä»¥ç¼“å­˜æ¥å¤„ç†æ¯æ¬¡çš„ä»»åŠ¡
+            /// æ³¨æ„ ï¼šonExitä¸èƒ½ä¸ºnull
             /// </summary>
             public Step LoopGroup(Func<bool> onExit)
             {
@@ -411,9 +411,9 @@ namespace Panty
                 return this;
             }
             /// <summary>
-            /// ÆôÓÃ´ÎÊıÑ­»·Ä£Ê½ ÔÚEndµ÷ÓÃÇ° ½«»áÒÔ»º´æÀ´´¦ÀíÃ¿´ÎµÄÈÎÎñ
+            /// å¯ç”¨æ¬¡æ•°å¾ªç¯æ¨¡å¼ åœ¨Endè°ƒç”¨å‰ å°†ä¼šä»¥ç¼“å­˜æ¥å¤„ç†æ¯æ¬¡çš„ä»»åŠ¡
             /// </summary>
-            /// <param name="repeatCount">Ñ­»·´ÎÊı£¬±ØĞë´óÓÚ 0</param>
+            /// <param name="repeatCount">å¾ªç¯æ¬¡æ•°ï¼Œå¿…é¡»å¤§äº 0</param>
             public Step RepeatGroup(byte repeatCount)
             {
                 mCounter = repeatCount == 0 ? (byte)1 : repeatCount;
@@ -421,7 +421,7 @@ namespace Panty
                 return this;
             }
             /// <summary>
-            /// ÆôÓÃ²¢ĞĞ×éÄ£Ê½ ÔÚEndµ÷ÓÃÇ° ½«»áÒÔ»º´æÀ´´¦ÀíÃ¿´ÎµÄÈÎÎñ
+            /// å¯ç”¨å¹¶è¡Œç»„æ¨¡å¼ åœ¨Endè°ƒç”¨å‰ å°†ä¼šä»¥ç¼“å­˜æ¥å¤„ç†æ¯æ¬¡çš„ä»»åŠ¡
             /// </summary>
             public Step ParallelGroup()
             {
@@ -429,7 +429,7 @@ namespace Panty
                 return this;
             }
             /// <summary>
-            /// ÓÃÓÚ·â±Õ¶¯×÷×é
+            /// ç”¨äºå°é—­åŠ¨ä½œç»„
             /// </summary>
             public Step End()
             {
@@ -484,7 +484,7 @@ namespace Panty
         {
 #if UNITY_EDITOR
             if (stepGroup != null)
-                throw new Exception($"´æÔÚÎ´·â±ÕĞòÁĞ{stepGroup}");
+                throw new Exception($"å­˜åœ¨æœªå°é—­åºåˆ—{stepGroup}");
 #endif
             return new Step(this, ignoreTimeScale);
         }
@@ -506,7 +506,7 @@ namespace Panty
         {
 #if UNITY_EDITOR
             if (stepGroup == null)
-                throw new Exception($"¶àÓàµÄEndµ÷ÓÃ");
+                throw new Exception($"å¤šä½™çš„Endè°ƒç”¨");
 #endif
             if (stepGroup.IsRoot)
             {

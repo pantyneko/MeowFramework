@@ -1,4 +1,4 @@
-using System;
+ï»¿using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -21,7 +21,7 @@ namespace Panty
 
         public static void Open(string msg, Action succeed = null, Action fail = null)
         {
-            var wd = GetWindow<TextDialog>("ß÷ß÷ÌáÊ¾Æ÷", true);
+            var wd = GetWindow<TextDialog>("å–µå–µæç¤ºå™¨", true);
             wd.succeed = succeed;
             wd.fail = fail;
             wd.longText = msg;
@@ -33,7 +33,7 @@ namespace Panty
         private void OnGUI()
         {
             EditorGUILayout.Space();
-            EditorGUILayout.HelpBox("ÄúµÄß÷ß÷Å®ÓÑÀ´µç»°À²£¡²»½ÓµÄ»°´òÏ´ÄãÅ¶", MessageType.Info);
+            EditorGUILayout.HelpBox("æ‚¨çš„å–µå–µå¥³å‹æ¥ç”µè¯å•¦ï¼ä¸æ¥çš„è¯æ‰“æ´—ä½ å“¦", MessageType.Info);
 
             scrollPosition = EditorGUILayout.BeginScrollView(scrollPosition);
             var style = new GUIStyle(EditorStyles.textArea) { wordWrap = true };
@@ -45,7 +45,7 @@ namespace Panty
             var e = Event.current;
             var op = new GUILayoutOption[] { GUILayout.Height(30f) };
             bool trigger = hasFocus && e.type == EventType.KeyDown;
-            if (GUILayout.Button("È·ÈÏ", op))
+            if (GUILayout.Button("ç¡®è®¤", op))
             {
                 succeed?.Invoke();
                 Close();
@@ -56,7 +56,7 @@ namespace Panty
                 succeed?.Invoke();
                 Close();
             }
-            if (GUILayout.Button("È¡Ïû", op))
+            if (GUILayout.Button("å–æ¶ˆ", op))
             {
                 fail?.Invoke();
                 Close();
@@ -93,28 +93,44 @@ namespace Panty
                 win.minSize = new Vector2(360f, 40f);
             }
         }
-        [MenuItem("PnTool/Quick/AddBind &S")]
+        [MenuItem("PnTool/Quick/AddBind %&B")]
         private static void AddBind()
         {
-            if (Selection.objects.Length == 0) return;
-            foreach (var go in Selection.objects.OfType<GameObject>())
+            if (Selection.objects.Length == 0)
             {
-                if (go == null) continue;
-                if (mGos.Count == 1)
-                    go.GetOrAddComponent<Bind>().Init(mGos[0]);
-                EditorUtility.SetDirty(go);
-                EditorSceneManager.MarkSceneDirty(go.scene);
+                "æ·»åŠ Bindå¤±è´¥ è¯·åœ¨åœºæ™¯ä¸­é€‰æ‹©éœ€è¦æ·»åŠ Bindç»„ä»¶çš„å¯¹è±¡".Log();
             }
+            else foreach (var go in Selection.objects.OfType<GameObject>())
+                {
+                    if (go == null) continue;
+                    if (mGos.Count == 0)
+                    {
+                        "æœªè®¾ç½®Rootå¯¹è±¡ è¯·åœ¨åœºæ™¯ä¸­é€‰æ‹©å¯¹åº”çš„Rootå¯¹è±¡æ‹–æ›³åˆ°QuickCmdEditorç¼–è¾‘å™¨ä¸­ å¹¶å†æ¬¡ç»‘å®š".Log();
+                    }
+                    else
+                    {
+                        if (mGos.Count == 1)
+                            "Bindæ— æ³•ç»‘å®šå¤šä¸ªRoot å½“å‰å°†ä»¥ç¬¬1ä¸ªé€‰æ‹©çš„Rootå¯¹è±¡ä½œä¸ºç›®æ ‡è¿›è¡Œç»‘å®š".Log();
+                        else
+                            $"{go.name}å·²æˆåŠŸæ·»åŠ Bindç»„ä»¶".Log();
+                        go.GetOrAddComponent<Bind>().Init(mGos[0]);
+                    }
+                    EditorUtility.SetDirty(go);
+                    EditorSceneManager.MarkSceneDirty(go.scene);
+                }
         }
-        [MenuItem("PnTool/Quick/AddUIRoot &W")]
+        [MenuItem("PnTool/Quick/AddUIRoot %&V")]
         private static void AddUIRoot()
         {
-            if (Selection.objects.Length == 0) return;
-            foreach (var go in Selection.objects.OfType<GameObject>())
+            if (Selection.objects.Length == 0)
             {
-                if (go == null) continue;
-                AddUIRoot(go);
+                "æ·»åŠ Rootå¤±è´¥ è¯·åœ¨åœºæ™¯ä¸­é€‰æ‹©éœ€è¦æ·»åŠ Rootç»„ä»¶çš„å¯¹è±¡".Log();
             }
+            else foreach (var go in Selection.objects.OfType<GameObject>())
+                {
+                    if (go == null) continue;
+                    AddUIRoot(go);
+                }
         }
         private static void GetPathFD(string fileName, out string assetPath)
         {
@@ -161,7 +177,7 @@ namespace Panty
             var binds = go.GetComponentsInChildren<Bind>(true);
             if (binds.Length == 0)
             {
-                "Ã»ÓĞ¿É°ó¶¨¶ÔÏó".Log();
+                "æ²¡æœ‰å¯ç»‘å®šå¯¹è±¡".Log();
             }
             else
             {
@@ -175,17 +191,17 @@ namespace Panty
                 {
                     GetPathFD(fileName, out assetPath);
                     SetRootData(type, binds, go);
-                    $"{type.Name}½Å±¾ÒÑ¹ÒÔØ".Log();
+                    $"{type.Name}è„šæœ¬å·²æŒ‚è½½".Log();
                 }
                 else
                 {
-                    // ËµÃ÷Ã»ÓĞÕâ¸ö×ÊÔ´
+                    // è¯´æ˜æ²¡æœ‰è¿™ä¸ªèµ„æº
                     if (type == null)
                     {
                         assetPath = CreateUIRootMono(fileName);
                         type = HubTool.BaseAss.GetType(full);
-                        (type == null ? "Ö÷³ÌĞò¼¯²»´æÔÚ¸ÃÀà" : $"¹¹½¨{type.Name}").Log();
-                        "ÇëÔÚ×ÊÔ´Ë¢ĞÂÍê³Éºó ÔÙ´Î´¥·¢ÒÔÈ·±£½Å±¾µÄ¹ÒÔØ".Log();
+                        (type == null ? "ä¸»ç¨‹åºé›†ä¸å­˜åœ¨è¯¥ç±»" : $"æ„å»º{type.Name}").Log();
+                        "è¯·åœ¨èµ„æºåˆ·æ–°å®Œæˆå å†æ¬¡è§¦å‘ä»¥ç¡®ä¿è„šæœ¬çš„æŒ‚è½½".Log();
                     }
                     else
                     {
@@ -193,12 +209,12 @@ namespace Panty
                         {
                             GetPathFD(fileName, out assetPath);
                             SetRootData(type, binds, go);
-                            $"{type.Name}½Å±¾ÒÑ´æÔÚ ¼´½«Ë¢ĞÂÊı¾İÀà".Log();
+                            $"{type.Name}è„šæœ¬å·²å­˜åœ¨ å³å°†åˆ·æ–°æ•°æ®ç±»".Log();
                         }
-                        else // ËµÃ÷Ö»ÓĞÊı¾İÀà
+                        else // è¯´æ˜åªæœ‰æ•°æ®ç±»
                         {
                             assetPath = CreateUIRootMono(fileName);
-                            $"Ö»ÕÒµ½Êı¾İÀà ÖØĞÂ¹¹½¨{type.Name} ÇëÔÚ×ÊÔ´Ë¢ĞÂÍê³Éºó ÔÙ´Î´¥·¢ÒÔÈ·±£½Å±¾µÄ¹ÒÔØ".Log();
+                            $"åªæ‰¾åˆ°æ•°æ®ç±» é‡æ–°æ„å»º{type.Name} è¯·åœ¨èµ„æºåˆ·æ–°å®Œæˆå å†æ¬¡è§¦å‘ä»¥ç¡®ä¿è„šæœ¬çš„æŒ‚è½½".Log();
                         }
                     }
                 }
@@ -208,7 +224,7 @@ namespace Panty
                 {
                     var bind = binds[i];
                     if (bind.Root == null)
-                        $"{bind}µÄRoot is Null".Log();
+                        $"{bind}çš„Root is Null".Log();
                     else if (bind.Root == go)
                     {
                         if (i > 1) bd.Append("\t\t");
@@ -223,12 +239,12 @@ namespace Panty
                         bd.Append($"[SerializeField] private {str}{bind.CType} {HandleBind(bind)};");
                         if (i < len - 1) bd.Append("\r\n");
                     }
-                    else $"{bind.Root}²»ÊôÓÚµ±Ç°¸¸¼¶".Log();
+                    else $"{bind.Root}ä¸å±äºå½“å‰çˆ¶çº§".Log();
                 }
                 bd.Append(data[1]);
                 FileKit.WriteFile(assetPath, bd.ToString());
                 AssetDatabase.Refresh();
-                $"{fileName}Êı¾İÒÑ¸üĞÂ".Log();
+                $"{fileName}æ•°æ®å·²æ›´æ–°".Log();
             }
         }
         private static void SetRootData(Type rootType, Bind[] binds, GameObject go)
@@ -240,7 +256,7 @@ namespace Panty
                 var bind = binds[i];
                 if (bind.Root == null)
                 {
-                    $"{bind}µÄRoot is Null".Log();
+                    $"{bind}çš„Root is Null".Log();
                     continue;
                 }
                 if (bind.Root == go)
@@ -250,7 +266,7 @@ namespace Panty
                     if (info == null) continue;
                     var bindCp = bind.GetComponent(info.FieldType);
                     if (bindCp) info.SetValue(cmpnt, Convert.ChangeType(bindCp, info.FieldType));
-                    else $"ÎŞ·¨ÕÒµ½{bind.Root}ÏÂ{info.FieldType}½Å±¾".Log();
+                    else $"æ— æ³•æ‰¾åˆ°{bind.Root}ä¸‹{info.FieldType}è„šæœ¬".Log();
                 }
             }
             EditorUtility.SetDirty(cmpnt);
@@ -303,7 +319,7 @@ namespace Panty
                     borderLeftWidth = 0,
                     borderRightWidth = 0,
                     fontSize = 24,
-                    flexGrow = 1 // Õ¼ÓÃÊ£Óà¿Õ¼ä
+                    flexGrow = 1 // å ç”¨å‰©ä½™ç©ºé—´
                 }
             };
             mField.RegisterCallback<ChangeEvent<string>>(OnChangeText);
@@ -312,7 +328,7 @@ namespace Panty
             mField.RegisterCallback<DragUpdatedEvent>(OnDragUpdated);
 
             mField.AddManipulator(new ContextualMenuManipulator(BuildContextualMenu));
-            // ½«TextFieldÌí¼Óµ½¸ùÔªËØ
+            // å°†TextFieldæ·»åŠ åˆ°æ ¹å…ƒç´ 
             root.Add(mField);
         }
         private void OnChangeText(ChangeEvent<string> evt) => mCmd = evt.newValue;
@@ -331,13 +347,13 @@ namespace Panty
                 {
                     string p = DragAndDrop.paths[0];
                     I.TPath = File.Exists(p) ? Path.GetDirectoryName(p) : p;
-                    $"ÒÑ±ê¼ÇÉú³ÉÂ·¾¶:{I.TPath}".Log();
+                    $"å·²æ ‡è®°ç”Ÿæˆè·¯å¾„:{I.TPath}".Log();
                 }
                 else if (evt.altKey)
                 {
                     string p = DragAndDrop.paths[0];
                     I.Search[0] = File.Exists(p) ? Path.GetDirectoryName(p) : p;
-                    $"ÒÑ±ê¼ÇËÑË÷Â·¾¶:{I.Search[0]}".Log();
+                    $"å·²æ ‡è®°æœç´¢è·¯å¾„:{I.Search[0]}".Log();
                 }
                 else
                 {
@@ -347,18 +363,18 @@ namespace Panty
                         Type scriptType = mono.GetClass();
                         if (scriptType == null)
                         {
-                            "´Ë½Å±¾Î´¶¨ÒåÀà»ò´æÔÚ±àÒë´íÎó".Log();
+                            "æ­¤è„šæœ¬æœªå®šä¹‰ç±»æˆ–å­˜åœ¨ç¼–è¯‘é”™è¯¯".Log();
                         }
                         else if (scriptType.IsSubclassOf(typeof(ScriptableObject)) &&
                                 !scriptType.IsSubclassOf(typeof(EditorWindow)))
                         {
                             SCRIPT = mono;
                             mField.value = "SoIns:" + mono.name;
-                            $"SO => {mono.name}ÒÑ±ê¼Ç".Log();
+                            $"SO => {mono.name}å·²æ ‡è®°".Log();
                         }
-                        else $"{mono.name}²»ÊÇSO".Log();
+                        else $"{mono.name}ä¸æ˜¯SO".Log();
                     }
-                    else "ÎŞ·¨»ñÈ¡ÍÏÒ·Êı¾İ".Log();
+                    else "æ— æ³•è·å–æ‹–æ›³æ•°æ®".Log();
                 }
             }
             else
@@ -370,7 +386,7 @@ namespace Panty
                     foreach (var obj in refs.OfType<GameObject>())
                     {
                         mGos.Push(obj);
-                        mField.value = $"ÒÑ»º´æ{obj.name}£ºGameObject";
+                        mField.value = $"å·²ç¼“å­˜{obj.name}ï¼šGameObject";
                     }
                 }
             }
@@ -389,7 +405,7 @@ namespace Panty
             if (string.IsNullOrEmpty(I.Hub))
             {
                 mField.value = "hub:";
-                $"ÇëÏÈÉèÖÃ¼Ü¹¹ {mCmd}¼Ü¹¹Ãû".Log();
+                $"è¯·å…ˆè®¾ç½®æ¶æ„ {mCmd}æ¶æ„å".Log();
                 return;
             }
             string father = tag switch
@@ -404,9 +420,9 @@ namespace Panty
         }
         private void ShowHelp()
         {
-            string instructions = $"# Panty ¹¤¾ß¼¯Ê¹ÓÃÊÖ²á\r\n\r\n```\r\n==============================\r\n  Panty ¹¤¾ß¼¯Ê¹ÓÃÊÖ²á\r\n==============================\r\n\r\nÄ¿Â¼:\r\n1. TextDialog Ê¹ÓÃÖ¸ÄÏ\r\n2. QuickCmdEditor Ê¹ÓÃÖ¸ÄÏ\r\n   - »ù´¡²Ù×÷\r\n   - ÃüÁîËµÃ÷\r\n   - ÍÏÒ·²Ù×÷ÓëÉÏÏÂÎÄ²Ëµ¥\r\n\r\n------------------------------\r\n1. TextDialog Ê¹ÓÃÖ¸ÄÏ\r\n------------------------------\r\n\r\n´ò¿ªÌáÊ¾¿ò:\r\n1. µ÷ÓÃ TextDialog.Open ·½·¨£¬´«ÈëĞèÒªÏÔÊ¾µÄÏûÏ¢ºÍ¿ÉÑ¡µÄ»Øµ÷º¯Êı:\r\n   TextDialog.Open(\"ÄãµÄÏûÏ¢\", È·ÈÏ»Øµ÷, È¡Ïû»Øµ÷);\r\n2. ÔÚÌáÊ¾¿òÖĞ£¬ÓÃ»§¿ÉÒÔÍ¨¹ıµã»÷È·ÈÏ»òÈ¡Ïû°´Å¥½øĞĞÏàÓ¦µÄ²Ù×÷¡£\r\n\r\n------------------------------\r\n2. QuickCmdEditor Ê¹ÓÃÖ¸ÄÏ\r\n------------------------------\r\n\r\n### »ù´¡²Ù×÷\r\n\r\n¿ìËÙ´ò¿ª:\r\n1. ÔÚ Unity ±à¼­Æ÷¶¥²¿²Ëµ¥À¸Ñ¡Ôñ PnTool/QuickCmd &Q ´ò¿ª QuickCmdEditor ´°¿Ú¡£\r\n   - ¿ì½İ¼ü: Alt + Q\r\n\r\nÌí¼Ó°ó¶¨:\r\n1. ÔÚ³¡¾°ÖĞÑ¡ÔñÒ»¸ö»ò¶à¸ö GameObject¡£\r\n2. ÔÚ Unity ±à¼­Æ÷¶¥²¿²Ëµ¥À¸Ñ¡Ôñ PnTool/Quick/AddBind &B ÎªËùÑ¡¶ÔÏóÌí¼Ó°ó¶¨×é¼ş¡£\r\n   - ¿ì½İ¼ü: Alt + B\r\n\r\nÌí¼ÓUI¸ù½Úµã:\r\n1. ÔÚ³¡¾°ÖĞÑ¡ÔñÒ»¸ö»ò¶à¸ö GameObject¡£\r\n2. ÔÚ Unity ±à¼­Æ÷¶¥²¿²Ëµ¥À¸Ñ¡Ôñ PnTool/Quick/AddUIRoot &W ½«ËùÑ¡¶ÔÏóÉèÖÃÎª UI ¸ù½Úµã¡£\r\n   - ¿ì½İ¼ü: Alt + W\r\n\r\n¼ì²é¸üĞÂ:\r\n1. ´ò¿ª QuickCmdEditor ´°¿Ú¡£\r\n2. ÔÚÃüÁîÊäÈë¿òÖĞÊäÈë check »ò ¼ì²é¸üĞÂ£¬È»ºó°´»Ø³µ¼ü¡£\r\n3. ³ÌĞò½«»á¼ì²é¸üĞÂ²¢ÏÔÊ¾ÏàÓ¦ĞÅÏ¢¡£\r\n   - ÉÏÏÂÎÄ²Ëµ¥: ÓÒ¼üµã»÷ÃüÁîÊäÈë¿òÑ¡Ôñ ¼ì²é¸üĞÂ¡£\r\n\r\n### ÃüÁîËµÃ÷\r\n\r\n»ù´¡ÃüÁî:\r\n- °ïÖú: ÊäÈë help »ò °ïÖú ²é¿´°ïÖúĞÅÏ¢¡£\r\n  - ÉÏÏÂÎÄ²Ëµ¥: ÓÒ¼üµã»÷ÃüÁîÊäÈë¿òÑ¡Ôñ ÏÔÊ¾°ïÖú¡£\r\n- ÇåÀí: ÊäÈë clear »ò ÇåÀí Çå¿ÕÒÑ±ê¼ÇµÄĞÅÏ¢¡£\r\n  - ÉÏÏÂÎÄ²Ëµ¥: ÓÒ¼üµã»÷ÃüÁîÊäÈë¿òÑ¡Ôñ Çå¿ÕÊı¾İ¡£\r\n- UI°ó¶¨: ÊäÈë uiBind »ò UI°ó¶¨ ½øĞĞ UI °ó¶¨²Ù×÷¡£\r\n  - ÉÏÏÂÎÄ²Ëµ¥: ÓÒ¼üµã»÷ÃüÁîÊäÈë¿òÑ¡Ôñ °ó¶¨ UI¡£\r\n- ¼ì²é¸üĞÂ: ÊäÈë check »ò ¼ì²é¸üĞÂ ¼ì²é¸üĞÂ¡£\r\n  - ÉÏÏÂÎÄ²Ëµ¥: ÓÒ¼üµã»÷ÃüÁîÊäÈë¿òÑ¡Ôñ ¼ì²é¸üĞÂ¡£\r\n\r\nÄ£¿éºÍ½Å±¾´´½¨ÃüÁî:\r\n- ÃüÃû¿Õ¼ä: ÊäÈë space:ÃüÃû¿Õ¼ä ÉèÖÃÃüÃû¿Õ¼ä£¬ÀıÈç space:MyNamespace¡£\r\n- Â·¾¶: ÊäÈë path:Â·¾¶ ÉèÖÃÂ·¾¶£¬ÀıÈç path:Assets/MyPath¡£ÊäÈë path:base »ò path:»ù´¡ ´´½¨»ù´¡Ä¿Â¼¡£\r\n- SoIns: ´´½¨ ScriptableObject ÊµÀı¡£ÀıÈç SoIns:MyScriptableObject¡£\r\n- Module: ´´½¨Ä£¿é¡£ÀıÈç Module:MyModule¡£\r\n- System: ´´½¨ÏµÍ³¡£ÀıÈç System:MySystem¡£\r\n- Model: ´´½¨Êı¾İÄ£ĞÍ¡£ÀıÈç Model:MyModel¡£\r\n- Game: ´´½¨ÓÎÏ·½Å±¾¡£ÀıÈç Game:MyGameScript¡£\r\n- UI: ´´½¨±íÏÖ²ã½Å±¾¡£ÀıÈç UI:MyUIScript¡£\r\n- Mono: ´´½¨ MonoBehaviour ½Å±¾¡£ÀıÈç Mono:MyMonoScript¡£\r\n- so: ´´½¨ ScriptableObject ½Å±¾¡£ÀıÈç so:MyScriptableObject¡£\r\n- hub: ´´½¨¼Ü¹¹¡£ÀıÈç hub:MyHub¡£\r\n\r\n### ÍÏÒ·²Ù×÷ÓëÉÏÏÂÎÄ²Ëµ¥\r\n\r\nÍÏÒ·²Ù×÷:\r\n1. ½«Ò»¸ö MonoScript ½Å±¾ÎÄ¼şÍÏµ½ QuickCmdEditor ´°¿ÚÖĞ£¬²¢°´×¡ Ctrl ¼üÒÔ±ê¼ÇÂ·¾¶¡£\r\n2. ½«Ò»¸ö»ò¶à¸ö GameObject ÍÏµ½ QuickCmdEditor ´°¿ÚÖĞ£¬ÒÔ»º´æÕâĞ©¶ÔÏó¹©ºóĞø²Ù×÷¡£\r\n\r\nÉÏÏÂÎÄ²Ëµ¥:\r\n1. ÓÒ¼üµã»÷ QuickCmdEditor ÃüÁîÊäÈë¿ò¿Éµ¯³öÉÏÏÂÎÄ²Ëµ¥£¬Ñ¡ÔñÒÔÏÂ²Ù×÷:\r\n   - ÏÔÊ¾°ïÖú: ²é¿´°ïÖúĞÅÏ¢¡£\r\n   - °ó¶¨ UI: ½øĞĞ UI °ó¶¨²Ù×÷¡£\r\n   - »ù´¡Ä¿Â¼: ÉèÖÃ»ù´¡Ä¿Â¼¡£\r\n   - ¼ì²é¸üĞÂ: ¼ì²é¸üĞÂ¡£\r\n   - Çå¿ÕÊı¾İ: Çå¿ÕÒÑ±ê¼ÇµÄĞÅÏ¢¡£\r\n\r\nÍ¨¹ıÒÔÉÏ²Ù×÷£¬ÓÃ»§¿ÉÒÔ¿ìËÙÀûÓÃ Panty ¹¤¾ß¼¯ÔÚ Unity ±à¼­Æ÷ÖĞ½øĞĞ¸÷ÖÖ±ã½İµÄ²Ù×÷¡£\r\n```";
+            string instructions = $"# Panty å·¥å…·é›†ä½¿ç”¨æ‰‹å†Œ\r\n\r\n```\r\n==============================\r\n  Panty å·¥å…·é›†ä½¿ç”¨æ‰‹å†Œ\r\n==============================\r\n\r\nç›®å½•:\r\n1. TextDialog ä½¿ç”¨æŒ‡å—\r\n2. QuickCmdEditor ä½¿ç”¨æŒ‡å—\r\n   - åŸºç¡€æ“ä½œ\r\n   - å‘½ä»¤è¯´æ˜\r\n   - æ‹–æ›³æ“ä½œä¸ä¸Šä¸‹æ–‡èœå•\r\n\r\n------------------------------\r\n1. TextDialog ä½¿ç”¨æŒ‡å—\r\n------------------------------\r\n\r\næ‰“å¼€æç¤ºæ¡†:\r\n1. è°ƒç”¨ TextDialog.Open æ–¹æ³•ï¼Œä¼ å…¥éœ€è¦æ˜¾ç¤ºçš„æ¶ˆæ¯å’Œå¯é€‰çš„å›è°ƒå‡½æ•°:\r\n   TextDialog.Open(\"ä½ çš„æ¶ˆæ¯\", ç¡®è®¤å›è°ƒ, å–æ¶ˆå›è°ƒ);\r\n2. åœ¨æç¤ºæ¡†ä¸­ï¼Œç”¨æˆ·å¯ä»¥é€šè¿‡ç‚¹å‡»ç¡®è®¤æˆ–å–æ¶ˆæŒ‰é’®è¿›è¡Œç›¸åº”çš„æ“ä½œã€‚\r\n\r\n------------------------------\r\n2. QuickCmdEditor ä½¿ç”¨æŒ‡å—\r\n------------------------------\r\n\r\n### åŸºç¡€æ“ä½œ\r\n\r\nå¿«é€Ÿæ‰“å¼€:\r\n1. åœ¨ Unity ç¼–è¾‘å™¨é¡¶éƒ¨èœå•æ é€‰æ‹© PnTool/QuickCmd &Q æ‰“å¼€ QuickCmdEditor çª—å£ã€‚\r\n   - å¿«æ·é”®: Alt + Q\r\n\r\næ·»åŠ ç»‘å®š:\r\n1. åœ¨åœºæ™¯ä¸­é€‰æ‹©ä¸€ä¸ªæˆ–å¤šä¸ª GameObjectã€‚\r\n2. åœ¨ Unity ç¼–è¾‘å™¨é¡¶éƒ¨èœå•æ é€‰æ‹© PnTool/Quick/AddBind &B ä¸ºæ‰€é€‰å¯¹è±¡æ·»åŠ ç»‘å®šç»„ä»¶ã€‚\r\n   - å¿«æ·é”®: Alt + B\r\n\r\næ·»åŠ UIæ ¹èŠ‚ç‚¹:\r\n1. åœ¨åœºæ™¯ä¸­é€‰æ‹©ä¸€ä¸ªæˆ–å¤šä¸ª GameObjectã€‚\r\n2. åœ¨ Unity ç¼–è¾‘å™¨é¡¶éƒ¨èœå•æ é€‰æ‹© PnTool/Quick/AddUIRoot &W å°†æ‰€é€‰å¯¹è±¡è®¾ç½®ä¸º UI æ ¹èŠ‚ç‚¹ã€‚\r\n   - å¿«æ·é”®: Alt + W\r\n\r\næ£€æŸ¥æ›´æ–°:\r\n1. æ‰“å¼€ QuickCmdEditor çª—å£ã€‚\r\n2. åœ¨å‘½ä»¤è¾“å…¥æ¡†ä¸­è¾“å…¥ check æˆ– æ£€æŸ¥æ›´æ–°ï¼Œç„¶åæŒ‰å›è½¦é”®ã€‚\r\n3. ç¨‹åºå°†ä¼šæ£€æŸ¥æ›´æ–°å¹¶æ˜¾ç¤ºç›¸åº”ä¿¡æ¯ã€‚\r\n   - ä¸Šä¸‹æ–‡èœå•: å³é”®ç‚¹å‡»å‘½ä»¤è¾“å…¥æ¡†é€‰æ‹© æ£€æŸ¥æ›´æ–°ã€‚\r\n\r\n### å‘½ä»¤è¯´æ˜\r\n\r\nåŸºç¡€å‘½ä»¤:\r\n- å¸®åŠ©: è¾“å…¥ help æˆ– å¸®åŠ© æŸ¥çœ‹å¸®åŠ©ä¿¡æ¯ã€‚\r\n  - ä¸Šä¸‹æ–‡èœå•: å³é”®ç‚¹å‡»å‘½ä»¤è¾“å…¥æ¡†é€‰æ‹© æ˜¾ç¤ºå¸®åŠ©ã€‚\r\n- æ¸…ç†: è¾“å…¥ clear æˆ– æ¸…ç† æ¸…ç©ºå·²æ ‡è®°çš„ä¿¡æ¯ã€‚\r\n  - ä¸Šä¸‹æ–‡èœå•: å³é”®ç‚¹å‡»å‘½ä»¤è¾“å…¥æ¡†é€‰æ‹© æ¸…ç©ºæ•°æ®ã€‚\r\n- UIç»‘å®š: è¾“å…¥ uiBind æˆ– UIç»‘å®š è¿›è¡Œ UI ç»‘å®šæ“ä½œã€‚\r\n  - ä¸Šä¸‹æ–‡èœå•: å³é”®ç‚¹å‡»å‘½ä»¤è¾“å…¥æ¡†é€‰æ‹© ç»‘å®š UIã€‚\r\n- æ£€æŸ¥æ›´æ–°: è¾“å…¥ check æˆ– æ£€æŸ¥æ›´æ–° æ£€æŸ¥æ›´æ–°ã€‚\r\n  - ä¸Šä¸‹æ–‡èœå•: å³é”®ç‚¹å‡»å‘½ä»¤è¾“å…¥æ¡†é€‰æ‹© æ£€æŸ¥æ›´æ–°ã€‚\r\n\r\næ¨¡å—å’Œè„šæœ¬åˆ›å»ºå‘½ä»¤:\r\n- å‘½åç©ºé—´: è¾“å…¥ space:å‘½åç©ºé—´ è®¾ç½®å‘½åç©ºé—´ï¼Œä¾‹å¦‚ space:MyNamespaceã€‚\r\n- è·¯å¾„: è¾“å…¥ path:è·¯å¾„ è®¾ç½®è·¯å¾„ï¼Œä¾‹å¦‚ path:Assets/MyPathã€‚è¾“å…¥ path:base æˆ– path:åŸºç¡€ åˆ›å»ºåŸºç¡€ç›®å½•ã€‚\r\n- SoIns: åˆ›å»º ScriptableObject å®ä¾‹ã€‚ä¾‹å¦‚ SoIns:MyScriptableObjectã€‚\r\n- Module: åˆ›å»ºæ¨¡å—ã€‚ä¾‹å¦‚ Module:MyModuleã€‚\r\n- System: åˆ›å»ºç³»ç»Ÿã€‚ä¾‹å¦‚ System:MySystemã€‚\r\n- Model: åˆ›å»ºæ•°æ®æ¨¡å‹ã€‚ä¾‹å¦‚ Model:MyModelã€‚\r\n- Game: åˆ›å»ºæ¸¸æˆè„šæœ¬ã€‚ä¾‹å¦‚ Game:MyGameScriptã€‚\r\n- UI: åˆ›å»ºè¡¨ç°å±‚è„šæœ¬ã€‚ä¾‹å¦‚ UI:MyUIScriptã€‚\r\n- Mono: åˆ›å»º MonoBehaviour è„šæœ¬ã€‚ä¾‹å¦‚ Mono:MyMonoScriptã€‚\r\n- so: åˆ›å»º ScriptableObject è„šæœ¬ã€‚ä¾‹å¦‚ so:MyScriptableObjectã€‚\r\n- hub: åˆ›å»ºæ¶æ„ã€‚ä¾‹å¦‚ hub:MyHubã€‚\r\n\r\n### æ‹–æ›³æ“ä½œä¸ä¸Šä¸‹æ–‡èœå•\r\n\r\næ‹–æ›³æ“ä½œ:\r\n1. å°†ä¸€ä¸ª MonoScript è„šæœ¬æ–‡ä»¶æ‹–åˆ° QuickCmdEditor çª—å£ä¸­ï¼Œå¹¶æŒ‰ä½ Ctrl é”®ä»¥æ ‡è®°è·¯å¾„ã€‚\r\n2. å°†ä¸€ä¸ªæˆ–å¤šä¸ª GameObject æ‹–åˆ° QuickCmdEditor çª—å£ä¸­ï¼Œä»¥ç¼“å­˜è¿™äº›å¯¹è±¡ä¾›åç»­æ“ä½œã€‚\r\n\r\nä¸Šä¸‹æ–‡èœå•:\r\n1. å³é”®ç‚¹å‡» QuickCmdEditor å‘½ä»¤è¾“å…¥æ¡†å¯å¼¹å‡ºä¸Šä¸‹æ–‡èœå•ï¼Œé€‰æ‹©ä»¥ä¸‹æ“ä½œ:\r\n   - æ˜¾ç¤ºå¸®åŠ©: æŸ¥çœ‹å¸®åŠ©ä¿¡æ¯ã€‚\r\n   - ç»‘å®š UI: è¿›è¡Œ UI ç»‘å®šæ“ä½œã€‚\r\n   - åŸºç¡€ç›®å½•: è®¾ç½®åŸºç¡€ç›®å½•ã€‚\r\n   - æ£€æŸ¥æ›´æ–°: æ£€æŸ¥æ›´æ–°ã€‚\r\n   - æ¸…ç©ºæ•°æ®: æ¸…ç©ºå·²æ ‡è®°çš„ä¿¡æ¯ã€‚\r\n\r\né€šè¿‡ä»¥ä¸Šæ“ä½œï¼Œç”¨æˆ·å¯ä»¥å¿«é€Ÿåˆ©ç”¨ Panty å·¥å…·é›†åœ¨ Unity ç¼–è¾‘å™¨ä¸­è¿›è¡Œå„ç§ä¾¿æ·çš„æ“ä½œã€‚\r\n```";
             string sc = SCRIPT == null ? "null" : SCRIPT.name;
-            TextDialog.Open($"{instructions}\r\n\r\n±ê¼Ç¼Ü¹¹£º{I.Hub}Hub\r\n±ê¼ÇÂ·¾¶£º{I.TPath}\r\n±ê¼ÇÃüÃû¿Õ¼ä£º{I.Space}\r\n±ê¼ÇËÑË÷Â·¾¶£º{I.Search[0]}\r\n±ê¼ÇSO×ÊÔ´£º{sc}\r\n");
+            TextDialog.Open($"{instructions}\r\n\r\næ ‡è®°æ¶æ„ï¼š{I.Hub}Hub\r\næ ‡è®°è·¯å¾„ï¼š{I.TPath}\r\næ ‡è®°å‘½åç©ºé—´ï¼š{I.Space}\r\næ ‡è®°æœç´¢è·¯å¾„ï¼š{I.Search[0]}\r\næ ‡è®°SOèµ„æºï¼š{sc}\r\n");
             mField.value = "";
         }
         private void ClearInfo()
@@ -415,7 +431,7 @@ namespace Panty
             SCRIPT = null;
             I.TPath = "Assets/Scripts";
             I.Search[0] = "Assets";
-            $"SCRIPTÒÑÖÃ¿Õ,´´½¨Â·¾¶:{I.TPath},ËÑË÷Â·¾¶{I.Search[0]}".Log();
+            $"SCRIPTå·²ç½®ç©º,åˆ›å»ºè·¯å¾„:{I.TPath},æœç´¢è·¯å¾„{I.Search[0]}".Log();
         }
         private void BasicCatalog()
         {
@@ -426,29 +442,29 @@ namespace Panty
                 string path = $"Assets/{fileNames[i]}";
                 if (FileKit.TryCreateDirectory(path))
                 {
-                    $"{path}´´½¨³É¹¦".Log();
+                    $"{path}åˆ›å»ºæˆåŠŸ".Log();
                     lose = false;
                 }
             }
             I.Search[0] = "Assets/Scripts";
-            if (lose) "ËùÓĞÎÄ¼ş¼ĞÒÑ¾ÍÎ»".Log();
+            if (lose) "æ‰€æœ‰æ–‡ä»¶å¤¹å·²å°±ä½".Log();
             else AssetDatabase.Refresh();
         }
         private void CheckUpdate()
         {
             if (IsAsync) return;
             string url = "https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/VersionInfo.txt";
-            RequestInfo(url, "ÕıÔÚ¼ì²é¸üĞÂ ÇëÉÔºó...", txt =>
+            RequestInfo(url, "æ­£åœ¨æ£€æŸ¥æ›´æ–° è¯·ç¨å...", txt =>
             {
                 string[] res = txt.Split("@");
                 string version = HubTool.version;
                 if (res[0] == version)
                 {
-                    TextDialog.Open($"µ±Ç°Îª×îĞÂ°æ±¾£º[ {version} ] > ÎŞĞè¸üĞÂ\r\n{res[1]}");
+                    TextDialog.Open($"å½“å‰ä¸ºæœ€æ–°ç‰ˆæœ¬ï¼š[ {version} ] > æ— éœ€æ›´æ–°\r\n{res[1]}");
                 }
                 else
                 {
-                    TextDialog.Open($"µ±Ç°°æ±¾£º{version}\r\n×îĞÂ°æ±¾£º{res[0]}\r\n\r\n{res[1]}");
+                    TextDialog.Open($"å½“å‰ç‰ˆæœ¬ï¼š{version}\r\næœ€æ–°ç‰ˆæœ¬ï¼š{res[0]}\r\n\r\n{res[1]}");
                 }
                 mField.value = "";
             });
@@ -456,7 +472,7 @@ namespace Panty
         private void OnUIBind()
         {
             if (mGos.Count == 0)
-                "ÎŞ¿É²Ù×÷¶ÔÏó".Log();
+                "æ— å¯æ“ä½œå¯¹è±¡".Log();
             else
             {
                 foreach (var go in mGos)
@@ -469,54 +485,54 @@ namespace Panty
         }
         private void BuildContextualMenu(ContextualMenuPopulateEvent evt)
         {
-            // Çå³ıÏÖÓĞ²Ëµ¥Ïî
+            // æ¸…é™¤ç°æœ‰èœå•é¡¹
             evt.menu.MenuItems().Clear();
-            // Ìí¼ÓĞÂµÄ²Ëµ¥Ïî
-            evt.menu.AppendAction("´´½¨ÃüÁî/Ä£¿é²ã(Module)", e => mField.value = "Module:½Å±¾Ãû");
-            evt.menu.AppendAction("´´½¨ÃüÁî/ÏµÍ³²ã(System)", e => mField.value = "System:½Å±¾Ãû");
-            evt.menu.AppendAction("´´½¨ÃüÁî/Êı¾İ²ã(Model)", e => mField.value = "Model:½Å±¾Ãû");
-            evt.menu.AppendSeparator("´´½¨ÃüÁî/");
-            evt.menu.AppendAction("´´½¨ÃüÁî/¿ØÖÆ½Å±¾(Game)", e => mField.value = "Game:½Å±¾Ãû");
-            evt.menu.AppendAction("´´½¨ÃüÁî/ÆÕÍ¨½Å±¾(Mono)", e => mField.value = "Mono:½Å±¾Ãû");
-            evt.menu.AppendAction("´´½¨ÃüÁî/±íÏÖ½Å±¾(View)", e => mField.value = "UI:½Å±¾Ãû");
-            evt.menu.AppendAction("´´½¨ÃüÁî/Êı¾İ½Å±¾(SO)", e => mField.value = "So:½Å±¾Ãû");
-            evt.menu.AppendAction("´´½¨ÃüÁî/Êı¾İ×ÊÔ´(SoIns)", e => mField.value = "SoIns:×ÊÔ´Ãû");
+            // æ·»åŠ æ–°çš„èœå•é¡¹
+            evt.menu.AppendAction("åˆ›å»ºå‘½ä»¤/æ¨¡å—å±‚(Module)", e => mField.value = "Module:è„šæœ¬å");
+            evt.menu.AppendAction("åˆ›å»ºå‘½ä»¤/ç³»ç»Ÿå±‚(System)", e => mField.value = "System:è„šæœ¬å");
+            evt.menu.AppendAction("åˆ›å»ºå‘½ä»¤/æ•°æ®å±‚(Model)", e => mField.value = "Model:è„šæœ¬å");
+            evt.menu.AppendSeparator("åˆ›å»ºå‘½ä»¤/");
+            evt.menu.AppendAction("åˆ›å»ºå‘½ä»¤/æ§åˆ¶è„šæœ¬(Game)", e => mField.value = "Game:è„šæœ¬å");
+            evt.menu.AppendAction("åˆ›å»ºå‘½ä»¤/æ™®é€šè„šæœ¬(Mono)", e => mField.value = "Mono:è„šæœ¬å");
+            evt.menu.AppendAction("åˆ›å»ºå‘½ä»¤/è¡¨ç°è„šæœ¬(View)", e => mField.value = "UI:è„šæœ¬å");
+            evt.menu.AppendAction("åˆ›å»ºå‘½ä»¤/æ•°æ®è„šæœ¬(SO)", e => mField.value = "So:è„šæœ¬å");
+            evt.menu.AppendAction("åˆ›å»ºå‘½ä»¤/æ•°æ®èµ„æº(SoIns)", e => mField.value = "SoIns:èµ„æºå");
             evt.menu.AppendSeparator();
-            evt.menu.AppendAction("°ó¶¨ÃüÁî/ÃüÃû¿Õ¼ä(NameSpace)", e => mField.value = "Space:ÃüÃû¿Õ¼äÃû");
-            evt.menu.AppendAction("°ó¶¨ÃüÁî/Â·¾¶(Path)", e => mField.value = "Path:Â·¾¶Ãû");
-            evt.menu.AppendAction("°ó¶¨ÃüÁî/¼Ü¹¹(Hub)", e => mField.value = "Hub:¼Ü¹¹Ãû");
+            evt.menu.AppendAction("ç»‘å®šå‘½ä»¤/å‘½åç©ºé—´(NameSpace)", e => mField.value = "Space:å‘½åç©ºé—´å");
+            evt.menu.AppendAction("ç»‘å®šå‘½ä»¤/è·¯å¾„(Path)", e => mField.value = "Path:è·¯å¾„å");
+            evt.menu.AppendAction("ç»‘å®šå‘½ä»¤/æ¶æ„(Hub)", e => mField.value = "Hub:æ¶æ„å");
             evt.menu.AppendSeparator();
-            evt.menu.AppendAction("ÏÔÊ¾°ïÖú", e => ShowHelp());
-            evt.menu.AppendAction("°ó¶¨ UI", e => OnUIBind());
-            evt.menu.AppendAction("»ù´¡Ä¿Â¼", e => BasicCatalog());
-            evt.menu.AppendAction("¼ì²é¸üĞÂ", e => CheckUpdate());
-            evt.menu.AppendAction("Çå¿ÕÊı¾İ", e =>
+            evt.menu.AppendAction("æ˜¾ç¤ºå¸®åŠ©", e => ShowHelp());
+            evt.menu.AppendAction("ç»‘å®š UI", e => OnUIBind());
+            evt.menu.AppendAction("åŸºç¡€ç›®å½•", e => BasicCatalog());
+            evt.menu.AppendAction("æ£€æŸ¥æ›´æ–°", e => CheckUpdate());
+            evt.menu.AppendAction("æ¸…ç©ºæ•°æ®", e =>
             {
-                if (EditorKit.Dialog("ÕæµÄÒªÇå¿ÕÊı¾İÂï£¡")) ClearInfo();
+                if (EditorKit.Dialog("çœŸçš„è¦æ¸…ç©ºæ•°æ®å˜›ï¼")) ClearInfo();
             });
         }
         private void OnKeyDown(KeyDownEvent evt)
         {
             if (evt.keyCode == KeyCode.Return || evt.keyCode == KeyCode.KeypadEnter)
             {
-                // Èç¹û¿ÕÖ¸Áî¾ÍÌø³ö
+                // å¦‚æœç©ºæŒ‡ä»¤å°±è·³å‡º
                 if (string.IsNullOrWhiteSpace(mCmd))
                 {
                     evt.StopPropagation();
                     return;
                 }
-                // È¥³ıÖ¸ÁîÍ·Î²
+                // å»é™¤æŒ‡ä»¤å¤´å°¾
                 string cmd = mCmd.Trim();
-                // °ïÖúÖ¸Áî
-                if (Eq(cmd, "Bind", "°ó¶¨")) OnUIBind();
-                else if (Eq(cmd, "help", "°ïÖú")) ShowHelp();
-                else if (Eq(cmd, "clear", "ÇåÀí")) ClearInfo();
-                else if (Eq(cmd, "check", "¼ì²é¸üĞÂ")) CheckUpdate();
-                else // ´øºó×ºµÄÖ¸Áî
+                // å¸®åŠ©æŒ‡ä»¤
+                if (Eq(cmd, "Bind", "ç»‘å®š")) OnUIBind();
+                else if (Eq(cmd, "help", "å¸®åŠ©")) ShowHelp();
+                else if (Eq(cmd, "clear", "æ¸…ç†")) ClearInfo();
+                else if (Eq(cmd, "check", "æ£€æŸ¥æ›´æ–°")) CheckUpdate();
+                else // å¸¦åç¼€çš„æŒ‡ä»¤
                 {
-                    string[] cmds = cmd.Split(':', '£º');
+                    string[] cmds = cmd.Split(':', 'ï¼š');
                     string info = cmds[0].TrimEnd();
-                    if (Eq(info, "space", "ÃüÃû¿Õ¼ä"))
+                    if (Eq(info, "space", "å‘½åç©ºé—´"))
                     {
                         if (cmds.Length > 1)
                         {
@@ -524,57 +540,57 @@ namespace Panty
                             if (char.IsLetterOrDigit(cmd[cmd.Length - 1]))
                                 I.Space = cmd;
                         }
-                        $"µ±Ç°ÃüÃû¿Õ¼äÎª:{I.Space}".Log();
+                        $"å½“å‰å‘½åç©ºé—´ä¸º:{I.Space}".Log();
                         mField.value = "space:";
                     }
-                    else if (Eq(info, "path", "Â·¾¶"))
+                    else if (Eq(info, "path", "è·¯å¾„"))
                     {
                         if (cmds.Length == 1)
                         {
-                            $"µ±Ç°Â·¾¶Îª:{I.TPath}".Log();
+                            $"å½“å‰è·¯å¾„ä¸º:{I.TPath}".Log();
                         }
                         else
                         {
                             if (string.IsNullOrEmpty(cmds[1]))
                             {
-                                $"µ±Ç°Â·¾¶Îª:{I.TPath}".Log();
+                                $"å½“å‰è·¯å¾„ä¸º:{I.TPath}".Log();
                             }
                             else
                             {
-                                // µÃµ½Êµ¼ÊÂ·¾¶ ²¢È¥µô¿Õ¸ñ 2ÖÖÇé¿ö Ïà¶ÔÂ·¾¶Ä£Ê½ ¾ø¶ÔÂ·¾¶Ä£Ê½
+                                // å¾—åˆ°å®é™…è·¯å¾„ å¹¶å»æ‰ç©ºæ ¼ 2ç§æƒ…å†µ ç›¸å¯¹è·¯å¾„æ¨¡å¼ ç»å¯¹è·¯å¾„æ¨¡å¼
                                 string sub = cmds[1].Trim();
                                 if (char.IsDigit(sub[0]))
                                 {
-                                    "Ö¸Áî²»ÄÜÒÔÊı×Ö¿ªÍ·".Log();
+                                    "æŒ‡ä»¤ä¸èƒ½ä»¥æ•°å­—å¼€å¤´".Log();
                                 }
-                                else if (Eq(sub, "base", "»ù´¡"))
+                                else if (Eq(sub, "base", "åŸºç¡€"))
                                     BasicCatalog();
                                 else
                                 {
-                                    // Ïà¶ÔÂ·¾¶´¦Àí
+                                    // ç›¸å¯¹è·¯å¾„å¤„ç†
                                     if (sub[0] == '/') cmd = I.TPath + sub;
-                                    // Èç¹ûÃ»ÓĞ¸ùÄ¿Â¼ ĞèÒª¼ÓÉÏ¸ùÄ¿Â¼
+                                    // å¦‚æœæ²¡æœ‰æ ¹ç›®å½• éœ€è¦åŠ ä¸Šæ ¹ç›®å½•
                                     else cmd = sub.Split('/')[0] == "Assets" ? sub : $"Assets/{sub}";
-                                    // ½øĞĞÂ·¾¶ºÏ·¨ĞÔÅĞ¶Ï
+                                    // è¿›è¡Œè·¯å¾„åˆæ³•æ€§åˆ¤æ–­
                                     if (FileKit.EnsurePathExists(ref cmd))
                                     {
                                         if (Directory.Exists(cmd))
                                         {
-                                            $"Â·¾¶´æÔÚ,ÒÑ±ê¼Ç{cmd}".Log();
+                                            $"è·¯å¾„å­˜åœ¨,å·²æ ‡è®°{cmd}".Log();
                                             I.TPath = cmd;
                                             mField.value = "path:";
                                         }
-                                        else if (EditorKit.Dialog($"È·¶¨Òª´´½¨¸ÃÂ·¾¶£¿\r\nPath£º{cmd}"))
+                                        else if (EditorKit.Dialog($"ç¡®å®šè¦åˆ›å»ºè¯¥è·¯å¾„ï¼Ÿ\r\nPathï¼š{cmd}"))
                                         {
                                             mField.value = "path:";
                                             I.TPath = cmd;
-                                            $"{cmd}´´½¨³É¹¦,ÒÑ±ê¼Ç¸ÃÂ·¾¶".Log();
+                                            $"{cmd}åˆ›å»ºæˆåŠŸ,å·²æ ‡è®°è¯¥è·¯å¾„".Log();
                                             Directory.CreateDirectory(cmd);
                                             AssetDatabase.Refresh();
                                         }
-                                        else $"È¡Ïû´´½¨,±ê¼ÇÔ­Â·¾¶ {I.TPath}".Log();
+                                        else $"å–æ¶ˆåˆ›å»º,æ ‡è®°åŸè·¯å¾„ {I.TPath}".Log();
                                     }
-                                    else $"Â·¾¶²»ºÏ·¨ {cmd}".Log();
+                                    else $"è·¯å¾„ä¸åˆæ³• {cmd}".Log();
                                 }
                             }
                         }
@@ -584,9 +600,9 @@ namespace Panty
                         string sub = cmds[1].TrimStart();
                         if (char.IsDigit(sub[0]))
                         {
-                            "Ö¸Áî²»ÄÜÒÔÊı×Ö¿ªÍ·".Log();
+                            "æŒ‡ä»¤ä¸èƒ½ä»¥æ•°å­—å¼€å¤´".Log();
                         }
-                        else if (Eq(info, "SoIns", "SoÊµÀı"))
+                        else if (Eq(info, "SoIns", "Soå®ä¾‹"))
                         {
                             if (SCRIPT != null)
                             {
@@ -595,7 +611,7 @@ namespace Panty
                                 path = $"{path}/{sub}.asset";
                                 if (File.Exists(path))
                                 {
-                                    $"{sub}.asset ÒÑ´æÔÚ".Log();
+                                    $"{sub}.asset å·²å­˜åœ¨".Log();
                                 }
                                 else
                                 {
@@ -605,29 +621,29 @@ namespace Panty
                                     instance.ApplyModifiedPropertiesWithoutUndo();
                                     AssetDatabase.CreateAsset(instance.targetObject, uniqueFileName);
                                     AssetDatabase.ImportAsset(uniqueFileName);
-                                    // Çå¿ÕserializedObject£¬ÒÔ±ãÁ¬Ğø´´½¨
+                                    // æ¸…ç©ºserializedObjectï¼Œä»¥ä¾¿è¿ç»­åˆ›å»º
                                     // serializedObject = null;
-                                    $"{sub}.asset ´´½¨³É¹¦".Log();
+                                    $"{sub}.asset åˆ›å»ºæˆåŠŸ".Log();
                                 }
                             }
                         }
-                        else if (Eq(info, "Module", "Ä£¿é")) CreateModule(sub, "Module");
-                        else if (Eq(info, "System", "ÏµÍ³")) CreateModule(sub, "System");
-                        else if (Eq(info, "Model", "Êı¾İ")) CreateModule(sub, "Model");
-                        else if (Eq(info, "Game", "ÓÎÏ·")) CreateScript(sub, "Game");
-                        else if (Eq(info, "UI", "±íÏÖ")) CreateScript(sub, "UI");
-                        else if (Eq(info, "Mono", "½Å±¾")) CreateScript(sub, "Mono");
+                        else if (Eq(info, "Module", "æ¨¡å—")) CreateModule(sub, "Module");
+                        else if (Eq(info, "System", "ç³»ç»Ÿ")) CreateModule(sub, "System");
+                        else if (Eq(info, "Model", "æ•°æ®")) CreateModule(sub, "Model");
+                        else if (Eq(info, "Game", "æ¸¸æˆ")) CreateScript(sub, "Game");
+                        else if (Eq(info, "UI", "è¡¨ç°")) CreateScript(sub, "UI");
+                        else if (Eq(info, "Mono", "è„šæœ¬")) CreateScript(sub, "Mono");
                         else if (Eq(info, "so", "SO")) CreateScript(sub, "So");
-                        else if (Eq(info, "hub", "¼Ü¹¹"))
+                        else if (Eq(info, "hub", "æ¶æ„"))
                         {
                             string tmp = $"using UnityEngine;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    public class @Hub : ModuleHub<@Hub>\r\n    {{\r\n        protected override void BuildModule()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n    public class @Game : MonoBehaviour, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n    public class @UI : UIPanel, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n}}";
                             EditorKit.CreatScript(I.TPath, sub, "Hub", tmp);
-                            $"ÒÑ±ê¼Ç{sub}Hub¼Ü¹¹".Log();
+                            $"å·²æ ‡è®°{sub}Hubæ¶æ„".Log();
                             mField.value = $"{info}:";
                             I.Hub = sub;
                         }
                     }
-                    else $"{cmd}Ö¸Áî´íÎó".Log();
+                    else $"{cmd}æŒ‡ä»¤é”™è¯¯".Log();
                 }
                 evt.StopPropagation();
             }
@@ -637,7 +653,7 @@ namespace Panty
             try
             {
                 using (var client = new HttpClient())
-                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8))) // ÉèÖÃ³¬Ê±Ê±¼ä
+                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8))) // è®¾ç½®è¶…æ—¶æ—¶é—´
                 {
                     IsAsync = true;
                     mField.value = (tips);
@@ -649,11 +665,11 @@ namespace Panty
             catch (TaskCanceledException e)
             {
                 bool trigger = e.CancellationToken.IsCancellationRequested;
-                EditorKit.Tips(trigger ? "ÇëÇó±»ÓÃ»§È¡Ïû¡£" : "ÇëÇó³¬Ê±!");
+                EditorKit.Tips(trigger ? "è¯·æ±‚è¢«ç”¨æˆ·å–æ¶ˆã€‚" : "è¯·æ±‚è¶…æ—¶!");
             }
             catch (HttpRequestException e)
             {
-                EditorKit.Tips($"ÇëÇó´íÎó: {e.Message}");
+                EditorKit.Tips($"è¯·æ±‚é”™è¯¯: {e.Message}");
             }
             finally
             {

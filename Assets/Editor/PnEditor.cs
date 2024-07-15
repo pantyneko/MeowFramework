@@ -1,9 +1,9 @@
-using UnityEngine;
-using UnityEditor;
-using System;
+ï»¿using System;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using UnityEditor;
+using UnityEngine;
 
 namespace Panty
 {
@@ -21,7 +21,7 @@ namespace Panty
             UpdateFK,
             Custom,
         }
-        protected string inputText = "ß÷ß÷¹¤¾ßÏä";
+        protected string inputText = "å–µå–µå·¥å…·ç®±";
         protected bool IsAsync;
         protected E_Path mPath;
         protected GUIStyle HelpBoxStyle;
@@ -63,12 +63,12 @@ namespace Panty
                     }
                 }
                 float len = btnInfos == null ? 0f : btnInfos.Length;
-                // ¼ÆËã×îĞ¡´°¿Ú¿í¶ÈÎª°´Å¥¿í¶ÈµÄ×ÜºÍ¼ÓÉÏ¼ä¸ô£¬ÔÙ¼ÓÉÏ¶îÍâ¿í¶È
+                // è®¡ç®—æœ€å°çª—å£å®½åº¦ä¸ºæŒ‰é’®å®½åº¦çš„æ€»å’ŒåŠ ä¸Šé—´éš”ï¼Œå†åŠ ä¸Šé¢å¤–å®½åº¦
                 float buttonWidth = GUI.skin.button.CalcSize(new GUIContent("0000000000")).x;
                 float minWindowWidth = MaxLineItemCount * buttonWidth + (MaxLineItemCount - 1) * textSpacing;
                 float btnLine = MathF.Ceiling(len / MaxLineItemCount);
                 float minWindowHeight = 300 + (btnLine + 1) * 10;
-                // ÉèÖÃ³õÊ¼´°¿ÚÎ»ÖÃÎªÆÁÄ»ÖĞÑë
+                // è®¾ç½®åˆå§‹çª—å£ä½ç½®ä¸ºå±å¹•ä¸­å¤®
                 float x = Screen.currentResolution.width * 0.3f;
                 float y = Screen.currentResolution.height * 0.1f;
                 position = new Rect(x, y, minWindowWidth, minWindowHeight);
@@ -78,9 +78,9 @@ namespace Panty
             EditorGUILayout.Space();
 
             EditorGUILayout.BeginHorizontal();
-            mIsShowBtn = GUILayout.Toggle(mIsShowBtn, "ÏÔÊ¾¹¦ÄÜ°´Å¥");
-            mDisabledInputBox = GUILayout.Toggle(mDisabledInputBox, "½ûÓÃÊäÈë¿ò");
-            mShowBaseInfo = GUILayout.Toggle(mShowBaseInfo, "»ù´¡ĞÅÏ¢");
+            mIsShowBtn = GUILayout.Toggle(mIsShowBtn, "æ˜¾ç¤ºåŠŸèƒ½æŒ‰é’®");
+            mDisabledInputBox = GUILayout.Toggle(mDisabledInputBox, "ç¦ç”¨è¾“å…¥æ¡†");
+            mShowBaseInfo = GUILayout.Toggle(mShowBaseInfo, "åŸºç¡€ä¿¡æ¯");
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.Space();
@@ -95,7 +95,7 @@ namespace Panty
 
             if (Event.current.type == EventType.ContextClick)
             {
-                // ´´½¨ÓÒ¼ü²Ëµ¥
+                // åˆ›å»ºå³é”®èœå•
                 var menu = new GenericMenu();
                 if (mMenuItemFunc != null)
                 {
@@ -104,7 +104,7 @@ namespace Panty
                         menu.AddItem(mMenuItemContent[i], false, mMenuItemFunc[i]);
                     }
                 }
-                menu.AddItem(new GUIContent("´´½¨»ù´¡Ä¿Â¼"), false, () =>
+                menu.AddItem(new GUIContent("åˆ›å»ºåŸºç¡€ç›®å½•"), false, () =>
                 {
                     string[] fileNames = { "ArtRes/Sprites", "Resources/Audios/Bgm", "Resources/Audios/Sound", "Resources/Prefabs", "Scripts/Framework", "Project/Game", "StreamingAssets/Csv" };
                     for (int i = 0; i < fileNames.Length; i++)
@@ -114,29 +114,29 @@ namespace Panty
                     }
                     AssetDatabase.Refresh();
                 });
-                menu.AddItem(new GUIContent("À­È¡ºËĞÄ´úÂë"), false, () =>
+                menu.AddItem(new GUIContent("æ‹‰å–æ ¸å¿ƒä»£ç "), false, () =>
                 {
                     if (IsAsync) return;
                     string url = "https://gitee.com/PantyNeko/MeowFramework/raw/main/Assets/FK/ModuleHub.cs";
-                    RequestInfo(url, "ÕıÔÚÀ­È¡×îĞÂ´úÂë ÇëÉÔºó...", txt =>
+                    RequestInfo(url, "æ­£åœ¨æ‹‰å–æœ€æ–°ä»£ç  è¯·ç¨å...", txt =>
                     {
-                        string msg = "µã»÷ Yes ´úÂë½«´«Èë¼ôÌù°å Ê¹ÓÃ Ctrl + V Ìæ»»Ô­Ê¼¼Ü¹¹";
+                        string msg = "ç‚¹å‡» Yes ä»£ç å°†ä¼ å…¥å‰ªè´´æ¿ ä½¿ç”¨ Ctrl + V æ›¿æ¢åŸå§‹æ¶æ„";
                         if (EditorKit.Dialog(msg)) GUIUtility.systemCopyBuffer = txt;
                     });
                 });
-                // ÏÔÊ¾ÓÒ¼ü²Ëµ¥
+                // æ˜¾ç¤ºå³é”®èœå•
                 menu.ShowAsContext();
                 Event.current.Use();
             }
             EditorGUILayout.BeginHorizontal();
-            if (OnClick("ÖØÖÃ×´Ì¬"))
+            if (OnClick("é‡ç½®çŠ¶æ€"))
             {
                 mIsShowBtn = true;
                 mDisabledInputBox = true;
                 mShowBaseInfo = false;
-                inputText = "×´Ì¬ÒÑÖØÖÃ";
+                inputText = "çŠ¶æ€å·²é‡ç½®";
             }
-            else if (OnClick("´ò¿ªÂ·¾¶"))
+            else if (OnClick("æ‰“å¼€è·¯å¾„"))
             {
                 inputText = mPath switch
                 {
@@ -152,7 +152,7 @@ namespace Panty
                 };
                 try
                 {
-                    if (string.IsNullOrEmpty(inputText)) inputText = "Â·¾¶Îª¿Õ";
+                    if (string.IsNullOrEmpty(inputText)) inputText = "è·¯å¾„ä¸ºç©º";
                     else if (inputText == "all")
                     {
                         foreach (var path in EditorKit.EnsureSelectedIsFolder())
@@ -171,14 +171,14 @@ namespace Panty
 
             if (mIsShowBtn)
             {
-                GUILayout.Label("¶¯Ì¬°´Å¥ÇøÓò ÖØĞ´InitBtnInfo½øĞĞÌí¼Ó ¡ı", HelpBoxStyle);
+                GUILayout.Label("åŠ¨æ€æŒ‰é’®åŒºåŸŸ é‡å†™InitBtnInfoè¿›è¡Œæ·»åŠ  â†“", HelpBoxStyle);
                 ShowBtns(btnInfos);
             }
             ExtensionControl();
 
             if (mShowBaseInfo)
             {
-                GUILayout.Label("¶¯Ì¬µ÷ÊÔĞÅÏ¢ ÖØĞ´ShowLogInfo½øĞĞÌí¼Ó ¡ı", HelpBoxStyle);
+                GUILayout.Label("åŠ¨æ€è°ƒè¯•ä¿¡æ¯ é‡å†™ShowLogInfoè¿›è¡Œæ·»åŠ  â†“", HelpBoxStyle);
                 ShowLogInfo();
             }
         }
@@ -187,7 +187,7 @@ namespace Panty
             try
             {
                 using (var client = new HttpClient())
-                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8))) // ÉèÖÃ³¬Ê±Ê±¼ä
+                using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(8))) // è®¾ç½®è¶…æ—¶æ—¶é—´
                 {
                     IsAsync = true;
                     inputText = tips;
@@ -198,11 +198,11 @@ namespace Panty
             }
             catch (TaskCanceledException e)
             {
-                EditorKit.Tips(e.CancellationToken.IsCancellationRequested ? "ÇëÇó±»ÓÃ»§È¡Ïû¡£" : "ÇëÇó³¬Ê±!");
+                EditorKit.Tips(e.CancellationToken.IsCancellationRequested ? "è¯·æ±‚è¢«ç”¨æˆ·å–æ¶ˆã€‚" : "è¯·æ±‚è¶…æ—¶!");
             }
             catch (HttpRequestException e)
             {
-                EditorKit.Tips($"ÇëÇó´íÎó: {e.Message}");
+                EditorKit.Tips($"è¯·æ±‚é”™è¯¯: {e.Message}");
             }
             finally
             {
@@ -211,10 +211,10 @@ namespace Panty
         }
         protected virtual void ShowLogInfo()
         {
-            GUILayout.Label($"ÊÀ½ç : {Camera.main.ScreenToWorldPoint(Input.mousePosition)}");
-            GUILayout.Label($"ÊÓ¿Ú : {Camera.main.ScreenToViewportPoint(Input.mousePosition)}");
-            GUILayout.Label($"ÆÁÄ» : {Input.mousePosition}");
-            GUILayout.Label("Ö¡ÂÊ : " + (1F / Time.deltaTime).ToString("F0"));
+            GUILayout.Label($"ä¸–ç•Œ : {Camera.main.ScreenToWorldPoint(Input.mousePosition)}");
+            GUILayout.Label($"è§†å£ : {Camera.main.ScreenToViewportPoint(Input.mousePosition)}");
+            GUILayout.Label($"å±å¹• : {Input.mousePosition}");
+            GUILayout.Label("å¸§ç‡ : " + (1F / Time.deltaTime).ToString("F0"));
         }
         private void ShowBtns((string name, Action call)[] btns)
         {
@@ -222,7 +222,7 @@ namespace Panty
             int row = btns.Length / MaxLineItemCount;
             if (btns.Length > MaxLineItemCount)
             {
-                // Èç¹û°´Å¥µÄÊıÁ¿´óÓÚÒ»ĞĞ µ÷Õû°´Å¥ĞĞ²¼¾Ö£¬ÈıĞĞ°´Å¥
+                // å¦‚æœæŒ‰é’®çš„æ•°é‡å¤§äºä¸€è¡Œ è°ƒæ•´æŒ‰é’®è¡Œå¸ƒå±€ï¼Œä¸‰è¡ŒæŒ‰é’®
                 for (byte r = 0; r < row; r++)
                 {
                     EditorGUILayout.BeginHorizontal();
