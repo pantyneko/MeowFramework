@@ -155,41 +155,44 @@ namespace Panty
             }
         }
 #endif
-        /// <summary>
-        /// 将委托添加到字典中 
-        /// </summary>
-        public static void Combine<T>(this Dictionary<T, Delegate> events, T key, Delegate evt)
-        {
-            events[key] = events.TryGetValue(key, out var methods) ? Delegate.Combine(methods, evt) : evt;
-        }
-        /// <summary>
-        /// 将委托从字典中移除
-        /// </summary>
-        public static void Separate<T>(this Dictionary<T, Delegate> events, T key, Delegate evt)
-        {
-            if (events.TryGetValue(key, out var methods))
-            {
-                methods = Delegate.Remove(methods, evt);
-                if (methods == null) events.Remove(key);
-                else events[key] = methods;
-            }
-#if DEBUG
-            else $"{key} 事件Key不存在".Log();
-#endif
-        }
     }
     public static partial class HubEx
     {
         public static M Module<M>(this IPermissionProvider self) where M : class, IModule => self.Hub.Module<M>();
         public static U Utility<U>(this IPermissionProvider self) where U : class, IUtility => self.Hub.Utility<U>();
+
+        public static IRmv AddEvent<E>(this IPermissionProvider self, Action evt) where E : struct => self.Hub.AddEvent<E>(evt);
         public static IRmv AddEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct => self.Hub.AddEvent<E>(evt);
+
+        public static IRmv AddEvent<E>(this IPermissionProvider self, int id, Action evt) where E : Enum => self.Hub.AddEvent<E>(id, evt);
+        public static IRmv AddEvent<E, T>(this IPermissionProvider self, int id, Action<T> evt) where E : Enum => self.Hub.AddEvent<E, T>(id, evt);
+
+        public static IRmv AddEvent<E>(this IPermissionProvider self, E type, Action evt) where E : Enum => self.Hub.AddEvent<E>(type, evt);
+        public static IRmv AddEvent<E, T>(this IPermissionProvider self, E type, Action<T> evt) where E : Enum => self.Hub.AddEvent<E, T>(type, evt);
+
+        public static void RmvEvent<E>(this IPermissionProvider self, Action evt) where E : struct => self.Hub.RmvEvent<E>(evt);
         public static void RmvEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct => self.Hub.RmvEvent<E>(evt);
+
+        public static void RmvEvent<E>(this IPermissionProvider self, int id, Action evt) where E : Enum => self.Hub.AddEvent<E>(id, evt);
+        public static void RmvEvent<E, T>(this IPermissionProvider self, int id, Action<T> evt) where E : Enum => self.Hub.AddEvent<E, T>(id, evt);
+
+        public static void RmvEvent<E>(this IPermissionProvider self, E type, Action evt) where E : Enum => self.Hub.RmvEvent<E>(type, evt);
+        public static void RmvEvent<E, T>(this IPermissionProvider self, E type, Action<T> evt) where E : Enum => self.Hub.RmvEvent<E, T>(type, evt);
+
         public static void SendEvent<E>(this IPermissionProvider self, E e) where E : struct => self.Hub.SendEvent<E>(e);
         public static void SendEvent<E>(this IPermissionProvider self) where E : struct => self.Hub.SendEvent<E>();
+
+        public static void EnumEvent<E>(this IPermissionProvider self, int id) where E : Enum => self.Hub.EnumEvent<E>(id);
+        public static void EnumEvent<E, T>(this IPermissionProvider self, int id, T info) where E : Enum => self.Hub.EnumEvent<E, T>(id, info);
+
+        public static void EnumEvent<E>(this IPermissionProvider self, E type) where E : Enum => self.Hub.EnumEvent<E>(type);
+        public static void EnumEvent<E, T>(this IPermissionProvider self, E type, T info) where E : Enum => self.Hub.EnumEvent<E, T>(type, info);
+
         public static void SendCmd<C>(this IPermissionProvider self, C cmd) where C : ICmd => self.Hub.SendCmd(cmd);
         public static void SendCmd<C>(this IPermissionProvider self) where C : struct, ICmd => self.Hub.SendCmd(new C());
         public static void SendCmd<C, P>(this IPermissionProvider self, C cmd, P info) where C : ICmd<P> => self.Hub.SendCmd(cmd, info);
         public static void SendCmd<C, P>(this IPermissionProvider self, P info) where C : struct, ICmd<P> => self.Hub.SendCmd(new C(), info);
+
         public static R Query<Q, R>(this IPermissionProvider self) where Q : struct, IQuery<R> => self.Hub.Query<Q, R>();
         public static R Query<Q, P, R>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, R> => self.Hub.Query<Q, P, R>(info);
         public static Q Query<Q>(this IPermissionProvider self) where Q : struct, IQuery<Q> => self.Hub.Query<Q>();
@@ -204,14 +207,36 @@ namespace Panty
     {
         M Module<M>() where M : class, IModule;
         U Utility<U>() where U : class, IUtility;
+
+        IRmv AddEvent<E>(Action evt) where E : struct;
         IRmv AddEvent<E>(Action<E> evt) where E : struct;
+
+        IRmv AddEvent<E>(int id, Action evt) where E : Enum;
+        IRmv AddEvent<E>(E type, Action evt) where E : Enum;
+        IRmv AddEvent<E, T>(int id, Action<T> evt) where E : Enum;
+        IRmv AddEvent<E, T>(E type, Action<T> evt) where E : Enum;
+
+        void RmvEvent<E>(Action evt) where E : struct;
         void RmvEvent<E>(Action<E> evt) where E : struct;
+
+        void RmvEvent<E>(int id, Action evt) where E : Enum;
+        void RmvEvent<E>(E type, Action evt) where E : Enum;
+        void RmvEvent<E, T>(int id, Action<T> evt) where E : Enum;
+        void RmvEvent<E, T>(E type, Action<T> evt) where E : Enum;
+
         void SendEvent<E>(E e) where E : struct;
         void SendEvent<E>() where E : struct;
+
+        void EnumEvent<E>(int id) where E : Enum;
+        void EnumEvent<E>(E type) where E : Enum;
+        void EnumEvent<E, T>(int id, T info) where E : Enum;
+        void EnumEvent<E, T>(E type, T info) where E : Enum;
+
         void SendCmd<C>(C cmd) where C : ICmd;
         void SendCmd<C>() where C : struct, ICmd;
         void SendCmd<C, P>(C cmd, P info) where C : ICmd<P>;
         void SendCmd<C, P>(P info) where C : struct, ICmd<P>;
+
         R Query<Q, R>() where Q : struct, IQuery<R>;
         R Query<Q, P, R>(P info) where Q : struct, IQuery<P, R>;
         Q Query<Q>() where Q : struct, IQuery<Q>;
@@ -242,6 +267,7 @@ namespace Panty
         private Dictionary<Type, IUtility> mUtilities = new Dictionary<Type, IUtility>();
         private Dictionary<Type, IModule> mModules = new Dictionary<Type, IModule>();
         private Dictionary<Type, Delegate> mEvents = new Dictionary<Type, Delegate>();
+        private Dictionary<Type, Delegate[]> mEnumEvents = new Dictionary<Type, Delegate[]>();
         /// <summary>
         /// 由子类重写实现所有模块和工具的构建与注册
         /// </summary>
@@ -277,38 +303,92 @@ namespace Panty
         }
         M IModuleHub.Module<M>()
         {
+#if DEBUG
+            if (mModules == null) throw new Exception("模块组不存在");
+#endif
             if (mModules.TryGetValue(typeof(M), out var ret))
             {
                 ret.TryInit();
                 return ret as M;
             }
 #if DEBUG
-            $"{typeof(M)} 模块未注册".Log();
-#endif
+            throw new Exception($"{typeof(M)} 模块未注册");
+#else
             return null;
+#endif
         }
         U IModuleHub.Utility<U>()
         {
+#if DEBUG
+            if (mUtilities == null) throw new Exception("工具组不存在");
+#endif
             if (mUtilities.TryGetValue(typeof(U), out var ret)) return ret as U;
 #if DEBUG
-            $"{typeof(U)} 工具未注册".Log();
-#endif
+            throw new Exception($"{typeof(U)} 工具未注册");
+#else
             return null;
+#endif
         }
-        IRmv IModuleHub.AddEvent<E>(Action<E> evt)
+        private IRmv Combine<E>(Delegate evt) where E : struct
         {
 #if DEBUG
-            if (evt == null) $"{evt} 不可为Null".Log();
+            if (evt == null) throw new Exception($"{evt} 不可为Null");
 #endif
-            mEvents.Combine(typeof(E), evt);
-            return new CustomRmv(() => mEvents.Separate(typeof(E), evt));
+            var key = typeof(E);
+            if (mEvents.TryGetValue(key, out var methods))
+            {
+#if DEBUG
+                if (methods is Action)
+                {
+                    if (evt is Action<E>) throw new Exception($"{key}为无参事件 请使用 AddEvent<E>(Action<E> evt)");
+                }
+                else if (evt is Action) throw new Exception($"{key}为有参事件 请使用 AddEvent<E>(Action evt)");
+#endif
+                mEvents[key] = Delegate.Combine(methods, evt);
+            }
+            else mEvents.Add(key, evt);
+            // 添加一个自定义移除
+            return new CustomRmv(() => Separate<E>(evt));
         }
-        void IModuleHub.RmvEvent<E>(Action<E> evt) =>
-            mEvents.Separate(typeof(E), evt);
+        /// <summary>
+        /// 将委托从字典中移除
+        /// </summary>
+        private void Separate<E>(Delegate evt) where E : struct
+        {
+#if DEBUG
+            if (evt == null) throw new Exception($"{evt} 不可为Null");
+#endif
+            var key = typeof(E);
+            if (mEvents.TryGetValue(key, out var methods))
+            {
+#if DEBUG
+                if (methods is Action)
+                {
+                    if (evt is Action<E>) throw new Exception($"{key}为无参事件 请使用 RmvEvent<E>(Action<E> evt)");
+                }
+                else if (evt is Action) throw new Exception($"{key}为有参事件 请使用 RmvEvent<E>(Action evt)");
+#endif
+                methods = Delegate.Remove(methods, evt);
+                if (methods == null) mEvents.Remove(key);
+                else mEvents[key] = methods;
+            }
+#if DEBUG
+            else $"{key} 事件Key不存在".Log();
+#endif
+        }
+        IRmv IModuleHub.AddEvent<E>(Action evt) => Combine<E>(evt);
+        IRmv IModuleHub.AddEvent<E>(Action<E> evt) => Combine<E>(evt);
+        void IModuleHub.RmvEvent<E>(Action evt) => Separate<E>(evt);
+        void IModuleHub.RmvEvent<E>(Action<E> evt) => Separate<E>(evt);
         void IModuleHub.SendEvent<E>(E e)
         {
             if (mEvents.TryGetValue(typeof(E), out var methods))
+            {
+#if DEBUG
+                if (methods is Action) throw new Exception($"{typeof(E)}为无参事件 请使用 SendEvent<E>() 或将注册替换成 AddEvent<E>(Action<E> evt)");
+#endif
                 (methods as Action<E>).Invoke(e);
+            }
 #if DEBUG
             else $"{typeof(E)} 事件未注册".Log();
 #endif
@@ -316,11 +396,175 @@ namespace Panty
         void IModuleHub.SendEvent<E>()
         {
             if (mEvents.TryGetValue(typeof(E), out var methods))
-                (methods as Action<E>).Invoke(default);
+            {
+#if DEBUG
+                if (methods is Action<E>) throw new Exception($"{typeof(E)}为有参事件 请使用 SendEvent<E>(E e) 或将注册替换成 AddEvent<E>(Action evt)");
+#endif
+                (methods as Action).Invoke();
+            }
 #if DEBUG
             else $"{typeof(E)} 事件未注册".Log();
 #endif
         }
+
+        IRmv IModuleHub.AddEvent<E>(E type, Action evt) => AddEvent<E>(Convert.ToInt32(type), evt);
+        IRmv IModuleHub.AddEvent<E, T>(E type, Action<T> evt) => AddEvent<E, T>(Convert.ToInt32(type), evt);
+        void IModuleHub.RmvEvent<E>(E type, Action evt) => RmvEvent<E>(Convert.ToInt32(type), evt);
+        void IModuleHub.RmvEvent<E, T>(E type, Action<T> evt) => RmvEvent<E, T>(Convert.ToInt32(type), evt);
+        void IModuleHub.EnumEvent<E>(E type) => EnumEvent<E>(Convert.ToInt32(type));
+        void IModuleHub.EnumEvent<E, T>(E type, T info) => EnumEvent<E, T>(Convert.ToInt32(type), info);
+        // 以下使用枚举转换为索引来驱动事件
+        public IRmv AddEvent<E>(int id, Action evt) where E : Enum
+        {
+#if DEBUG
+            if (evt == null) throw new Exception($"{evt} 不可为Null");
+#endif
+            var key = typeof(E);
+            if (mEnumEvents.TryGetValue(key, out var arr))
+            {
+                var ms = arr[id];
+                if (ms == null)
+                {
+                    arr[id] = evt;
+                }
+                else
+                {
+#if DEBUG
+                    if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 AddEvent<E,T>({key} type, Action<T> evt)");
+#endif   
+                    arr[id] = Delegate.Combine(ms, evt);
+                }
+            }
+            else
+            {
+                arr = new Delegate[Enum.GetValues(key).Length];
+                arr[id] = evt;
+                mEnumEvents.Add(key, arr);
+            }
+            // 添加一个自定义移除
+            return new CustomRmv(() => RmvEvent<E>(id, evt));
+        }
+        public IRmv AddEvent<E, T>(int id, Action<T> evt) where E : Enum
+        {
+#if DEBUG
+            if (evt == null) throw new Exception($"{evt} 不可为Null");
+#endif
+            var key = typeof(E);
+            if (mEnumEvents.TryGetValue(key, out var arr))
+            {
+                var ms = arr[id];
+                if (ms == null)
+                {
+                    arr[id] = evt;
+                }
+                else
+                {
+#if DEBUG
+                    if (ms is Action) throw new Exception($"{key}为无参事件 请使用 AddEvent<E>({key} type, Action evt)");
+#endif   
+                    arr[id] = Delegate.Combine(ms, evt);
+                }
+            }
+            else
+            {
+                arr = new Delegate[Enum.GetValues(key).Length];
+                arr[id] = evt;
+                mEnumEvents.Add(key, arr);
+            }
+            // 添加一个自定义移除
+            return new CustomRmv(() => RmvEvent<E, T>(id, evt));
+        }
+        public void RmvEvent<E>(int id, Action evt) where E : Enum
+        {
+#if DEBUG
+            if (evt == null) throw new Exception($"{evt} 不可为Null");
+#endif
+            var key = typeof(E);
+            if (mEnumEvents.TryGetValue(key, out var arr))
+            {
+                var ms = arr[id];
+                if (ms == null)
+                {
+                    $"事件{id}未被注册 请检查逻辑错误".Log();
+                }
+                else
+                {
+#if DEBUG
+                    if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 RmvEvent<E,T>({key} type, Action<T> evt)");
+#endif
+                    arr[id] = Delegate.Remove(ms, evt);
+                }
+            }
+#if DEBUG
+            else $"{key} 当前枚举事件组不存在".Log();
+#endif
+        }
+        public void RmvEvent<E, T>(int id, Action<T> evt) where E : Enum
+        {
+#if DEBUG
+            if (evt == null) throw new Exception($"{evt} 不可为Null");
+#endif
+            var key = typeof(E);
+            if (mEnumEvents.TryGetValue(key, out var arr))
+            {
+                var ms = arr[id];
+                if (ms == null)
+                {
+                    $"事件{id}未被注册 请检查逻辑错误".Log();
+                }
+                else
+                {
+#if DEBUG
+                    if (ms is Action) throw new Exception($"{key}为无参事件 请使用 RmvEvent<E>({key} type, Action evt)");
+#endif
+                    arr[id] = Delegate.Remove(ms, evt);
+                }
+            }
+#if DEBUG
+            else $"{key} 当前枚举事件组不存在".Log();
+#endif
+        }
+        public void EnumEvent<E>(int id) where E : Enum
+        {
+            var key = typeof(E);
+            if (mEnumEvents.TryGetValue(key, out var arr))
+            {
+                var ms = arr[id];
+                if (ms == null)
+                {
+                    $"{key} 事件未注册".Log();
+                    return;
+                }
+#if DEBUG
+                if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 SendEnumEvent<E,T>({key} type,T info)");
+#endif
+                (ms as Action).Invoke();
+            }
+#if DEBUG
+            else $"{key} 事件未注册".Log();
+#endif
+        }
+        public void EnumEvent<E, T>(int id, T info) where E : Enum
+        {
+            var key = typeof(E);
+            if (mEnumEvents.TryGetValue(key, out var arr))
+            {
+                var ms = arr[id];
+                if (ms == null)
+                {
+                    $"事件{id}未注册".Log();
+                    return;
+                }
+#if DEBUG
+                if (ms is Action) throw new Exception($"{key}为无参事件 请使用 SendEnumEvent<E>({key} type)");
+#endif
+                (ms as Action<T>).Invoke(info);
+            }
+#if DEBUG
+            else $"{key} 事件未注册".Log();
+#endif
+        }
+
         void IModuleHub.SendCmd<C>() => SendCmd(new C());
         void IModuleHub.SendCmd<C, P>(P info) => SendCmd(new C(), info);
         // 可重写的命令 架构子类可对该命令逻辑进行重写 例如在命令前后记录日志

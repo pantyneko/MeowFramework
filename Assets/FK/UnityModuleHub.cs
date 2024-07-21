@@ -25,37 +25,6 @@ namespace Panty
             return mInstance;
         }
     }
-    /// <summary>
-    /// Unity的Mono单例基类
-    /// </summary>
-    public abstract class MonoSingle<T> : MonoBehaviour where T : MonoSingle<T>
-    {
-        private static T ins;
-        public static T GetIns()
-        {
-#if UNITY_EDITOR
-            // 防止编辑器意外创建 主要是 ExecuteInEditMode
-            if (!UnityEditor.EditorApplication.isPlaying) return null;
-#endif
-            if (ins == null && (ins = FindObjectOfType<T>()) == null)
-            {
-                var o = new GameObject(typeof(T).Name);
-                GameObject.DontDestroyOnLoad(o);
-                ins = o.AddComponent<T>();
-            }
-            return ins;
-        }
-        private void Awake()
-        {
-            if (ins == null)
-            {
-                ins = this as T;
-                InitSingle();
-            }
-            else Destroy(gameObject);
-        }
-        protected virtual void InitSingle() { }
-    }
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Method, Inherited = false)]
     public class EmptyAttribute : Attribute { }
     [AttributeUsage(AttributeTargets.Field, AllowMultiple = false)]
@@ -114,8 +83,9 @@ namespace Panty
 
         private void Awake()
         {
-            if (mono == null) mono = this;
-            else Destroy(mono.gameObject);
+            if (mono)
+                Destroy(mono.gameObject);
+            else mono = this;
         }
         private void Update() => OnUpdate?.Invoke();
         private void FixedUpdate() => OnFixedUpdate?.Invoke();
