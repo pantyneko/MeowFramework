@@ -24,7 +24,6 @@ using System.Collections.Generic;
 */
 namespace Panty
 {
-    #region 架构模块和规则接口    
     /// <summary>
     /// 用于分离命令中的具体执行逻辑 
     /// </summary>
@@ -121,8 +120,6 @@ namespace Panty
         // 实现IPermissionProvider接口，提供模块的访问能力。
         IModuleHub IPermissionProvider.Hub => mHub;
     }
-    #endregion
-    #region 架构扩展
     public static partial class HubTool
     {
 #if DEBUG
@@ -164,29 +161,20 @@ namespace Panty
         public static IRmv AddEvent<E>(this IPermissionProvider self, Action evt) where E : struct => self.Hub.AddEvent<E>(evt);
         public static IRmv AddEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct => self.Hub.AddEvent<E>(evt);
 
-        public static IRmv AddEvent<E>(this IPermissionProvider self, int id, Action evt) where E : Enum => self.Hub.AddEvent<E>(id, evt);
-        public static IRmv AddEvent<E, T>(this IPermissionProvider self, int id, Action<T> evt) where E : Enum => self.Hub.AddEvent<E, T>(id, evt);
-
-        public static IRmv AddEvent<E>(this IPermissionProvider self, E type, Action evt) where E : Enum => self.Hub.AddEvent<E>(type, evt);
-        public static IRmv AddEvent<E, T>(this IPermissionProvider self, E type, Action<T> evt) where E : Enum => self.Hub.AddEvent<E, T>(type, evt);
+        public static IRmv AddEvent<E>(this IPermissionProvider self, E type, Action evt) where E : IConvertible => self.Hub.AddEvent<E>(type, evt);
+        public static IRmv AddEvent<E, T>(this IPermissionProvider self, E type, Action<T> evt) where E : IConvertible => self.Hub.AddEvent<E, T>(type, evt);
 
         public static void RmvEvent<E>(this IPermissionProvider self, Action evt) where E : struct => self.Hub.RmvEvent<E>(evt);
         public static void RmvEvent<E>(this IPermissionProvider self, Action<E> evt) where E : struct => self.Hub.RmvEvent<E>(evt);
 
-        public static void RmvEvent<E>(this IPermissionProvider self, int id, Action evt) where E : Enum => self.Hub.AddEvent<E>(id, evt);
-        public static void RmvEvent<E, T>(this IPermissionProvider self, int id, Action<T> evt) where E : Enum => self.Hub.AddEvent<E, T>(id, evt);
-
-        public static void RmvEvent<E>(this IPermissionProvider self, E type, Action evt) where E : Enum => self.Hub.RmvEvent<E>(type, evt);
-        public static void RmvEvent<E, T>(this IPermissionProvider self, E type, Action<T> evt) where E : Enum => self.Hub.RmvEvent<E, T>(type, evt);
+        public static void RmvEvent<E>(this IPermissionProvider self, E type, Action evt) where E : IConvertible => self.Hub.RmvEvent<E>(type, evt);
+        public static void RmvEvent<E, T>(this IPermissionProvider self, E type, Action<T> evt) where E : IConvertible => self.Hub.RmvEvent<E, T>(type, evt);
 
         public static void SendEvent<E>(this IPermissionProvider self, E e) where E : struct => self.Hub.SendEvent<E>(e);
         public static void SendEvent<E>(this IPermissionProvider self) where E : struct => self.Hub.SendEvent<E>();
 
-        public static void EnumEvent<E>(this IPermissionProvider self, int id) where E : Enum => self.Hub.EnumEvent<E>(id);
-        public static void EnumEvent<E, T>(this IPermissionProvider self, int id, T info) where E : Enum => self.Hub.EnumEvent<E, T>(id, info);
-
-        public static void EnumEvent<E>(this IPermissionProvider self, E type) where E : Enum => self.Hub.EnumEvent<E>(type);
-        public static void EnumEvent<E, T>(this IPermissionProvider self, E type, T info) where E : Enum => self.Hub.EnumEvent<E, T>(type, info);
+        public static void EnumEvent<E>(this IPermissionProvider self, E type) where E : IConvertible => self.Hub.EnumEvent<E>(type);
+        public static void EnumEvent<E, T>(this IPermissionProvider self, E type, T info) where E : IConvertible => self.Hub.EnumEvent<E, T>(type, info);
 
         public static void SendCmd<C>(this IPermissionProvider self, C cmd) where C : ICmd => self.Hub.SendCmd(cmd);
         public static void SendCmd<C>(this IPermissionProvider self) where C : struct, ICmd => self.Hub.SendCmd(new C());
@@ -198,8 +186,6 @@ namespace Panty
         public static Q Query<Q>(this IPermissionProvider self) where Q : struct, IQuery<Q> => self.Hub.Query<Q>();
         public static Q Query<Q, P>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, Q> => self.Hub.Query<Q, P>(info);
     }
-    #endregion
-    #region 架构接口
     /// <summary>
     /// 定义模块中心的接口，负责管理模块、工具、事件、通知、命令和查询。
     /// </summary>
@@ -211,26 +197,20 @@ namespace Panty
         IRmv AddEvent<E>(Action evt) where E : struct;
         IRmv AddEvent<E>(Action<E> evt) where E : struct;
 
-        IRmv AddEvent<E>(int id, Action evt) where E : Enum;
-        IRmv AddEvent<E>(E type, Action evt) where E : Enum;
-        IRmv AddEvent<E, T>(int id, Action<T> evt) where E : Enum;
-        IRmv AddEvent<E, T>(E type, Action<T> evt) where E : Enum;
+        IRmv AddEvent<E>(E type, Action evt) where E : IConvertible;
+        IRmv AddEvent<E, T>(E type, Action<T> evt) where E : IConvertible;
 
         void RmvEvent<E>(Action evt) where E : struct;
         void RmvEvent<E>(Action<E> evt) where E : struct;
 
-        void RmvEvent<E>(int id, Action evt) where E : Enum;
-        void RmvEvent<E>(E type, Action evt) where E : Enum;
-        void RmvEvent<E, T>(int id, Action<T> evt) where E : Enum;
-        void RmvEvent<E, T>(E type, Action<T> evt) where E : Enum;
+        void RmvEvent<E>(E type, Action evt) where E : IConvertible;
+        void RmvEvent<E, T>(E type, Action<T> evt) where E : IConvertible;
 
         void SendEvent<E>(E e) where E : struct;
         void SendEvent<E>() where E : struct;
 
-        void EnumEvent<E>(int id) where E : Enum;
-        void EnumEvent<E>(E type) where E : Enum;
-        void EnumEvent<E, T>(int id, T info) where E : Enum;
-        void EnumEvent<E, T>(E type, T info) where E : Enum;
+        void EnumEvent<E>(E type) where E : IConvertible;
+        void EnumEvent<E, T>(E type, T info) where E : IConvertible;
 
         void SendCmd<C>(C cmd) where C : ICmd;
         void SendCmd<C>() where C : struct, ICmd;
@@ -242,8 +222,6 @@ namespace Panty
         Q Query<Q>() where Q : struct, IQuery<Q>;
         Q Query<Q, P>(P info) where Q : struct, IQuery<P, Q>;
     }
-    #endregion
-    #region 架构基类
     public interface IRmv { void Do(); }
     // 实现自身移除委托
     public class CustomRmv : IRmv
@@ -407,19 +385,14 @@ namespace Panty
 #endif
         }
 
-        IRmv IModuleHub.AddEvent<E>(E type, Action evt) => AddEvent<E>(Convert.ToInt32(type), evt);
-        IRmv IModuleHub.AddEvent<E, T>(E type, Action<T> evt) => AddEvent<E, T>(Convert.ToInt32(type), evt);
-        void IModuleHub.RmvEvent<E>(E type, Action evt) => RmvEvent<E>(Convert.ToInt32(type), evt);
-        void IModuleHub.RmvEvent<E, T>(E type, Action<T> evt) => RmvEvent<E, T>(Convert.ToInt32(type), evt);
-        void IModuleHub.EnumEvent<E>(E type) => EnumEvent<E>(Convert.ToInt32(type));
-        void IModuleHub.EnumEvent<E, T>(E type, T info) => EnumEvent<E, T>(Convert.ToInt32(type), info);
         // 以下使用枚举转换为索引来驱动事件
-        public IRmv AddEvent<E>(int id, Action evt) where E : Enum
+        IRmv IModuleHub.AddEvent<E>(E type, Action evt)
         {
 #if DEBUG
             if (evt == null) throw new Exception($"{evt} 不可为Null");
 #endif
             var key = typeof(E);
+            int id = type.ToInt32(null);
             if (mEnumEvents.TryGetValue(key, out var arr))
             {
                 var ms = arr[id];
@@ -430,7 +403,7 @@ namespace Panty
                 else
                 {
 #if DEBUG
-                    if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 AddEvent<E,T>({key} type, Action<T> evt)");
+                    if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 AddEvent<E,T>(E type, Action<T> evt)");
 #endif   
                     arr[id] = Delegate.Combine(ms, evt);
                 }
@@ -442,14 +415,15 @@ namespace Panty
                 mEnumEvents.Add(key, arr);
             }
             // 添加一个自定义移除
-            return new CustomRmv(() => RmvEvent<E>(id, evt));
+            return new CustomRmv(() => RmvEvent(type, evt));
         }
-        public IRmv AddEvent<E, T>(int id, Action<T> evt) where E : Enum
+        IRmv IModuleHub.AddEvent<E, T>(E type, Action<T> evt)
         {
 #if DEBUG
             if (evt == null) throw new Exception($"{evt} 不可为Null");
 #endif
             var key = typeof(E);
+            int id = type.ToInt32(null);
             if (mEnumEvents.TryGetValue(key, out var arr))
             {
                 var ms = arr[id];
@@ -460,7 +434,7 @@ namespace Panty
                 else
                 {
 #if DEBUG
-                    if (ms is Action) throw new Exception($"{key}为无参事件 请使用 AddEvent<E>({key} type, Action evt)");
+                    if (ms is Action) throw new Exception($"{key}为无参事件 请使用 AddEvent<E>(E type, Action evt)");
 #endif   
                     arr[id] = Delegate.Combine(ms, evt);
                 }
@@ -472,9 +446,9 @@ namespace Panty
                 mEnumEvents.Add(key, arr);
             }
             // 添加一个自定义移除
-            return new CustomRmv(() => RmvEvent<E, T>(id, evt));
+            return new CustomRmv(() => RmvEvent(type, evt));
         }
-        public void RmvEvent<E>(int id, Action evt) where E : Enum
+        public void RmvEvent<E>(E type, Action evt) where E : IConvertible
         {
 #if DEBUG
             if (evt == null) throw new Exception($"{evt} 不可为Null");
@@ -482,89 +456,96 @@ namespace Panty
             var key = typeof(E);
             if (mEnumEvents.TryGetValue(key, out var arr))
             {
+                int id = type.ToInt32(null);
                 var ms = arr[id];
                 if (ms == null)
                 {
+#if DEBUG
                     $"事件{id}未被注册 请检查逻辑错误".Log();
-                }
-                else
-                {
-#if DEBUG
-                    if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 RmvEvent<E,T>({key} type, Action<T> evt)");
 #endif
-                    arr[id] = Delegate.Remove(ms, evt);
-                }
-            }
-#if DEBUG
-            else $"{key} 当前枚举事件组不存在".Log();
-#endif
-        }
-        public void RmvEvent<E, T>(int id, Action<T> evt) where E : Enum
-        {
-#if DEBUG
-            if (evt == null) throw new Exception($"{evt} 不可为Null");
-#endif
-            var key = typeof(E);
-            if (mEnumEvents.TryGetValue(key, out var arr))
-            {
-                var ms = arr[id];
-                if (ms == null)
-                {
-                    $"事件{id}未被注册 请检查逻辑错误".Log();
-                }
-                else
-                {
-#if DEBUG
-                    if (ms is Action) throw new Exception($"{key}为无参事件 请使用 RmvEvent<E>({key} type, Action evt)");
-#endif
-                    arr[id] = Delegate.Remove(ms, evt);
-                }
-            }
-#if DEBUG
-            else $"{key} 当前枚举事件组不存在".Log();
-#endif
-        }
-        public void EnumEvent<E>(int id) where E : Enum
-        {
-            var key = typeof(E);
-            if (mEnumEvents.TryGetValue(key, out var arr))
-            {
-                var ms = arr[id];
-                if (ms == null)
-                {
-                    $"{key} 事件未注册".Log();
                     return;
                 }
 #if DEBUG
-                if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 SendEnumEvent<E,T>({key} type,T info)");
+                if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 RmvEvent<E,T>(E type, Action<T> evt)");
+#endif
+                arr[id] = Delegate.Remove(ms, evt);
+            }
+#if DEBUG
+            else $"{key} 当前枚举事件组不存在".Log();
+#endif
+        }
+        public void RmvEvent<E, T>(E type, Action<T> evt) where E : IConvertible
+        {
+#if DEBUG
+            if (evt == null) throw new Exception($"{evt} 不可为Null");
+#endif
+            var key = typeof(E);
+            if (mEnumEvents.TryGetValue(key, out var arr))
+            {
+                int id = type.ToInt32(null);
+                var ms = arr[id];
+                if (ms == null)
+                {
+#if DEBUG
+                    $"事件{id}未被注册 请检查逻辑错误".Log();
+#endif
+                    return;
+                }
+#if DEBUG
+                if (ms is Action) throw new Exception($"{key}为无参事件 请使用 RmvEvent<E>(E type, Action evt)");
+#endif
+                arr[id] = Delegate.Remove(ms, evt);
+            }
+#if DEBUG
+            else $"{key} 当前枚举事件组不存在".Log();
+#endif
+        }
+        void IModuleHub.EnumEvent<E>(E type)
+        {
+            var key = typeof(E);
+            if (mEnumEvents.TryGetValue(key, out var arr))
+            {
+                int id = type.ToInt32(null);
+                var ms = arr[id];
+                if (ms == null)
+                {
+#if DEBUG
+                    $"事件{id}未被注册 请检查逻辑错误".Log();
+#endif
+                    return;
+                }
+#if DEBUG
+                if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 EnumEvent<E,T>(E type,T info)");
 #endif
                 (ms as Action).Invoke();
             }
 #if DEBUG
-            else $"{key} 事件未注册".Log();
+            else $"{key} 当前枚举事件组不存在".Log();
 #endif
         }
-        public void EnumEvent<E, T>(int id, T info) where E : Enum
+        void IModuleHub.EnumEvent<E, T>(E type, T info)
         {
             var key = typeof(E);
             if (mEnumEvents.TryGetValue(key, out var arr))
             {
+                int id = type.ToInt32(null);
                 var ms = arr[id];
                 if (ms == null)
                 {
-                    $"事件{id}未注册".Log();
+#if DEBUG
+                    $"事件{id}未被注册 请检查逻辑错误".Log();
+#endif
                     return;
                 }
 #if DEBUG
-                if (ms is Action) throw new Exception($"{key}为无参事件 请使用 SendEnumEvent<E>({key} type)");
+                if (ms is Action) throw new Exception($"{key}为无参事件 请使用 EnumEvent<E>(E type)");
 #endif
                 (ms as Action<T>).Invoke(info);
             }
 #if DEBUG
-            else $"{key} 事件未注册".Log();
+            else $"{key} 当前枚举事件组不存在".Log();
 #endif
         }
-
         void IModuleHub.SendCmd<C>() => SendCmd(new C());
         void IModuleHub.SendCmd<C, P>(P info) => SendCmd(new C(), info);
         // 可重写的命令 架构子类可对该命令逻辑进行重写 例如在命令前后记录日志
@@ -576,5 +557,4 @@ namespace Panty
         Q IModuleHub.Query<Q>() => new Q().Do(this);
         Q IModuleHub.Query<Q, P>(P info) => new Q().Do(this, info);
     }
-    #endregion
 }
