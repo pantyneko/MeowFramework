@@ -3,7 +3,9 @@ using UnityEditor;
 using System.IO;
 using UnityEngine;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
+using System.Reflection;
+using System;
+using System.Collections;
 
 namespace Panty
 {
@@ -41,6 +43,53 @@ namespace Panty
                 return false;
             }
         }
+        public static T GetAttribute<T>(SerializedProperty property) where T : class
+        {
+            T[] attributes = GetAttributes<T>(property);
+            return (attributes.Length > 0) ? attributes[0] : null;
+        }
+        private static object GetValue_Imp(object source, string name)
+        {
+            if (source != null)
+            {
+                Type type = source.GetType();
+                while (type != null)
+                {
+                    var field = type.GetField(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance);
+                    if (field != null) return field.GetValue(source);
+                    var property = type.GetProperty(name, BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Instance | BindingFlags.IgnoreCase);
+                    if (property != null) return property.GetValue(source, null);
+                    type = type.BaseType;
+                }
+            }
+            return null;
+        }
+        private static object GetValue_Imp(object source, string name, int index)
+        {
+            var enumerable = GetValue_Imp(source, name) as IEnumerable;
+            if (enumerable == null) return null;
+            var enumerator = enumerable.GetEnumerator();
+            for (int i = 0; i <= index; i++)
+            {
+                if (!enumerator.MoveNext()) return null;
+            }
+            return enumerator.Current;
+        }
+        public static T[] GetAttributes<T>(SerializedProperty property) where T : class
+        {
+            object obj = property.serializedObject.targetObject;
+            string[] elements = property.propertyPath.Replace(".Array.data[", "[").Split('.');
+            for (int i = 0; i < elements.Length - 1; i++)
+            {
+                string element = elements[i];
+                int index = Convert.ToInt32(element.Substring(element.IndexOf("[")).Replace("[", "").Replace("]", ""));
+                obj = element.Contains("[") ?
+                    GetValue_Imp(obj, element.Substring(0, element.IndexOf("[")), index) :
+                    GetValue_Imp(obj, element);
+            }
+            var fieldInfo = RefKit.GetField(obj, property.name);
+            return fieldInfo == null ? new T[0] : (T[])fieldInfo.GetCustomAttributes(typeof(T), true);
+        }
         public static void CreatScript(string path, string name, string tag, string tmple, bool ignoreRoot = true)
         {
             path = ignoreRoot ? path : $"Assets/{path}";
@@ -72,7 +121,7 @@ namespace Panty
                 foreach (var id in guids)
                 {
                     string path = AssetDatabase.GUIDToAssetPath(id);
-                    var o = AssetDatabase.LoadAssetAtPath<Object>(path);
+                    var o = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
                     if (o is MonoScript mono)
                     {
                         var type = mono.GetClass();
@@ -94,7 +143,7 @@ namespace Panty
                     string path = AssetDatabase.GUIDToAssetPath(id);
                     if (Path.GetFileName(path) == fileName)
                     {
-                        var o = AssetDatabase.LoadAssetAtPath<Object>(path);
+                        var o = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(path);
                         if (o is MonoScript mono)
                         {
                             var type = mono.GetClass();
@@ -110,7 +159,7 @@ namespace Panty
         /// 检查所选资源是否为文件夹，如果不是则将其转换为文件夹并返回文件夹路径列表。
         /// </summary>
         /// <returns>文件夹路径列表</returns>
-        public static List<string> EnsureSelectedIsFolder()
+        public static PArray<string> EnsureSelectedIsFolder()
         {
             // 获取所有选中的资源
             var selectedObjects = Selection.objects;
@@ -119,8 +168,8 @@ namespace Panty
                 "No assets selected.".Log();
                 return null;
             }
-            var folderPaths = new List<string>();
-            foreach (Object selectedObject in selectedObjects)
+            var folderPaths = new PArray<string>();
+            foreach (var selectedObject in selectedObjects)
             {
                 string selectedPath = AssetDatabase.GetAssetPath(selectedObject);
                 // 如果选中的是场景中的对象，尝试找到它的Prefab路径
@@ -145,7 +194,7 @@ namespace Panty
                 // 使用C#的文件和目录操作来处理路径
                 if (Directory.Exists(selectedPath))
                 {
-                    folderPaths.Add(selectedPath);
+                    folderPaths.Push(selectedPath);
                     continue;
                 }
                 string parentFolderPath = Path.GetDirectoryName(selectedPath);
@@ -154,7 +203,8 @@ namespace Panty
                     $"Unable to determine the parent folder path for {selectedObject.name}.".Log();
                     continue;
                 }
-                string newFolderPath = Path.Combine(parentFolderPath, Path.GetFileNameWithoutExtension(selectedPath));
+                string newFolderPath = Path.GetFileNameWithoutExtension(selectedPath);
+                newFolderPath = Path.Combine(parentFolderPath, newFolderPath);
 
                 // 使用C#的文件系统操作来创建新文件夹
                 if (!Directory.Exists(newFolderPath))
@@ -163,7 +213,7 @@ namespace Panty
                     // 刷新AssetDatabase以确保新创建的文件夹被正确识别
                     AssetDatabase.Refresh();
                 }
-                folderPaths.Add(newFolderPath);
+                folderPaths.Push(newFolderPath);
             }
             return folderPaths;
         }

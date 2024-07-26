@@ -282,7 +282,11 @@ namespace Panty
         M IModuleHub.Module<M>()
         {
 #if DEBUG
-            if (mModules == null) throw new Exception("模块组不存在");
+            if (mModules == null)
+            {
+                "模块组不存在 将返回 null".Log();
+                return null;
+            }
 #endif
             if (mModules.TryGetValue(typeof(M), out var ret))
             {
@@ -298,7 +302,11 @@ namespace Panty
         U IModuleHub.Utility<U>()
         {
 #if DEBUG
-            if (mUtilities == null) throw new Exception("工具组不存在");
+            if (mUtilities == null)
+            {
+                "工具组不存在 将返回 null".Log();
+                return null;
+            }
 #endif
             if (mUtilities.TryGetValue(typeof(U), out var ret)) return ret as U;
 #if DEBUG

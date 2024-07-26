@@ -18,6 +18,16 @@ namespace Panty
                 if (!ValidPathCharacter(path[i])) return true;
             return false;
         }
+        public static string CapitalizeFirstLetter(this string input)
+        {
+            if (!string.IsNullOrEmpty(input) && char.IsLower(input[0]))
+            {
+                char[] charArray = input.ToCharArray();
+                charArray[0] = char.ToUpper(charArray[0]);
+                return new string(charArray);
+            }
+            return input;
+        }
         private static bool ValidPathCharacter(char c)
         {
             return char.IsLetterOrDigit(c) || c == '_' || c == '\\' || c == '/' || c == '.';

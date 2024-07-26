@@ -4,6 +4,7 @@ using UnityEngine.UI;
 
 namespace Panty
 {
+    public interface IBindRoot { }
     public class Bind : MonoBehaviour
     {
 #if UNITY_EDITOR
@@ -23,11 +24,15 @@ namespace Panty
                 E_Type.Scrollbar => typeof(Scrollbar),
                 E_Type.ScrollRect => typeof(ScrollRect),
                 E_Type.InputField => typeof(InputField),
+
+                E_Type.SpriteRenderer => typeof(SpriteRenderer),
                 _ => null,
             };
         }
         public enum E_Type : byte
         {
+            SpriteRenderer,
+
             Transform,
             Button,
             Canvas,
@@ -57,6 +62,7 @@ namespace Panty
             if (GetComponent<Image>()) type = E_Type.Image;
             else if (GetComponent<Text>()) type = E_Type.Text;
             else if (GetComponent<RawImage>()) type = E_Type.RawImage;
+            else if (GetComponent<SpriteRenderer>()) type = E_Type.SpriteRenderer;
             else type = E_Type.Transform;
         }
         private void OnValidate()

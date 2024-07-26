@@ -395,6 +395,59 @@ namespace Panty
             /// <summary>
             /// 开始处理随机组 在End调用前 将会以缓存来处理每次的任务
             /// </summary>
+            public Step RandomGroup(Action<Step> call)
+            {
+#if UNITY_EDITOR
+                ThrowEx.EmptyCallback(call);
+#endif
+                mScheduler.NextGroup(E_Type.Random);
+                call.Invoke(this);
+                return this;
+            }
+            /// <summary>
+            /// 启用连续循环模式 在End调用前 将会以缓存来处理每次的任务
+            /// 注意 ：onExit不能为null
+            /// </summary>
+            public Step LoopGroup(Func<bool> onExit, Action<Step> call)
+            {
+#if UNITY_EDITOR
+                ThrowEx.EmptyCallback(onExit);
+                ThrowEx.EmptyCallback(call);
+#endif
+                mOnExit = onExit;
+                mScheduler.NextGroup(E_Type.Loop);
+                call.Invoke(this);
+                return this;
+            }
+            /// <summary>
+            /// 启用次数循环模式 在End调用前 将会以缓存来处理每次的任务
+            /// </summary>
+            /// <param name="repeatCount">循环次数，必须大于 0</param>
+            public Step RepeatGroup(byte repeatCount, Action<Step> call)
+            {
+#if UNITY_EDITOR
+                ThrowEx.EmptyCallback(call);
+#endif
+                mCounter = repeatCount == 0 ? (byte)1 : repeatCount;
+                mScheduler.NextGroup(E_Type.Repeat);
+                call.Invoke(this);
+                return this;
+            }
+            /// <summary>
+            /// 启用并行组模式 在End调用前 将会以缓存来处理每次的任务
+            /// </summary>
+            public Step ParallelGroup(Action<Step> call)
+            {
+#if UNITY_EDITOR
+                ThrowEx.EmptyCallback(call);
+#endif
+                mScheduler.NextGroup(E_Type.Parallel);
+                call.Invoke(this);
+                return this;
+            }
+            /// <summary>
+            /// 开始处理随机组 在End调用前 将会以缓存来处理每次的任务
+            /// </summary>
             public Step RandomGroup()
             {
                 mScheduler.NextGroup(E_Type.Random);
@@ -406,6 +459,9 @@ namespace Panty
             /// </summary>
             public Step LoopGroup(Func<bool> onExit)
             {
+#if UNITY_EDITOR
+                ThrowEx.EmptyCallback(onExit);
+#endif
                 mOnExit = onExit;
                 mScheduler.NextGroup(E_Type.Loop);
                 return this;

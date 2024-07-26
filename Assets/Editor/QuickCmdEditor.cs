@@ -125,12 +125,13 @@ namespace Panty
             if (Selection.objects.Length == 0)
             {
                 "添加Root失败 请在场景中选择需要添加Root组件的对象".Log();
+                return;
             }
-            else foreach (var go in Selection.objects.OfType<GameObject>())
-                {
-                    if (go == null) continue;
-                    AddUIRoot(go);
-                }
+            foreach (var go in Selection.objects.OfType<GameObject>())
+            {
+                if (go == null) continue;
+                AddUIRoot(go);
+            }
         }
         private static void GetPathFD(string fileName, out string assetPath)
         {
@@ -159,6 +160,8 @@ namespace Panty
                 Bind.E_Type.InputField => "inpFld",
                 Bind.E_Type.RawImage => "rwImg",
 
+                Bind.E_Type.SpriteRenderer => "Spr",
+
                 Bind.E_Type.TextMeshPro => "tmpTxt",
                 Bind.E_Type.TextMeshProUGUI => "tmpTxtUGUI",
                 Bind.E_Type.TMP_InputField => "tmp_InpFld",
@@ -166,9 +169,9 @@ namespace Panty
                 _ => ""
             };
         }
-        private static string CreateUIRootMono(string fileName)
+        private static string CreateRootMono(string fileName)
         {
-            string tmple = $"using UnityEngine;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    [DisallowMultipleComponent]\r\n    public partial class {fileName} : {I.Hub}UI\r\n    {{\r\n\r\n    }}\r\n}}";
+            string tmple = $"using UnityEngine;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    public partial class {fileName} : MonoBehaviour, IBindRoot\r\n    {{\r\n\r\n    }}\r\n}}";
             File.WriteAllText($"{I.TPath}/{fileName}.cs", tmple);
             return $"{I.TPath}/F{fileName}.cs";
         }
@@ -182,23 +185,18 @@ namespace Panty
             else
             {
                 string assetPath = null;
-                var cp = go.GetComponent<UIPanel>();
-                string fileName = $"R_{go.name}";
-                string full = $"{I.Space}.{fileName}";
+                var cp = go.GetComponent<IBindRoot>();
+                string fileName = $"R_{go.name.CapitalizeFirstLetter()}";
+                string space = I.Space;
+                string full = $"{space}.{fileName}";
                 var type = HubTool.BaseAss.GetType(full);
 
-                if (cp && cp.GetType().FullName == full)
-                {
-                    GetPathFD(fileName, out assetPath);
-                    SetRootData(type, binds, go);
-                    $"{type.Name}脚本已挂载".Log();
-                }
-                else
+                if (cp == null)
                 {
                     // 说明没有这个资源
                     if (type == null)
                     {
-                        assetPath = CreateUIRootMono(fileName);
+                        assetPath = CreateRootMono(fileName);
                         type = HubTool.BaseAss.GetType(full);
                         (type == null ? "主程序集不存在该类" : $"构建{type.Name}").Log();
                         "请在资源刷新完成后 再次触发以确保脚本的挂载".Log();
@@ -213,12 +211,23 @@ namespace Panty
                         }
                         else // 说明只有数据类
                         {
-                            assetPath = CreateUIRootMono(fileName);
+                            assetPath = CreateRootMono(fileName);
                             $"只找到数据类 重新构建{type.Name} 请在资源刷新完成后 再次触发以确保脚本的挂载".Log();
                         }
                     }
                 }
-                string[] data = $"using UnityEngine;\r\nusing UnityEngine.UI;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    public partial class {fileName}\r\n    {{\r\n        @\r\n    }}\r\n}}".Split('@');
+                else
+                {
+                    type = cp.GetType();
+                    string typeName = type.FullName;
+                    SetRootData(type, binds, go);
+                    $"{type.Name}脚本已挂载".Log();
+                    var tp = typeName.Split('.');
+                    fileName = tp[tp.Length - 1];
+                    space = typeName.Substring(0, typeName.Length - fileName.Length - 1);
+                    GetPathFD(fileName, out assetPath);
+                }
+                string[] data = $"using UnityEngine;\r\nusing UnityEngine.UI;\r\n\r\nnamespace {space}\r\n{{\r\n    public partial class {fileName}\r\n    {{\r\n        @\r\n    }}\r\n}}".Split('@');
                 var bd = new StringBuilder(data[0]);
                 for (int i = 0, len = binds.Length; i < len; i++)
                 {
