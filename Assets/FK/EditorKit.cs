@@ -87,7 +87,7 @@ namespace Panty
                     GetValue_Imp(obj, element.Substring(0, element.IndexOf("[")), index) :
                     GetValue_Imp(obj, element);
             }
-            var fieldInfo = RefKit.GetField(obj, property.name);
+            var fieldInfo = ReflectionKit.GetField(obj, property.name);
             return fieldInfo == null ? new T[0] : (T[])fieldInfo.GetCustomAttributes(typeof(T), true);
         }
         public static void CreatScript(string path, string name, string tag, string tmple, bool ignoreRoot = true)

@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Panty
 {
-    public class RefKit
+    public class ReflectionKit
     {
         public static FieldInfo GetField(object target, string fieldName)
         {

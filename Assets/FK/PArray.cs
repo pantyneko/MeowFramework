@@ -5,9 +5,16 @@ using System.Collections.Generic;
 
 namespace Panty
 {
+    [Serializable]
     public class LoopList<T> : IEnumerable<T>
     {
+#if UNITY_EDITOR
+        [UnityEngine.SerializeField]
+#endif
         private T[] arr;
+#if UNITY_EDITOR
+        [UnityEngine.SerializeField]
+#endif
         private int N = 0, first = 0;
         public int Count => N;
         public int Capacity => arr.Length;
@@ -132,7 +139,13 @@ namespace Panty
         /// 只重置游标 不释放数据
         /// </summary>
         public void ToFirst() => N = 0;
-        public void LoopPos() => first = (first + 1) % arr.Length;
+        public void LoopPos()
+        {
+#if DEBUG
+            ThrowEx.EmptyItem<T>(N);
+#endif
+            first = (first + 1) % arr.Length;
+        }
         public void LoopNeg()
         {
 #if DEBUG
@@ -162,9 +175,16 @@ namespace Panty
     /// 可自动扩容的动态数组 注意该结构需要手动释放未使用结构
     /// 当移除时 需手动调用缩容 合理利用报错
     /// </summary>
+    [Serializable]
     public class PArray<T> : IEnumerable<T>
     {
+#if UNITY_EDITOR
+        [UnityEngine.SerializeField]
+#endif
         private T[] arr;
+#if UNITY_EDITOR
+        [UnityEngine.SerializeField]
+#endif
         private int N = 0;
         public int Count => N;
         public int Capacity => arr.Length;

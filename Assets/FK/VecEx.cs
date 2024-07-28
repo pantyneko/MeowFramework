@@ -24,6 +24,7 @@ namespace Panty
         /// 根据弧度获取向量角 [角度为0时 方向为正右]
         /// </summary>
         public static float2 GetVecF(float r) => new float2(MathF.Cos(r), MathF.Sin(r));
+        public static Vector2 Abs(this Vector2 v) => new Vector2(v.x.Abs(), v.y.Abs());
         /// <summary>
         /// 获取2维二次贝塞尔曲线
         /// </summary>
@@ -36,6 +37,31 @@ namespace Panty
         {
             float omt = 1f - t;
             return s * (omt * omt) + m * (2f * t * omt) + e * (t * t);
+        }
+        /// <summary>
+        /// 判断当前点是否在线段附近
+        /// </summary>
+        public static bool OnLine(this Vector2 p, Vector2 s, Vector2 e, float min, out Vector2 projectionPos)
+        {
+            float esx = e.x - s.x;
+            float esy = e.y - s.y;
+
+            float abac = esx * (p.x - s.x) + esy * (p.y - s.y);
+            // 内积小于0，夹角大于90度，c在ab线段外面靠近a的一侧
+            if (abac < 0)
+            {
+                projectionPos = s;
+                return (s - p).sqrMagnitude + min < min;
+            }
+            float denominator = esx * esx + esy * esy;
+            // 内积大于ab模的平方，ac在ab方向的投影大于ab，c在ab线段外面靠近b的一侧
+            if (abac > denominator)
+            {
+                projectionPos = e;
+                return (e - p).sqrMagnitude + min < min;
+            }
+            projectionPos = s + (e - s) * (abac / denominator);
+            return (p - projectionPos).sqrMagnitude < min;
         }
         /// <summary>
         /// 创建等边多边形顶点

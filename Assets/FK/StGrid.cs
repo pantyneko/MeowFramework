@@ -22,7 +22,8 @@ namespace Panty
         // 网格的行数和列数
         public int row, colm;
         // 计算网格的总大小（行数*列数）
-        public int Size => row * colm;
+        public int TotalCount => row * colm;
+        public float AspectRatio => ch <= 0f ? 0f : cw / ch;
         // 计算网格的一半行数和列数
         public int SubRow => row >> 1;
         public int SubColm => colm >> 1;

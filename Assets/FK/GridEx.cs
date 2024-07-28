@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 namespace Panty
 {
@@ -7,6 +8,43 @@ namespace Panty
         public void DrawGrid() => GLKit.DrawGrid(xMin, yMin, row, colm, cw, ch, 0f);
         public void DrawGridGizmos() => GLKit.DrawGridGizmos(xMin, yMin, row, colm, cw, ch, 0f);
         public bool Contains(Vector2 p) => Contains(p.x, p.y);
+        public Vector2 Origin
+        {
+            get => new Vector2(xMin, yMin);
+            set
+            {
+                xMin = value.x;
+                yMin = value.y;
+            }
+        }
+        public Vector2 CellSize
+        {
+            get => new Vector2(cw, ch);
+            set
+            {
+                cw = value.x;
+                ch = value.y;
+            }
+        }
+        public Vector2 GridSize
+        {
+            get => new Vector2(W, H);
+            set
+            {
+                if (colm == 0 || row == 0) return;
+                cw = value.x / colm;
+                ch = value.y / row;
+            }
+        }
+        public Vector2Int RowColm
+        {
+            get => new Vector2Int(row, colm);
+            set
+            {
+                row = value.x;
+                colm = value.y;
+            }
+        }
         public StGrid(Vector2 center, float totalWidth, float totalHeight, int row, int colm)
         {
             cw = totalWidth / colm;

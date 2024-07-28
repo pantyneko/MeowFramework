@@ -5,7 +5,7 @@ namespace Panty
     [ExecuteInEditMode]
     public class ControllableGrid : MonoBehaviour
     {
-        [SerializeField] protected So_StGrid mData;
+        [SerializeField] protected SO_StGrid mData;
         public StGrid Grid => mData.Grid;
 #if UNITY_EDITOR       
         [SerializeField] private bool mProportional, mIsContrl, mIsRow;
