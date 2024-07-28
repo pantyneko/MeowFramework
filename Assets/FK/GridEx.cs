@@ -26,7 +26,7 @@ namespace Panty
                 ch = value.y;
             }
         }
-        public Vector2 GridSize
+        public Vector2 BoundSize
         {
             get => new Vector2(W, H);
             set

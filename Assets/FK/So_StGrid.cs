@@ -58,7 +58,7 @@ namespace Panty
             EditorGUILayout.Space();
 
             GUI.enabled = false; // 禁用 GUI
-            EditorGUILayout.Vector2Field("网格区域大小：", grid.GridSize);
+            EditorGUILayout.Vector2Field("网格区域大小：", grid.BoundSize);
             EditorGUILayout.Space();
             EditorGUILayout.FloatField("格子对角:", grid.Hypotenuse);
             EditorGUILayout.Space();
