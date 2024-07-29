@@ -45,15 +45,6 @@ namespace Panty
             GetChild = getChild;
         }
     }
-    public abstract class TaskStopTrigger : MonoBehaviour
-    {
-        private readonly Stack<DelayTask> tasks = new Stack<DelayTask>();
-        public void Add(DelayTask task) => tasks.Push(task);
-        private void OnDestroy()
-        {
-            while (tasks.Count > 0) tasks.Pop().Stop();
-        }
-    }
     public abstract class RmvTrigger : MonoBehaviour
     {
         private readonly Stack<IRmv> rmvs = new Stack<IRmv>();
@@ -229,10 +220,6 @@ namespace Panty
         /// 标记为物体被销毁时注销
         /// </summary>
         public static void RmvOnDestroy(this IRmv rmv, Component c) => c.GetOrAddComponent<RmvOnDestroyTrigger>().Add(rmv);
-        /// <summary>
-        /// 标记为物体被销毁时停止任务
-        /// </summary>
-        public static void StopOnDestroy(this DelayTask task, Component c) => c.GetOrAddComponent<TaskStopTrigger>().Add(task);
         /// <summary>
         /// 标记为物体失活时注销
         /// </summary>

@@ -44,6 +44,10 @@ namespace Panty
             else $"{property.name} doesn't have an asset preview".Log();
         }
     }
+    // 用于处理打开资源选择器
+    // EditorGUIUtility.ShowObjectPicker<Object>()
+    // EditorGUIUtility.GetObjectPickerControlID()
+    // EditorGUIUtility.GetObjectPickerObject()
     // 自定义属性类，用于在属性上添加预览图像
     public class AssetPreviewAttribute : PropertyAttribute
     {

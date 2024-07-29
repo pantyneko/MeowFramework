@@ -5,6 +5,42 @@ using UnityEngine;
 
 namespace Panty
 {
+    public static class TaskSchedulerEx
+    {
+        /// <summary>
+        /// 标记为物体被销毁时停止任务
+        /// </summary>
+        public static void StopOnDestroy(this DelayTask task, Component c) => c.GetOrAddComponent<TaskOnDestroyStopTrigger>().Add(task);
+        public static TaskScheduler.Step StopOnDestroy<T>(this TaskScheduler.Step step, T view) where T : Component, IPermissionProvider
+        {
+            view.GetOrAddComponent<SequenceOnDestroyStopTrigger>().Add(step, view);
+            return step;
+        }
+    }
+    public class TaskOnDestroyStopTrigger : MonoBehaviour
+    {
+        private readonly Stack<DelayTask> tasks = new Stack<DelayTask>();
+        public void Add(DelayTask task) => tasks.Push(task);
+        private void OnDestroy()
+        {
+            while (tasks.Count > 0) tasks.Pop().Stop();
+        }
+    }
+    public class SequenceOnDestroyStopTrigger : MonoBehaviour
+    {
+        private IPermissionProvider view;
+        private readonly Stack<TaskScheduler.Step> arr = new Stack<TaskScheduler.Step>();
+        public void Add(TaskScheduler.Step step, IPermissionProvider view)
+        {
+            this.view = view;
+            arr.Push(step);
+        }
+        private void OnDestroy()
+        {
+            var scheduler = view.Hub.Module<ITaskScheduler>();
+            while (arr.Count > 0) scheduler.StopSequence(arr.Pop());
+        }
+    }
     public class DelayTask
     {
         private Action mTask;
@@ -26,11 +62,10 @@ namespace Panty
         /// <summary>
         /// 初始化任务 该阶段会自动调用 Reset
         /// </summary>
-        public DelayTask Init(float delayTime, bool isLoop)
+        public void Init(float delayTime, bool isLoop)
         {
             mRemTime = DelayTime = delayTime;
             Loop = isLoop;
-            return this;
         }
         public void Reset() => mRemTime = DelayTime;
         public void Start() => mState = E_State.Start;
@@ -62,8 +97,28 @@ namespace Panty
     }
     public interface ITaskScheduler : IModule
     {
+        /// <summary>
+        /// 添加一个延时任务
+        /// </summary>
+        /// <param name="duration">持续时间</param>
+        /// <param name="onFinished">当延时完成时做的事情</param>
+        /// <param name="isLoop">是否循环执行 当完成后重新调用该任务</param>
+        /// <param name="ignoreTimeScale">是否忽略时间缩放</param>
+        /// <returns>计时器</returns>
         DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop = false, bool ignoreTimeScale = false);
+        /// <summary>
+        /// 添加一个临时任务 在持续时间内 进行帧更新
+        /// </summary>
+        /// <param name="duration">持续时间</param>
+        /// <param name="onUpdate">当在持续时间内执行的任务</param>
+        /// <param name="ignoreTimeScale">是否忽略时间缩放</param>
+        /// <returns>计时器</returns>
         DelayTask AddTemporaryTask(float duration, Action onUpdate, bool ignoreTimeScale = false);
+        /// <summary>
+        /// 任务序列 可以自定义任务组
+        /// </summary>
+        /// <param name="ignoreTimeScale">是否忽略时间缩放</param>
+        /// <returns>任务步骤</returns>
         TaskScheduler.Step Sequence(bool ignoreTimeScale = false);
         void StopSequence(TaskScheduler.Step step);
     }
@@ -104,7 +159,6 @@ namespace Panty
                 ThrowEx.EmptyCallback(exit);
 #endif
                 exitCondition = exit;
-
             }
             public bool IsExit() => exitCondition();
             public void Reset() { }
@@ -117,6 +171,30 @@ namespace Panty
             public DelayAction(float duration) =>
                 this.duration = duration < 0f ? 0f : duration;
             public bool IsExit() => cur >= duration;
+            public void Reset() => cur = 0;
+            public void Update(float delta) => cur += delta;
+        }
+        private class DelayRunAction : IAction
+        {
+            private float duration, cur;
+            private Action call;
+            public DelayRunAction(float duration, Action call)
+            {
+#if UNITY_EDITOR
+                ThrowEx.EmptyCallback(call);
+#endif
+                this.duration = duration < 0f ? 0f : duration;
+                this.call = call;
+            }
+            public bool IsExit()
+            {
+                if (cur >= duration)
+                {
+                    call.Invoke();
+                    return true;
+                }
+                return false;
+            }
             public void Reset() => cur = 0;
             public void Update(float delta) => cur += delta;
         }
@@ -207,10 +285,17 @@ namespace Panty
             public RandomGroup(PArray<IAction> actions)
             {
                 this.actions = actions;
-                select = actions.RandomGet();
             }
-            public bool IsExit() => select.IsExit();
-            public void Update(float delta) => select.Update(delta);
+            public bool IsExit()
+            {
+                if (select == null)
+                    select = actions.RandomGet();
+                return select.IsExit();
+            }
+            public void Update(float delta)
+            {
+                select.Update(delta);
+            }
             public void Reset()
             {
                 select = actions.RandomGet();
@@ -345,6 +430,14 @@ namespace Panty
                 return this;
             }
             /// <summary>
+            /// 插入一个有任务的延迟事件
+            /// </summary>
+            public Step Delay(float duration, Action call)
+            {
+                mScheduler.ToSequence(this, new DelayRunAction(duration, call));
+                return this;
+            }
+            /// <summary>
             /// 插入一个事件
             /// </summary>
             public Step Event(Action call)
@@ -402,6 +495,7 @@ namespace Panty
 #endif
                 mScheduler.NextGroup(E_Type.Random);
                 call.Invoke(this);
+                mScheduler.EndGroup(this);
                 return this;
             }
             /// <summary>
@@ -417,6 +511,7 @@ namespace Panty
                 mOnExit = onExit;
                 mScheduler.NextGroup(E_Type.Loop);
                 call.Invoke(this);
+                mScheduler.EndGroup(this);
                 return this;
             }
             /// <summary>
@@ -431,6 +526,7 @@ namespace Panty
                 mCounter = repeatCount == 0 ? (byte)1 : repeatCount;
                 mScheduler.NextGroup(E_Type.Repeat);
                 call.Invoke(this);
+                mScheduler.EndGroup(this);
                 return this;
             }
             /// <summary>
@@ -443,6 +539,7 @@ namespace Panty
 #endif
                 mScheduler.NextGroup(E_Type.Parallel);
                 call.Invoke(this);
+                mScheduler.EndGroup(this);
                 return this;
             }
             /// <summary>
@@ -519,7 +616,8 @@ namespace Panty
         }
         public DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop, bool ignoreTimeScale)
         {
-            var task = GetTask().Init(duration, isLoop);
+            var task = GetTask();
+            task.Init(duration, isLoop);
             task.SetTask(onFinished).Start();
 
             if (ignoreTimeScale)
