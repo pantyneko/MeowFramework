@@ -163,6 +163,7 @@ namespace Panty
                 Bind.E_Type.RawImage => "rwImg",
 
                 Bind.E_Type.SpriteRenderer => "Spr",
+                Bind.E_Type.RectTransform => "rectTr",
 
                 Bind.E_Type.TextMeshPro => "tmpTxt",
                 Bind.E_Type.TextMeshProUGUI => "tmpTxtUGUI",
@@ -285,7 +286,17 @@ namespace Panty
                     var info = fields.FirstOrDefault(t => t.Name == n);
                     if (info == null) continue;
                     var bindCp = bind.GetComponent(info.FieldType);
-                    if (bindCp) info.SetValue(cmpnt, Convert.ChangeType(bindCp, info.FieldType));
+                    object o = null;
+                    try
+                    {
+                        o = Convert.ChangeType(bindCp, info.FieldType);
+                    }
+                    catch (Exception e)
+                    {
+                        $"错误{e.Message} 已将类型修改为特殊".Log();
+                        o = Convert.ChangeType(bindCp, typeof(RectTransform));
+                    }
+                    if (bindCp) info.SetValue(cmpnt, o);
                     else $"无法找到{bind.Root}下{info.FieldType}脚本".Log();
                 }
             }

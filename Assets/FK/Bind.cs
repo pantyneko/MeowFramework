@@ -25,6 +25,7 @@ namespace Panty
                 E_Type.ScrollRect => typeof(ScrollRect),
                 E_Type.InputField => typeof(InputField),
 
+                E_Type.RectTransform => typeof(RectTransform),
                 E_Type.SpriteRenderer => typeof(SpriteRenderer),
                 _ => null,
             };
@@ -32,6 +33,7 @@ namespace Panty
         public enum E_Type : byte
         {
             SpriteRenderer,
+            RectTransform,
 
             Transform,
             Button,
@@ -62,6 +64,7 @@ namespace Panty
             if (GetComponent<Image>()) type = E_Type.Image;
             else if (GetComponent<Text>()) type = E_Type.Text;
             else if (GetComponent<RawImage>()) type = E_Type.RawImage;
+            else if (GetComponent<RectTransform>()) type = E_Type.RectTransform;
             else if (GetComponent<SpriteRenderer>()) type = E_Type.SpriteRenderer;
             else type = E_Type.Transform;
         }
