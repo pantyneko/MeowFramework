@@ -122,8 +122,6 @@ namespace Panty
     }
     public static partial class HubTool
     {
-#if DEBUG
-        public const string version = "1.1.4";
         /// <summary>
         /// 在调试模式下 将对象信息输出到控制台 可支持多个平台。
         /// </summary>
@@ -134,6 +132,8 @@ namespace Panty
 #endif
             return o;
         }
+#if DEBUG
+        public const string version = "1.1.4";
         public static void DicLog<K, V>(this Dictionary<K, V> dic, string dicName, string prefix)
         {
             if (dic.Count == 0)
@@ -392,7 +392,6 @@ namespace Panty
             else $"{typeof(E)} 事件未注册".Log();
 #endif
         }
-
         // 以下使用枚举转换为索引来驱动事件
         IRmv IModuleHub.AddEvent<E>(E type, Action evt)
         {

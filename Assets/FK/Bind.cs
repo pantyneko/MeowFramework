@@ -74,7 +74,7 @@ namespace Panty
             }
             if (GetComponent(ToType(type)) == null)
             {
-                $"{type}组件不存在 请重新设置".Log();
+                $"{type}组件不存在 将设置为默认变换组件".Log();
                 type = E_Type.Transform;
             }
         }

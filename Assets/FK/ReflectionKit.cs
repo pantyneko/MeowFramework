@@ -15,7 +15,9 @@ namespace Panty
         {
             if (target == null)
             {
+#if DEBUG
                 "The target object is null. Check for missing scripts.".Log();
+#endif
                 yield break;
             }
             var types = new List<Type>() { target.GetType() };

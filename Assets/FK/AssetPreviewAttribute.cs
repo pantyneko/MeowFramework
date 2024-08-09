@@ -8,7 +8,7 @@ namespace Panty
     public class AssetPreviewDrawer : PropertyDrawer
     {
         private AssetPreviewAttribute cachedAttribute;
-
+        private bool InvBg, altPressed;
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             if (property.propertyType == SerializedPropertyType.ObjectReference)
@@ -31,12 +31,26 @@ namespace Panty
                 var attribute = cachedAttribute ??= EditorKit.GetAttribute<AssetPreviewAttribute>(property);
                 var previewRect = new Rect(position.x, position.y + labelRect.height + 2, attribute.Width + 20, attribute.Height);
                 EditorGUI.ObjectField(previewRect, property, GUIContent.none);
+
+                Event e = Event.current;
+                // 检查是否按下 Alt 键
+                if (e.alt)
+                {
+                    if (!altPressed && previewRect.Contains(e.mousePosition))
+                    {
+                        InvBg = !InvBg;
+                        altPressed = true;
+                        e.Use(); // 使用事件，防止其他控件处理
+                    }
+                }
+                else altPressed = false;
                 // 绘制预览图像
                 var previewTexture = AssetPreview.GetAssetPreview(property.objectReferenceValue);
                 if (previewTexture != null)
                 {
                     previewRect.width = attribute.Width;
                     previewTexture.filterMode = FilterMode.Point;
+                    Graphics.DrawTexture(previewRect, InvBg ? TextureEx.InvTPG : TextureEx.BaseTPG);
                     Graphics.DrawTexture(previewRect, previewTexture);
                 }
                 EditorGUI.EndProperty();

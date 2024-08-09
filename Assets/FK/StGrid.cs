@@ -85,9 +85,25 @@ namespace Panty
         /// 获取网格中心点的线性索引
         /// </summary>
         /// <returns>网格中心点的线性索引</returns>
-        public int CenterIndex_RowMajor()
+        public int CenterLinearIndex_RowMajor()
         {
             return CellIndexToLinearIndex_RowMajor(row >> 1, colm >> 1);
+        }
+        /// <summary>
+        /// 将坐标转换到格子的中心坐标
+        /// </summary>
+        public void ToCoordCenter(float x, float y, out float cx, out float cy)
+        {
+            CoordToCellIndex(x, y, out int rowIndex, out int colIndex);
+            CellIndexToCoordCenter(rowIndex, colIndex, out cx, out cy);
+        }
+        /// <summary>
+        /// 将坐标转换到格子的左下角坐标
+        /// </summary>
+        public void ToWorldCoord(float x, float y, out float cx, out float cy)
+        {
+            CoordToCellIndex(x, y, out int rowIndex, out int colIndex);
+            CellIndexToWorldCoord(rowIndex, colIndex, out cx, out cy);
         }
         /// <summary>
         /// 从网格中心点缩放网格大小
@@ -183,6 +199,16 @@ namespace Panty
 
             return r >= 0 && r < row && c >= 0 && c < colm;
         }
+        public bool GetNeighborIndex(int r, int c, Dir4 direction, out int or, out int oc)
+        {
+            if (direction.HasFlag(Dir4.Up)) r += 1;
+            if (direction.HasFlag(Dir4.Down)) r -= 1;
+            if (direction.HasFlag(Dir4.Left)) c -= 1;
+            if (direction.HasFlag(Dir4.Right)) c += 1;
+            or = r;
+            oc = c;
+            return r >= 0 && r < row && c >= 0 && c < colm;
+        }
         /// <summary>
         /// 获取环绕网格的邻居索引（用于边界穿越）
         /// </summary>
@@ -259,6 +285,12 @@ namespace Panty
             r = index / colm;
             c = index % colm;
         }
+        /// <summary>
+        /// 将线性索引转换为网格的行列索引（列主序）
+        /// </summary>
+        /// <param name="index">线性索引</param>
+        /// <param name="r">行索引</param>
+        /// <param name="c">列索引</param>
         public void LinearIndexToCellIndex_ColMajor(int index, out int r, out int c)
         {
             r = index % row;

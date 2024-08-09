@@ -34,11 +34,10 @@ namespace Panty
             Directory.CreateDirectory(path);
             return true;
         }
-        public static void WriteFile(string filePath, string content)
+        public static void WriteFile(string filePath, string content, Encoding encode)
         {
             if (string.IsNullOrEmpty(content)) return;
             var spanContent = content.AsSpan();
-            var encode = Encoding.UTF8;
             int maxByteCount = encode.GetMaxByteCount(spanContent.Length);
 
             using (FileStream fs = File.Create(filePath))

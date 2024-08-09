@@ -42,7 +42,7 @@ namespace Panty
                 {
                     fontSize = 10,
                     alignment = TextAnchor.MiddleCenter,
-                    normal = { background = GLKit.MakeTex(20, 20, new Color(0, 0, 0, 0.5f)) }
+                    normal = { background = TextureEx.GetSolidTex(1, 1, new Color32(0, 0, 0, 128)) }
                 };
                 buttonStyle = new GUIStyle(GUI.skin.button)
                 {
@@ -131,7 +131,10 @@ namespace Panty
             {
                 if (GUI.changed) previewCache[index] = GetPreview(obj);
                 if (previewCache[index] != null)
+                {
+                    Graphics.DrawTexture(rect, TextureEx.InvTPG);
                     Graphics.DrawTexture(rect, obj is Texture2D ? (Texture2D)obj : previewCache[index]);
+                }
             }
             GUI.Label(new Rect(rect.x, rect.y, 20, 20), index.ToString(), indexStyle);
         }
@@ -153,7 +156,7 @@ namespace Panty
         }
         private Texture2D GetPreview(Object obj)
         {
-            return AssetPreview.GetAssetPreview(obj) ?? GLKit.MakeTex(1, 1, Color.white);
+            return AssetPreview.GetAssetPreview(obj) ?? TextureEx.GetSolidTex(1, 1, ColorEx.white32);
         }
     }
 }

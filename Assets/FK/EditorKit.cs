@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 using System.Reflection;
 using System;
 using System.Collections;
+using System.Text;
 
 namespace Panty
 {
@@ -39,6 +40,8 @@ namespace Panty
             else
             {
                 win = array[0];
+                if (win == null)
+                    return EditorWindow.GetWindow<T>(isUtility, title);
                 win.Close();
                 return false;
             }
@@ -90,9 +93,8 @@ namespace Panty
             var fieldInfo = ReflectionKit.GetField(obj, property.name);
             return fieldInfo == null ? new T[0] : (T[])fieldInfo.GetCustomAttributes(typeof(T), true);
         }
-        public static void CreatScript(string path, string name, string tag, string tmple, bool ignoreRoot = true)
+        public static void CreatScript(string path, string name, string tag, string tmple)
         {
-            path = ignoreRoot ? path : $"Assets/{path}";
             FileKit.TryCreateDirectory(path);
             var tmp = $"{name}{tag}";
             if (FindMonoAsset(tmp))
@@ -100,7 +102,7 @@ namespace Panty
             else
             {
                 string str = Regex.Replace(tmple, Regex.Escape("@"), name);
-                FileKit.WriteFile($"{path}/{tmp}.cs", str);
+                FileKit.WriteFile($"{path}/{tmp}.cs", str, Encoding.UTF8);
                 AssetDatabase.Refresh();
             }
         }

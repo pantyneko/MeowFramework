@@ -25,17 +25,7 @@ namespace Panty
             callback?.Invoke();
             GL.PopMatrix();
         }
-        public static Texture2D MakeTex(int width, int height, Color col)
-        {
-            int len = width * height;
-            var pix = new Color[len];
-            for (int i = 0; i < len; i++) pix[i] = col;
-            var result = new Texture2D(width, height);
-            result.SetPixels(pix);
-            result.Apply();
-            return result;
-        }
-        public static void Draw(this Rect rect, float z = 0f, bool isWire = true)
+        public static void DrawRectLeft(this Rect rect, float z = 0f, bool isWire = true)
         {
             DrawRectLeft(rect.x, rect.y, rect.width, rect.height, z, isWire);
         }

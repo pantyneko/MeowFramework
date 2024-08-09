@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text.RegularExpressions;
 
 namespace Panty
@@ -36,6 +37,12 @@ namespace Panty
         {
             // 使用正则表达式替换所有非字母、数字和中文字符
             return Regex.Replace(input, "[^a-zA-Z0-9\u4e00-\u9fa5]", "");
+        }
+        public static char[] AsciiChars()
+        {
+            var chs = new char[256];
+            for (int i = 0; i < 256; i++) chs[i] = (char)i;
+            return chs;
         }
     }
 }

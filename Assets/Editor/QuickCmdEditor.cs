@@ -81,6 +81,7 @@ namespace Panty
         private string mCmd = "help";
 
         private TextField mField;
+        private static bool PathMode;
         private static MonoScript SCRIPT;
         private static PArray<GameObject> mGos = new PArray<GameObject>();
 
@@ -93,14 +94,21 @@ namespace Panty
                 win.minSize = new Vector2(360f, 40f);
             }
         }
-        [MenuItem("PnTool/Quick/AddBind %&B")]
+        [MenuItem("PnTool/Cmd/PathMode")]
+        private static void ChangePathMode()
+        {
+            $"切换为 {((PathMode = !PathMode) ? "Hub" : "TPath")} 作为路径".Log();
+        }
+        [MenuItem("PnTool/Cmd/AddBind #B")]
         private static void AddBind()
         {
             if (Selection.objects.Length == 0)
             {
                 "添加Bind失败 请在场景中选择需要添加Bind组件的对象".Log();
             }
-            else foreach (var go in Selection.objects.OfType<GameObject>())
+            else
+            {
+                foreach (var go in Selection.objects.OfType<GameObject>())
                 {
                     if (go == null) continue;
                     if (mGos.Count == 0)
@@ -109,17 +117,21 @@ namespace Panty
                     }
                     else
                     {
-                        if (mGos.Count == 1)
-                            "Bind无法绑定多个Root 当前将以第1个选择的Root对象作为目标进行绑定".Log();
+                        if (go == mGos[0])
+                            $"Bind组件无法添加到根节点：{go.name}".Log();
                         else
-                            $"{go.name}已成功添加Bind组件".Log();
-                        go.GetOrAddComponent<Bind>().Init(mGos[0]);
+                        {
+                            if (mGos.Count == 1) $"{go.name}已成功添加Bind组件".Log();
+                            else "Bind无法绑定多个Root 将以第1个Root对象作为目标进行绑定".Log();
+                            go.GetOrAddComponent<Bind>().Init(mGos[0]);
+                        }
                     }
                     EditorUtility.SetDirty(go);
                     EditorSceneManager.MarkSceneDirty(go.scene);
                 }
+            }
         }
-        [MenuItem("PnTool/Quick/AddUIRoot %&V")]
+        [MenuItem("PnTool/Cmd/AddUIRoot #V")]
         private static void AddUIRoot()
         {
             if (Selection.objects.Length == 0)
@@ -131,16 +143,6 @@ namespace Panty
             {
                 if (go == null) continue;
                 AddUIRoot(go);
-            }
-        }
-        private static void GetPathFD(string fileName, out string assetPath)
-        {
-            assetPath = EditorKit.GetMonoPath(fileName, $"{fileName}.cs");
-            assetPath = $"{Path.GetDirectoryName(assetPath)}/F{fileName}.cs";
-            if (!File.Exists(assetPath))
-            {
-                var psth = EditorKit.GetMonoPath(fileName, $"F{fileName}.cs");
-                if (psth != null) assetPath = psth;
             }
         }
         private static string GetPrefix(Bind.E_Type type)
@@ -172,8 +174,15 @@ namespace Panty
         private static string CreateRootMono(string fileName)
         {
             string tmple = $"using UnityEngine;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    public partial class {fileName} : MonoBehaviour, IBindRoot\r\n    {{\r\n\r\n    }}\r\n}}";
-            File.WriteAllText($"{I.TPath}/{fileName}.cs", tmple);
-            return $"{I.TPath}/F{fileName}.cs";
+            string path = I.TPath;
+            if (GetPathByMode(ref path))
+            {
+                FileKit.TryCreateDirectory($"{path}/Binds");
+                File.WriteAllText($"{path}/Binds/{fileName}.cs", tmple);
+                FileKit.TryCreateDirectory($"{path}/Fields");
+                return $"{path}/Fields/F{fileName}.cs";
+            }
+            return null;
         }
         private static void AddUIRoot(GameObject go)
         {
@@ -205,7 +214,8 @@ namespace Panty
                     {
                         if (type.IsSubclassOf(typeof(Component)))
                         {
-                            GetPathFD(fileName, out assetPath);
+                            string path = Path.GetDirectoryName(EditorKit.GetMonoPath(fileName, $"{fileName}.cs"));
+                            assetPath = $"{path.Substring(0, path.Length - 5)}Fields/F{fileName}.cs"; // Binds.Length = 5
                             SetRootData(type, binds, go);
                             $"{type.Name}脚本已存在 即将刷新数据类".Log();
                         }
@@ -225,7 +235,8 @@ namespace Panty
                     var tp = typeName.Split('.');
                     fileName = tp[tp.Length - 1];
                     space = typeName.Substring(0, typeName.Length - fileName.Length - 1);
-                    GetPathFD(fileName, out assetPath);
+                    string path = Path.GetDirectoryName(EditorKit.GetMonoPath(fileName, $"{fileName}.cs"));
+                    assetPath = $"{path.Substring(0, path.Length - 5)}Fields/F{fileName}.cs"; // Binds.Length = 5
                 }
                 string[] data = $"using UnityEngine;\r\nusing UnityEngine.UI;\r\n\r\nnamespace {space}\r\n{{\r\n    public partial class {fileName}\r\n    {{\r\n        @\r\n    }}\r\n}}".Split('@');
                 var bd = new StringBuilder(data[0]);
@@ -251,7 +262,7 @@ namespace Panty
                     else $"{bind.Root}不属于当前父级".Log();
                 }
                 bd.Append(data[1]);
-                FileKit.WriteFile(assetPath, bd.ToString());
+                FileKit.WriteFile(assetPath, bd.ToString(), Encoding.UTF8);
                 AssetDatabase.Refresh();
                 $"{fileName}数据已更新".Log();
             }
@@ -293,6 +304,7 @@ namespace Panty
         private void OnEnable()
         {
             string n = nameof(QuickCmdEditor);
+            PathMode = EditorPrefs.GetBool($"{n}Pmod", false);
             mCmd = EditorPrefs.GetString($"{n}Cmd", mCmd);
             I.TPath = EditorPrefs.GetString($"{n}Path", I.TPath);
             I.Space = EditorPrefs.GetString($"{n}Space", I.Space);
@@ -302,6 +314,7 @@ namespace Panty
         private void OnDisable()
         {
             string n = nameof(QuickCmdEditor);
+            EditorPrefs.SetBool($"{n}Pmod", PathMode);
             EditorPrefs.SetString($"{n}Cmd", mCmd);
             if (!string.IsNullOrEmpty(I.TPath))
                 EditorPrefs.SetString($"{n}Path", I.TPath);
@@ -401,37 +414,72 @@ namespace Panty
             }
             evt.StopImmediatePropagation();
         }
+        private static bool GetPathByMode(ref string path)
+        {
+            if (PathMode)
+            {
+                string hub = I.Hub + "Hub";
+                path = EditorKit.GetMonoPath(hub, hub + ".cs");
+                path = Path.GetDirectoryName(path);
+                if (string.IsNullOrEmpty(path))
+                {
+                    $"无法找到{hub} 该脚本可能被删除 请指定正确的架构 Hub:架构名".Log();
+                    return false;
+                }
+            }
+            return true;
+        }
         private static bool Eq(string source, string en, string ch) =>
             StringComparer.OrdinalIgnoreCase.Equals(source, en) || source == ch;
-        private void CreateModule(string name, string tag)
-        {
-            string tmp = $"namespace {I.Space}\r\n{{\r\n    public interface I@{tag} : IModule\r\n    {{\r\n\r\n    }}\r\n    public class @{tag} : AbsModule, I@{tag}\r\n    {{\r\n        protected override void OnInit()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n}}";
-            EditorKit.CreatScript(I.TPath, name, tag, tmp);
-            mField.value = $"{tag}:";
-        }
-        private void CreateScript(string name, string tag)
+        private bool IsNotHub()
         {
             if (string.IsNullOrEmpty(I.Hub))
             {
                 mField.value = "hub:";
                 $"请先设置架构 {mCmd}架构名".Log();
-                return;
+                return true;
             }
+            return false;
+        }
+        private void CreateModule(string name, string tag)
+        {
+            if (IsNotHub()) return;
+            string tmp = $"namespace {I.Space}\r\n{{\r\n    public interface I@{tag} : IModule\r\n    {{\r\n\r\n    }}\r\n    public class @{tag} : AbsModule, I@{tag}\r\n    {{\r\n        protected override void OnInit()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n}}";
+            string path = I.TPath;
+            if (GetPathByMode(ref path))
+            {
+                if (PathMode) path = $"{path}/{tag}";
+                EditorKit.CreatScript(path, name, tag, tmp);
+                mField.value = $"{tag}:";
+            }
+            else mField.value = "hub:";
+        }
+        private void CreateScript(string name, string tag)
+        {
+            if (IsNotHub()) return;
             string father = tag switch
             {
                 "Mono" => "MonoBehaviour",
-                "So" => "ScriptableObject",
+                "SO" => "ScriptableObject",
                 _ => I.Hub + tag
             };
             string tmp = $"using UnityEngine;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    public class @ : {father}\r\n    {{\r\n\r\n    }}\r\n}}";
-            EditorKit.CreatScript(I.TPath, name, "", tmp);
-            mField.value = $"{tag}:";
+            string path = I.TPath;
+            if (GetPathByMode(ref path))
+            {
+                if (PathMode) path = $"{path}/{tag}";
+                EditorKit.CreatScript(path, name, "", tmp);
+                mField.value = $"{tag}:";
+            }
+            else mField.value = "hub:";
         }
         private void ShowHelp()
         {
             string instructions = $"# Panty 工具集使用手册\r\n\r\n```\r\n==============================\r\n  Panty 工具集使用手册\r\n==============================\r\n\r\n目录:\r\n1. TextDialog 使用指南\r\n2. QuickCmdEditor 使用指南\r\n   - 基础操作\r\n   - 命令说明\r\n   - 拖曳操作与上下文菜单\r\n\r\n------------------------------\r\n1. TextDialog 使用指南\r\n------------------------------\r\n\r\n打开提示框:\r\n1. 调用 TextDialog.Open 方法，传入需要显示的消息和可选的回调函数:\r\n   TextDialog.Open(\"你的消息\", 确认回调, 取消回调);\r\n2. 在提示框中，用户可以通过点击确认或取消按钮进行相应的操作。\r\n\r\n------------------------------\r\n2. QuickCmdEditor 使用指南\r\n------------------------------\r\n\r\n### 基础操作\r\n\r\n快速打开:\r\n1. 在 Unity 编辑器顶部菜单栏选择 PnTool/QuickCmd &Q 打开 QuickCmdEditor 窗口。\r\n   - 快捷键: Alt + Q\r\n\r\n添加绑定:\r\n1. 在场景中选择一个或多个 GameObject。\r\n2. 在 Unity 编辑器顶部菜单栏选择 PnTool/Quick/AddBind &B 为所选对象添加绑定组件。\r\n   - 快捷键: Alt + B\r\n\r\n添加UI根节点:\r\n1. 在场景中选择一个或多个 GameObject。\r\n2. 在 Unity 编辑器顶部菜单栏选择 PnTool/Quick/AddUIRoot &W 将所选对象设置为 UI 根节点。\r\n   - 快捷键: Alt + W\r\n\r\n检查更新:\r\n1. 打开 QuickCmdEditor 窗口。\r\n2. 在命令输入框中输入 check 或 检查更新，然后按回车键。\r\n3. 程序将会检查更新并显示相应信息。\r\n   - 上下文菜单: 右键点击命令输入框选择 检查更新。\r\n\r\n### 命令说明\r\n\r\n基础命令:\r\n- 帮助: 输入 help 或 帮助 查看帮助信息。\r\n  - 上下文菜单: 右键点击命令输入框选择 显示帮助。\r\n- 清理: 输入 clear 或 清理 清空已标记的信息。\r\n  - 上下文菜单: 右键点击命令输入框选择 清空数据。\r\n- UI绑定: 输入 uiBind 或 UI绑定 进行 UI 绑定操作。\r\n  - 上下文菜单: 右键点击命令输入框选择 绑定 UI。\r\n- 检查更新: 输入 check 或 检查更新 检查更新。\r\n  - 上下文菜单: 右键点击命令输入框选择 检查更新。\r\n\r\n模块和脚本创建命令:\r\n- 命名空间: 输入 space:命名空间 设置命名空间，例如 space:MyNamespace。\r\n- 路径: 输入 path:路径 设置路径，例如 path:Assets/MyPath。输入 path:base 或 path:基础 创建基础目录。\r\n- SoIns: 创建 ScriptableObject 实例。例如 SoIns:MyScriptableObject。\r\n- Module: 创建模块。例如 Module:MyModule。\r\n- System: 创建系统。例如 System:MySystem。\r\n- Model: 创建数据模型。例如 Model:MyModel。\r\n- Game: 创建游戏脚本。例如 Game:MyGameScript。\r\n- UI: 创建表现层脚本。例如 UI:MyUIScript。\r\n- Mono: 创建 MonoBehaviour 脚本。例如 Mono:MyMonoScript。\r\n- so: 创建 ScriptableObject 脚本。例如 so:MyScriptableObject。\r\n- hub: 创建架构。例如 hub:MyHub。\r\n\r\n### 拖曳操作与上下文菜单\r\n\r\n拖曳操作:\r\n1. 将一个 MonoScript 脚本文件拖到 QuickCmdEditor 窗口中，并按住 Ctrl 键以标记路径。\r\n2. 将一个或多个 GameObject 拖到 QuickCmdEditor 窗口中，以缓存这些对象供后续操作。\r\n\r\n上下文菜单:\r\n1. 右键点击 QuickCmdEditor 命令输入框可弹出上下文菜单，选择以下操作:\r\n   - 显示帮助: 查看帮助信息。\r\n   - 绑定 UI: 进行 UI 绑定操作。\r\n   - 基础目录: 设置基础目录。\r\n   - 检查更新: 检查更新。\r\n   - 清空数据: 清空已标记的信息。\r\n\r\n通过以上操作，用户可以快速利用 Panty 工具集在 Unity 编辑器中进行各种便捷的操作。\r\n```";
             string sc = SCRIPT == null ? "null" : SCRIPT.name;
-            TextDialog.Open($"{instructions}\r\n\r\n标记架构：{I.Hub}Hub\r\n标记路径：{I.TPath}\r\n标记命名空间：{I.Space}\r\n标记搜索路径：{I.Search[0]}\r\n标记SO资源：{sc}\r\n");
+            string hub = I.Hub + "Hub";
+            string path = EditorKit.GetMonoPath(hub, hub + ".cs");
+            TextDialog.Open($"{instructions}\r\n\r\n标记架构：{hub} [{path}]\r\n路径模式：以 {(PathMode ? "Hub" : "TPath")}作为生成路径\r\n标记路径：{I.TPath}\r\n标记命名空间：{I.Space}\r\n标记搜索路径：{I.Search[0]}\r\n标记SO资源：{sc}\r\n");
             mField.value = "";
         }
         private void ClearInfo()
@@ -481,15 +529,14 @@ namespace Panty
         private void OnUIBind()
         {
             if (mGos.Count == 0)
-                "无可操作对象".Log();
-            else
             {
-                foreach (var go in mGos)
-                {
-                    if (go == null) continue;
-                    AddUIRoot(go);
-                }
-                mGos.ToFirst();
+                "无可操作对象".Log();
+                return;
+            }
+            foreach (var go in mGos)
+            {
+                if (go == null) continue;
+                AddUIRoot(go);
             }
         }
         private void BuildContextualMenu(ContextualMenuPopulateEvent evt)
@@ -616,24 +663,29 @@ namespace Panty
                             if (SCRIPT != null)
                             {
                                 string path = I.TPath;
-                                FileKit.TryCreateDirectory(path);
-                                path = $"{path}/{sub}.asset";
-                                if (File.Exists(path))
+                                if (GetPathByMode(ref path))
                                 {
-                                    $"{sub}.asset 已存在".Log();
+                                    if (PathMode) path = $"{path}/SoIns";
+                                    FileKit.TryCreateDirectory(path);
+                                    string file = $"{path}/{sub}.asset";
+                                    if (File.Exists(file))
+                                    {
+                                        $"{sub}.asset 已存在".Log();
+                                    }
+                                    else
+                                    {
+                                        string uniqueFileName = AssetDatabase.GenerateUniqueAssetPath(file);
+                                        var instance = new SerializedObject(CreateInstance(SCRIPT.GetClass()));
+                                        instance.Update();
+                                        instance.ApplyModifiedPropertiesWithoutUndo();
+                                        AssetDatabase.CreateAsset(instance.targetObject, uniqueFileName);
+                                        AssetDatabase.ImportAsset(uniqueFileName);
+                                        // 清空serializedObject，以便连续创建
+                                        // serializedObject = null;
+                                        $"{sub}.asset 创建成功".Log();
+                                    }
                                 }
-                                else
-                                {
-                                    string uniqueFileName = AssetDatabase.GenerateUniqueAssetPath(path);
-                                    var instance = new SerializedObject(CreateInstance(SCRIPT.GetClass()));
-                                    instance.Update();
-                                    instance.ApplyModifiedPropertiesWithoutUndo();
-                                    AssetDatabase.CreateAsset(instance.targetObject, uniqueFileName);
-                                    AssetDatabase.ImportAsset(uniqueFileName);
-                                    // 清空serializedObject，以便连续创建
-                                    // serializedObject = null;
-                                    $"{sub}.asset 创建成功".Log();
-                                }
+                                else mField.value = "hub:";
                             }
                         }
                         else if (Eq(info, "Module", "模块")) CreateModule(sub, "Module");
@@ -642,7 +694,7 @@ namespace Panty
                         else if (Eq(info, "Game", "游戏")) CreateScript(sub, "Game");
                         else if (Eq(info, "UI", "表现")) CreateScript(sub, "UI");
                         else if (Eq(info, "Mono", "脚本")) CreateScript(sub, "Mono");
-                        else if (Eq(info, "so", "SO")) CreateScript(sub, "So");
+                        else if (Eq(info, "so", "SO")) CreateScript(sub, "SO");
                         else if (Eq(info, "hub", "架构"))
                         {
                             string tmp = $"using UnityEngine;\r\n\r\nnamespace {I.Space}\r\n{{\r\n    public class @Hub : ModuleHub<@Hub>\r\n    {{\r\n        protected override void BuildModule()\r\n        {{\r\n\r\n        }}\r\n    }}\r\n    public class @Game : MonoBehaviour, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n    public class @UI : UIPanel, IPermissionProvider\r\n    {{\r\n        IModuleHub IPermissionProvider.Hub => @Hub.GetIns();\r\n    }}\r\n}}";

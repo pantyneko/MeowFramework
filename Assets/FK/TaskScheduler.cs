@@ -120,6 +120,8 @@ namespace Panty
         /// <param name="ignoreTimeScale">是否忽略时间缩放</param>
         /// <returns>任务步骤</returns>
         TaskScheduler.Step Sequence(bool ignoreTimeScale = false);
+        TaskScheduler.Step Sequence<G>(G group = default, bool ignoreTimeScale = false) where G : struct, TaskScheduler.IGroup;
+        TaskScheduler.Step Sequence<G, T>(G group, T data, bool ignoreTimeScale = false) where G : struct, TaskScheduler.IGroup<T>;
         void StopSequence(TaskScheduler.Step step);
     }
     public class TaskScheduler : AbsModule, ITaskScheduler
@@ -130,7 +132,15 @@ namespace Panty
             void Reset();
             void Update(float delta);
         }
-        private class Sequence
+        public interface IGroup
+        {
+            void Execute(Step step);
+        }
+        public interface IGroup<T>
+        {
+            void Execute(Step step, T data);
+        }
+        private class SequenceGrp
         {
             private bool mExit;
             public bool IsExit() => mExit;
@@ -401,7 +411,8 @@ namespace Panty
         public class Step
         {
             private static TaskScheduler mScheduler;
-            public Action evt;
+            private Action mEvt;
+            public Action evt => mEvt;
             public bool ignoreTimeScale;
             public Step(TaskScheduler scheduler, bool ignoreTimeScale)
             {
@@ -412,13 +423,45 @@ namespace Panty
             /// 缓存一个任务 在下一次调用前 贯穿当前序列使用
             /// </summary>
             public Step Cache(Action evt)
-            { this.evt = evt; return this; }
+            { mEvt = evt; return this; }
             /// <summary>
             /// 插入一个等待事件 等待不需要执行内容
             /// </summary>
             public Step Wait(Func<bool> onExit)
             {
                 mScheduler.ToSequence(this, new WaitAction(onExit));
+                return this;
+            }
+            /// <summary>
+            /// 插入一个自定义动作
+            /// </summary>
+            public Step CustomAct(IAction action)
+            {
+                mScheduler.ToSequence(this, action);
+                return this;
+            }
+            /// <summary>
+            /// 插入一个自定义动作
+            /// </summary>
+            public Step CustomAct<T>() where T : IAction, new()
+            {
+                mScheduler.ToSequence(this, new T());
+                return this;
+            }
+            /// <summary>
+            /// 插入一个自定义组
+            /// </summary>
+            public Step Custom<G>(G group = default) where G : struct, IGroup
+            {
+                group.Execute(this);
+                return this;
+            }
+            /// <summary>
+            /// 插入一个自定义组
+            /// </summary>
+            public Step Custom<T, G>(G group, T data) where G : struct, IGroup<T>
+            {
+                group.Execute(this, data);
                 return this;
             }
             /// <summary>
@@ -596,13 +639,13 @@ namespace Panty
         private Group stepGroup = null;
         private PArray<Step> mRmvStep;
         private PArray<DelayTask> mAvailable, mDelayTasks, mUnScaledTasks;
-        private Dictionary<Step, Sequence> mSequenceGroup;
-        private Dictionary<Step, Sequence> mUnscaledSequence;
+        private Dictionary<Step, SequenceGrp> mSequenceGroup;
+        private Dictionary<Step, SequenceGrp> mUnscaledSequence;
 
         protected override void OnInit()
         {
-            mSequenceGroup = new Dictionary<Step, Sequence>();
-            mUnscaledSequence = new Dictionary<Step, Sequence>();
+            mSequenceGroup = new Dictionary<Step, SequenceGrp>();
+            mUnscaledSequence = new Dictionary<Step, SequenceGrp>();
             mAvailable = new PArray<DelayTask>();
             mDelayTasks = new PArray<DelayTask>();
             mUnScaledTasks = new PArray<DelayTask>();
@@ -610,10 +653,7 @@ namespace Panty
             mRmvStep = new PArray<Step>();
             MonoKit.OnUpdate += Update;
         }
-        void ITaskScheduler.StopSequence(Step step)
-        {
-            GetSequence(step).Exit();
-        }
+        void ITaskScheduler.StopSequence(Step step) => GetSequence(step).Exit();
         public DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop, bool ignoreTimeScale)
         {
             var task = GetTask();
@@ -634,13 +674,25 @@ namespace Panty
             MonoKit.OnUpdate += onUpdate;
             return AddDelayTask(duration, () => MonoKit.OnUpdate -= onUpdate, false, ignoreTimeScale);
         }
-        Step ITaskScheduler.Sequence(bool ignoreTimeScale)
+        public Step Sequence(bool ignoreTimeScale)
         {
 #if UNITY_EDITOR
             if (stepGroup != null)
                 throw new Exception($"存在未封闭序列{stepGroup}");
 #endif
             return new Step(this, ignoreTimeScale);
+        }
+        Step ITaskScheduler.Sequence<G>(G group, bool ignoreTimeScale)
+        {
+            var step = Sequence(ignoreTimeScale);
+            group.Execute(step);
+            return step;
+        }
+        Step ITaskScheduler.Sequence<G, T>(G group, T data, bool ignoreTimeScale)
+        {
+            var step = Sequence(ignoreTimeScale);
+            group.Execute(step, data);
+            return step;
         }
         private DelayTask GetTask() => mAvailable.IsEmpty ? new DelayTask() : mAvailable.Pop();
         private void NextGroup(E_Type type)
@@ -675,20 +727,20 @@ namespace Panty
                 GetSequence(step).Enqueue(action);
             else stepGroup.Push(action);
         }
-        private Sequence GetSequence(Step step)
+        private SequenceGrp GetSequence(Step step)
         {
-            Sequence q = null;
+            SequenceGrp q = null;
             if (step.ignoreTimeScale)
             {
                 if (!mUnscaledSequence.TryGetValue(step, out q))
                 {
-                    q = new Sequence();
+                    q = new SequenceGrp();
                     mUnscaledSequence.Add(step, q);
                 }
             }
             else if (!mSequenceGroup.TryGetValue(step, out q))
             {
-                q = new Sequence();
+                q = new SequenceGrp();
                 mSequenceGroup.Add(step, q);
             }
             return q;
@@ -702,7 +754,7 @@ namespace Panty
             Update(mDelayTasks, Time.deltaTime);
             Update(mSequenceGroup, Time.deltaTime);
         }
-        private void Update(Dictionary<Step, Sequence> dic, float delta)
+        private void Update(Dictionary<Step, SequenceGrp> dic, float delta)
         {
             if (dic.Count == 0) return;
             mRmvStep.ToFirst();
