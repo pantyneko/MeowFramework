@@ -296,8 +296,11 @@ namespace Panty
                         $"错误{e.Message} 已将类型修改为特殊".Log();
                         o = Convert.ChangeType(bindCp, typeof(RectTransform));
                     }
-                    if (bindCp) info.SetValue(cmpnt, o);
-                    else $"无法找到{bind.Root}下{info.FieldType}脚本".Log();
+                    finally
+                    {
+                        if (bindCp) info.SetValue(cmpnt, o);
+                        else $"无法找到{bind.Root}下{info.FieldType}脚本".Log();
+                    }
                 }
             }
             EditorUtility.SetDirty(cmpnt);
