@@ -129,11 +129,13 @@ namespace Panty
         {
 #if UNITY_EDITOR
             UnityEngine.Debug.unityLogger.Log(o);
+#elif DEBUG
+            System.Diagnostics.Debug.WriteLine(o);
 #endif
             return o;
         }
 #if DEBUG
-        public const string version = "1.1.4";
+        public const string version = "1.1.5";
         public static void DicLog<K, V>(this Dictionary<K, V> dic, string dicName, string prefix)
         {
             if (dic.Count == 0)
@@ -179,7 +181,6 @@ namespace Panty
         public static void SendCmd<C>(this IPermissionProvider self, C cmd) where C : ICmd => self.Hub.SendCmd(cmd);
         public static void SendCmd<C>(this IPermissionProvider self) where C : struct, ICmd => self.Hub.SendCmd(new C());
         public static void SendCmd<C, P>(this IPermissionProvider self, C cmd, P info) where C : ICmd<P> => self.Hub.SendCmd(cmd, info);
-        public static void SendCmd<C, P>(this IPermissionProvider self, P info) where C : struct, ICmd<P> => self.Hub.SendCmd(new C(), info);
 
         public static R Query<Q, R>(this IPermissionProvider self) where Q : struct, IQuery<R> => self.Hub.Query<Q, R>();
         public static R Query<Q, P, R>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, R> => self.Hub.Query<Q, P, R>(info);
@@ -326,9 +327,11 @@ namespace Panty
 #if DEBUG
                 if (methods is Action)
                 {
-                    if (evt is Action<E>) throw new Exception($"{key}为无参事件 请使用 AddEvent<E>(Action<E> evt)");
+                    if (evt is Action<E>)
+                        throw new Exception($"{key}为无参事件 请使用 AddEvent<E>(Action<E> evt)");
                 }
-                else if (evt is Action) throw new Exception($"{key}为有参事件 请使用 AddEvent<E>(Action evt)");
+                else if (evt is Action)
+                    throw new Exception($"{key}为有参事件 请使用 AddEvent<E>(Action evt)");
 #endif
                 mEvents[key] = Delegate.Combine(methods, evt);
             }
@@ -350,9 +353,11 @@ namespace Panty
 #if DEBUG
                 if (methods is Action)
                 {
-                    if (evt is Action<E>) throw new Exception($"{key}为无参事件 请使用 RmvEvent<E>(Action<E> evt)");
+                    if (evt is Action<E>)
+                        throw new Exception($"{key}为无参事件 请使用 RmvEvent<E>(Action<E> evt)");
                 }
-                else if (evt is Action) throw new Exception($"{key}为有参事件 请使用 RmvEvent<E>(Action evt)");
+                else if (evt is Action)
+                    throw new Exception($"{key}为有参事件 请使用 RmvEvent<E>(Action evt)");
 #endif
                 methods = Delegate.Remove(methods, evt);
                 if (methods == null) mEvents.Remove(key);
@@ -371,7 +376,8 @@ namespace Panty
             if (mEvents.TryGetValue(typeof(E), out var methods))
             {
 #if DEBUG
-                if (methods is Action) throw new Exception($"{typeof(E)}为无参事件 请使用 SendEvent<E>() 或将注册替换成 AddEvent<E>(Action<E> evt)");
+                if (methods is Action)
+                    throw new Exception($"{typeof(E)}为无参事件 请使用 SendEvent<E>() 或将注册替换成 AddEvent<E>(Action<E> evt)");
 #endif
                 (methods as Action<E>).Invoke(e);
             }
@@ -384,7 +390,8 @@ namespace Panty
             if (mEvents.TryGetValue(typeof(E), out var methods))
             {
 #if DEBUG
-                if (methods is Action<E>) throw new Exception($"{typeof(E)}为有参事件 请使用 SendEvent<E>(E e) 或将注册替换成 AddEvent<E>(Action evt)");
+                if (methods is Action<E>)
+                    throw new Exception($"{typeof(E)}为有参事件 请使用 SendEvent<E>(E e) 或将注册替换成 AddEvent<E>(Action evt)");
 #endif
                 (methods as Action).Invoke();
             }
@@ -410,7 +417,8 @@ namespace Panty
                 else
                 {
 #if DEBUG
-                    if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 AddEvent<E,T>(E type, Action<T> evt)");
+                    if (!(ms is Action))
+                        throw new Exception($"{key}为有参事件 请使用 AddEvent<E,T>(E type, Action<T> evt)");
 #endif   
                     arr[id] = Delegate.Combine(ms, evt);
                 }
@@ -441,7 +449,8 @@ namespace Panty
                 else
                 {
 #if DEBUG
-                    if (ms is Action) throw new Exception($"{key}为无参事件 请使用 AddEvent<E>(E type, Action evt)");
+                    if (ms is Action)
+                        throw new Exception($"{key}为无参事件 请使用 AddEvent<E>(E type, Action evt)");
 #endif   
                     arr[id] = Delegate.Combine(ms, evt);
                 }
@@ -473,7 +482,8 @@ namespace Panty
                     return;
                 }
 #if DEBUG
-                if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 RmvEvent<E,T>(E type, Action<T> evt)");
+                if (!(ms is Action))
+                    throw new Exception($"{key}为有参事件 请使用 RmvEvent<E,T>(E type, Action<T> evt)");
 #endif
                 arr[id] = Delegate.Remove(ms, evt);
             }
@@ -500,6 +510,7 @@ namespace Panty
                 }
 #if DEBUG
                 if (ms is Action) throw new Exception($"{key}为无参事件 请使用 RmvEvent<E>(E type, Action evt)");
+                if (!(ms is Action<T>)) throw new Exception($"参数{typeof(T)}不正确");
 #endif
                 arr[id] = Delegate.Remove(ms, evt);
             }
@@ -522,7 +533,8 @@ namespace Panty
                     return;
                 }
 #if DEBUG
-                if (!(ms is Action)) throw new Exception($"{key}为有参事件 请使用 EnumEvent<E,T>(E type,T info)");
+                if (!(ms is Action))
+                    throw new Exception($"{key}为有参事件 请使用 EnumEvent<E,T>(E type,T info)");
 #endif
                 (ms as Action).Invoke();
             }
@@ -546,6 +558,7 @@ namespace Panty
                 }
 #if DEBUG
                 if (ms is Action) throw new Exception($"{key}为无参事件 请使用 EnumEvent<E>(E type)");
+                if (!(ms is Action<T>)) throw new Exception($"参数{typeof(T)}不正确");
 #endif
                 (ms as Action<T>).Invoke(info);
             }

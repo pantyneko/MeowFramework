@@ -15,9 +15,6 @@ namespace Panty
         [UnityEngine.SerializeField]
 #endif
         private T[] arr;
-#if UNITY_EDITOR
-        [UnityEngine.SerializeField]
-#endif
         private int N = 0;
         public int Count => N;
         public int Capacity => arr.Length;

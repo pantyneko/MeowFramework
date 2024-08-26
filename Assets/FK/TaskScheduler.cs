@@ -10,7 +10,8 @@ namespace Panty
         /// <summary>
         /// 标记为物体被销毁时停止任务
         /// </summary>
-        public static void StopOnDestroy(this DelayTask task, Component c) => c.GetOrAddComponent<TaskOnDestroyStopTrigger>().Add(task);
+        public static void StopOnDestroy(this DelayTask task, Component c) =>
+            c.GetOrAddComponent<TaskOnDestroyStopTrigger>().Add(task);
         public static TaskScheduler.Step StopOnDestroy<T>(this TaskScheduler.Step step, T view) where T : Component, IPermissionProvider
         {
             view.GetOrAddComponent<SequenceOnDestroyStopTrigger>().Add(step, view);
@@ -55,8 +56,8 @@ namespace Panty
         public void Skip(float time) => mRemTime -= time;
         public float RemTime() => mRemTime;
 
-        public void AddTask(Action task) => mTask += task;
-        public DelayTask SetTask(Action task) { mTask = task; return this; }
+        public void AddEvent(Action task) => mTask += task;
+        public DelayTask SetEvent(Action task) { mTask = task; return this; }
         public void Execute() => mTask?.Invoke();
         public void Clear() => mTask = null;
         /// <summary>
@@ -159,7 +160,7 @@ namespace Panty
                 else a.Update(delta);
             }
         }
-        // 单纯等待条件触发
+        // 单纯等待条件退出
         private class WaitAction : IAction
         {
             private Func<bool> exitCondition;
@@ -174,7 +175,7 @@ namespace Panty
             public void Reset() { }
             public void Update(float delta) { }
         }
-        // 单纯延迟N秒触发
+        // 单纯延迟N秒退出
         private class DelayAction : IAction
         {
             private float duration, cur;
@@ -184,6 +185,7 @@ namespace Panty
             public void Reset() => cur = 0;
             public void Update(float delta) => cur += delta;
         }
+        // 延迟N秒后执行一件事情 退出
         private class DelayRunAction : IAction
         {
             private float duration, cur;
@@ -229,7 +231,7 @@ namespace Panty
                 currentCount++;
             }
         }
-        // 在条件内重复执行
+        // 在条件内进行帧更新 条件满足退出
         private class UntilConditionAction : IAction
         {
             private Action call;
@@ -247,7 +249,7 @@ namespace Panty
             public void Reset() { }
             public void Update(float delta) => call.Invoke();
         }
-        // 周期内重复执行任务
+        // 在一定时间内 进行帧更新
         private class PeriodicAction : IAction
         {
             private Action call;
@@ -316,11 +318,11 @@ namespace Panty
         private class RepeatGroup : IAction
         {
             private readonly PArray<IAction> actions;
-            private byte repeatCount, current;
+            private int repeatCount, current;
             private int cur;
-            public RepeatGroup(PArray<IAction> actions, byte count)
+            public RepeatGroup(PArray<IAction> actions, int count)
             {
-                this.repeatCount = count == 0 ? (byte)1 : count;
+                this.repeatCount = count == 0 ? 1 : count;
                 this.actions = actions;
             }
             public bool IsExit() => current >= repeatCount;
@@ -561,12 +563,12 @@ namespace Panty
             /// 启用次数循环模式 在End调用前 将会以缓存来处理每次的任务
             /// </summary>
             /// <param name="repeatCount">循环次数，必须大于 0</param>
-            public Step RepeatGroup(byte repeatCount, Action<Step> call)
+            public Step RepeatGroup(int repeatCount, Action<Step> call)
             {
 #if UNITY_EDITOR
                 ThrowEx.EmptyCallback(call);
 #endif
-                mCounter = repeatCount == 0 ? (byte)1 : repeatCount;
+                mCounter = repeatCount <= 0 ? 1 : repeatCount;
                 mScheduler.NextGroup(E_Type.Repeat);
                 call.Invoke(this);
                 mScheduler.EndGroup(this);
@@ -610,9 +612,9 @@ namespace Panty
             /// 启用次数循环模式 在End调用前 将会以缓存来处理每次的任务
             /// </summary>
             /// <param name="repeatCount">循环次数，必须大于 0</param>
-            public Step RepeatGroup(byte repeatCount)
+            public Step RepeatGroup(int repeatCount)
             {
-                mCounter = repeatCount == 0 ? (byte)1 : repeatCount;
+                mCounter = repeatCount <= 0 ? 1 : repeatCount;
                 mScheduler.NextGroup(E_Type.Repeat);
                 return this;
             }
@@ -633,7 +635,7 @@ namespace Panty
                 return this;
             }
         }
-        private static byte mCounter;
+        private static int mCounter;
         private static Func<bool> mOnExit;
 
         private Group stepGroup = null;
@@ -641,9 +643,11 @@ namespace Panty
         private PArray<DelayTask> mAvailable, mDelayTasks, mUnScaledTasks;
         private Dictionary<Step, SequenceGrp> mSequenceGroup;
         private Dictionary<Step, SequenceGrp> mUnscaledSequence;
+        private Dictionary<Step, SequenceGrp> mTmpDic;
 
         protected override void OnInit()
         {
+            mTmpDic = new Dictionary<Step, SequenceGrp>();
             mSequenceGroup = new Dictionary<Step, SequenceGrp>();
             mUnscaledSequence = new Dictionary<Step, SequenceGrp>();
             mAvailable = new PArray<DelayTask>();
@@ -654,11 +658,12 @@ namespace Panty
             MonoKit.OnUpdate += Update;
         }
         void ITaskScheduler.StopSequence(Step step) => GetSequence(step).Exit();
+        private DelayTask GetTask() => mAvailable.IsEmpty ? new DelayTask() : mAvailable.Pop();
         public DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop, bool ignoreTimeScale)
         {
             var task = GetTask();
             task.Init(duration, isLoop);
-            task.SetTask(onFinished).Start();
+            task.SetEvent(onFinished).Start();
 
             if (ignoreTimeScale)
                 mUnScaledTasks.Push(task);
@@ -694,7 +699,6 @@ namespace Panty
             group.Execute(step, data);
             return step;
         }
-        private DelayTask GetTask() => mAvailable.IsEmpty ? new DelayTask() : mAvailable.Pop();
         private void NextGroup(E_Type type)
         {
             if (stepGroup == null)
@@ -730,18 +734,14 @@ namespace Panty
         private SequenceGrp GetSequence(Step step)
         {
             SequenceGrp q = null;
-            if (step.ignoreTimeScale)
+            if (!mTmpDic.TryGetValue(step, out q))
             {
-                if (!mUnscaledSequence.TryGetValue(step, out q))
+                var dic = step.ignoreTimeScale ? mUnscaledSequence : mSequenceGroup;
+                if (!dic.TryGetValue(step, out q))
                 {
                     q = new SequenceGrp();
-                    mUnscaledSequence.Add(step, q);
+                    mTmpDic.Add(step, q);
                 }
-            }
-            else if (!mSequenceGroup.TryGetValue(step, out q))
-            {
-                q = new SequenceGrp();
-                mSequenceGroup.Add(step, q);
             }
             return q;
         }
@@ -750,9 +750,18 @@ namespace Panty
             float delta = Time.unscaledDeltaTime;
             Update(mUnScaledTasks, delta);
             Update(mUnscaledSequence, delta);
-            if (Time.timeScale <= 0f) return;
-            Update(mDelayTasks, Time.deltaTime);
-            Update(mSequenceGroup, Time.deltaTime);
+            if (Time.timeScale > 0f)
+            {
+                Update(mDelayTasks, Time.deltaTime);
+                Update(mSequenceGroup, Time.deltaTime);
+            }
+            if (mTmpDic.Count == 0) return;
+            foreach (var e in mTmpDic)
+            {
+                var dic = e.Key.ignoreTimeScale ? mUnscaledSequence : mSequenceGroup;
+                dic.Add(e.Key, e.Value);
+            }
+            mTmpDic.Clear();
         }
         private void Update(Dictionary<Step, SequenceGrp> dic, float delta)
         {

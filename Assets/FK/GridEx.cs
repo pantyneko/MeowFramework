@@ -45,17 +45,28 @@ namespace Panty
                 colm = value.y;
             }
         }
-        public StGrid(Vector2 center, float totalWidth, float totalHeight, int row, int colm)
+        public StGrid(Vector2 center, float width, float height, int row, int colm, bool cellMode = false)
         {
-            cw = totalWidth / colm;
-            ch = totalHeight / row;
             this.colm = colm;
             this.row = row;
-            xMin = center.x - totalWidth * 0.5f;
-            yMin = center.y - totalHeight * 0.5f;
+            if (cellMode)
+            {
+                cw = width;
+                ch = height;
+                xMin = center.x - width * colm * 0.5f;
+                yMin = center.y - height * row * 0.5f;
+            }
+            else
+            {
+                cw = width / colm;
+                ch = height / row;
+                xMin = center.x - width * 0.5f;
+                yMin = center.y - height * 0.5f;
+            }
+
         }
         public StGrid(Vector2 center, float totalSize, int num) :
-            this(center, totalSize, totalSize, num, num)
+            this(center, totalSize, totalSize, num, num, false)
         { }
         public Vector2 RandomPos()
         {
