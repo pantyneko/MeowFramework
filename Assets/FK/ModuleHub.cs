@@ -181,6 +181,7 @@ namespace Panty
         public static void SendCmd<C>(this IPermissionProvider self, C cmd) where C : ICmd => self.Hub.SendCmd(cmd);
         public static void SendCmd<C>(this IPermissionProvider self) where C : struct, ICmd => self.Hub.SendCmd(new C());
         public static void SendCmd<C, P>(this IPermissionProvider self, C cmd, P info) where C : ICmd<P> => self.Hub.SendCmd(cmd, info);
+        public static void SendCmdP<C, P>(this IPermissionProvider self, P info) where C : struct, ICmd<P> => self.Hub.SendCmd(new C(), info);
 
         public static R Query<Q, R>(this IPermissionProvider self) where Q : struct, IQuery<R> => self.Hub.Query<Q, R>();
         public static R Query<Q, P, R>(this IPermissionProvider self, P info) where Q : struct, IQuery<P, R> => self.Hub.Query<Q, P, R>(info);
@@ -216,7 +217,7 @@ namespace Panty
         void SendCmd<C>(C cmd) where C : ICmd;
         void SendCmd<C>() where C : struct, ICmd;
         void SendCmd<C, P>(C cmd, P info) where C : ICmd<P>;
-        void SendCmd<C, P>(P info) where C : struct, ICmd<P>;
+        void SendCmdP<C, P>(P info) where C : struct, ICmd<P>;
 
         R Query<Q, R>() where Q : struct, IQuery<R>;
         R Query<Q, P, R>(P info) where Q : struct, IQuery<P, R>;
@@ -567,7 +568,7 @@ namespace Panty
 #endif
         }
         void IModuleHub.SendCmd<C>() => SendCmd(new C());
-        void IModuleHub.SendCmd<C, P>(P info) => SendCmd(new C(), info);
+        void IModuleHub.SendCmdP<C, P>(P info) => SendCmd(new C(), info);
         // 可重写的命令 架构子类可对该命令逻辑进行重写 例如在命令前后记录日志
         public virtual void SendCmd<C>(C cmd) where C : ICmd => cmd.Do(this);
         public virtual void SendCmd<C, P>(C cmd, P info) where C : ICmd<P> => cmd.Do(this, info);

@@ -217,7 +217,7 @@ namespace Panty.Test
                 var sel = GUI.SelectionGrid(rect, mSelect, Enum.GetNames(typeof(Op)), 1);
                 if (mSelect == sel) return;
                 mSelect = sel;
-                this.SendCmd<ChangeOpCmd, int>(sel);
+                this.SendCmdP<ChangeOpCmd, int>(sel);
                 ShowList = false;
             }
         }
