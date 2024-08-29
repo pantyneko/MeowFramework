@@ -62,6 +62,12 @@ namespace Panty
     {
         private void OnDisable() => RmvAll();
     }
+    public class UnityTimeInfo : ITimeInfo
+    {
+        float ITimeInfo.deltaTime => Time.deltaTime;
+        float ITimeInfo.timeScale => Time.timeScale;
+        float ITimeInfo.unscaledDeltaTime => Time.unscaledDeltaTime;
+    }
     public class MonoKit : MonoBehaviour
     {
         private static MonoKit mono;

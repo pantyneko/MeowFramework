@@ -41,7 +41,7 @@ namespace Panty
             {
                 win = array[0];
                 if (win == null)
-                    return EditorWindow.GetWindow<T>(isUtility, title);
+                    win = EditorWindow.GetWindow<T>(isUtility, title);
                 win.Close();
                 return false;
             }

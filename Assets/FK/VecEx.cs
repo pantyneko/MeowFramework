@@ -15,6 +15,12 @@ namespace Panty
             dir.y = MathF.Sin(rad);
             return dir;
         }
+        public static bool Approximate(this Vector3 lhs, Vector2 rhs)
+        {
+            float num = lhs.x - rhs.x;
+            float num2 = lhs.y - rhs.y;
+            return num * num + num2 * num2 < 9.99999944E-11f;
+        }
         /// <summary>
         /// 得到一根向量的垂线 XNA [-x => -pi/2] [-y => +pi/2]
         /// </summary>

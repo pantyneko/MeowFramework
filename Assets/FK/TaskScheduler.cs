@@ -1,47 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
 
 namespace Panty
 {
-    public static class TaskSchedulerEx
-    {
-        /// <summary>
-        /// 标记为物体被销毁时停止任务
-        /// </summary>
-        public static void StopOnDestroy(this DelayTask task, Component c) =>
-            c.GetOrAddComponent<TaskOnDestroyStopTrigger>().Add(task);
-        public static TaskScheduler.Step StopOnDestroy<T>(this TaskScheduler.Step step, T view) where T : Component, IPermissionProvider
-        {
-            view.GetOrAddComponent<SequenceOnDestroyStopTrigger>().Add(step, view);
-            return step;
-        }
-    }
-    public class TaskOnDestroyStopTrigger : MonoBehaviour
-    {
-        private readonly Stack<DelayTask> tasks = new Stack<DelayTask>();
-        public void Add(DelayTask task) => tasks.Push(task);
-        private void OnDestroy()
-        {
-            while (tasks.Count > 0) tasks.Pop().Stop();
-        }
-    }
-    public class SequenceOnDestroyStopTrigger : MonoBehaviour
-    {
-        private IPermissionProvider view;
-        private readonly Stack<TaskScheduler.Step> arr = new Stack<TaskScheduler.Step>();
-        public void Add(TaskScheduler.Step step, IPermissionProvider view)
-        {
-            this.view = view;
-            arr.Push(step);
-        }
-        private void OnDestroy()
-        {
-            var scheduler = view.Hub.Module<ITaskScheduler>();
-            while (arr.Count > 0) scheduler.StopSequence(arr.Pop());
-        }
-    }
     public class DelayTask
     {
         private Action mTask;
@@ -96,7 +58,7 @@ namespace Panty
             }
         }
     }
-    public interface ITaskScheduler : IModule
+    public partial interface ITaskScheduler : IModule
     {
         /// <summary>
         /// 添加一个延时任务
@@ -108,14 +70,6 @@ namespace Panty
         /// <returns>计时器</returns>
         DelayTask AddDelayTask(float duration, Action onFinished, bool isLoop = false, bool ignoreTimeScale = false);
         /// <summary>
-        /// 添加一个临时任务 在持续时间内 进行帧更新
-        /// </summary>
-        /// <param name="duration">持续时间</param>
-        /// <param name="onUpdate">当在持续时间内执行的任务</param>
-        /// <param name="ignoreTimeScale">是否忽略时间缩放</param>
-        /// <returns>计时器</returns>
-        DelayTask AddTemporaryTask(float duration, Action onUpdate, bool ignoreTimeScale = false);
-        /// <summary>
         /// 任务序列 可以自定义任务组
         /// </summary>
         /// <param name="ignoreTimeScale">是否忽略时间缩放</param>
@@ -124,8 +78,12 @@ namespace Panty
         TaskScheduler.Step Sequence<G>(G group = default, bool ignoreTimeScale = false) where G : struct, TaskScheduler.IGroup;
         TaskScheduler.Step Sequence<G, T>(G group, T data, bool ignoreTimeScale = false) where G : struct, TaskScheduler.IGroup<T>;
         void StopSequence(TaskScheduler.Step step);
+
+        void PeriodicExecute(float duration, Action onUpdate, bool ignoreTimeScale = false);
+        void DelayExecute(float duration, Action onUpdate, bool ignoreTimeScale = false);
+        void UntilConditionExecute(Func<bool> onExit, Action onUpdate, bool ignoreTimeScale = false);
     }
-    public class TaskScheduler : AbsModule, ITaskScheduler
+    public partial class TaskScheduler : AbsModule, ITaskScheduler
     {
         public interface IAction
         {
@@ -410,7 +368,7 @@ namespace Panty
                 _ => throw new Exception("未知动作"),
             };
         }
-        public class Step
+        public partial class Step
         {
             private static TaskScheduler mScheduler;
             private Action mEvt;
@@ -637,14 +595,17 @@ namespace Panty
         }
         private static int mCounter;
         private static Func<bool> mOnExit;
+        private ITimeInfo time;
 
         private Group stepGroup = null;
         private PArray<Step> mRmvStep;
+        private PArray<IAction> mActionQueue;
+        private PArray<IAction> mUnscaledQueue;
         private PArray<DelayTask> mAvailable, mDelayTasks, mUnScaledTasks;
         private Dictionary<Step, SequenceGrp> mSequenceGroup;
         private Dictionary<Step, SequenceGrp> mUnscaledSequence;
         private Dictionary<Step, SequenceGrp> mTmpDic;
-
+        public TaskScheduler(ITimeInfo time) => this.time = time;
         protected override void OnInit()
         {
             mTmpDic = new Dictionary<Step, SequenceGrp>();
@@ -653,6 +614,9 @@ namespace Panty
             mAvailable = new PArray<DelayTask>();
             mDelayTasks = new PArray<DelayTask>();
             mUnScaledTasks = new PArray<DelayTask>();
+
+            mActionQueue = new PArray<IAction>();
+            mUnscaledQueue = new PArray<IAction>();
 
             mRmvStep = new PArray<Step>();
             MonoKit.OnUpdate += Update;
@@ -664,20 +628,8 @@ namespace Panty
             var task = GetTask();
             task.Init(duration, isLoop);
             task.SetEvent(onFinished).Start();
-
-            if (ignoreTimeScale)
-                mUnScaledTasks.Push(task);
-            else
-                mDelayTasks.Push(task);
+            (ignoreTimeScale ? mUnScaledTasks : mDelayTasks).Push(task);
             return task;
-        }
-        DelayTask ITaskScheduler.AddTemporaryTask(float duration, Action onUpdate, bool ignoreTimeScale)
-        {
-#if DEBUG
-            ThrowEx.EmptyCallback(onUpdate);
-#endif
-            MonoKit.OnUpdate += onUpdate;
-            return AddDelayTask(duration, () => MonoKit.OnUpdate -= onUpdate, false, ignoreTimeScale);
         }
         public Step Sequence(bool ignoreTimeScale)
         {
@@ -733,27 +685,28 @@ namespace Panty
         }
         private SequenceGrp GetSequence(Step step)
         {
-            SequenceGrp q = null;
-            if (!mTmpDic.TryGetValue(step, out q))
+            if (mTmpDic.TryGetValue(step, out var q)) return q;
+            var dic = step.ignoreTimeScale ? mUnscaledSequence : mSequenceGroup;
+            if (!dic.TryGetValue(step, out q))
             {
-                var dic = step.ignoreTimeScale ? mUnscaledSequence : mSequenceGroup;
-                if (!dic.TryGetValue(step, out q))
-                {
-                    q = new SequenceGrp();
-                    mTmpDic.Add(step, q);
-                }
+                q = new SequenceGrp();
+                mTmpDic.Add(step, q);
             }
             return q;
         }
         private void Update()
         {
-            float delta = Time.unscaledDeltaTime;
+            float delta = time.unscaledDeltaTime;
             Update(mUnScaledTasks, delta);
             Update(mUnscaledSequence, delta);
-            if (Time.timeScale > 0f)
+            Update(mUnscaledQueue, delta);
+
+            if (time.timeScale > 0f)
             {
-                Update(mDelayTasks, Time.deltaTime);
-                Update(mSequenceGroup, Time.deltaTime);
+                delta = time.deltaTime;
+                Update(mDelayTasks, delta);
+                Update(mSequenceGroup, delta);
+                Update(mActionQueue, delta);
             }
             if (mTmpDic.Count == 0) return;
             foreach (var e in mTmpDic)
@@ -794,6 +747,38 @@ namespace Panty
                 }
                 else i++;
             }
+        }
+        private void Update(PArray<IAction> tasks, float delta)
+        {
+            int i = 0;
+            while (i < tasks.Count)
+            {
+                var task = tasks[i];
+                if (task.IsExit())
+                {
+                    tasks.RmvAt(i);
+                }
+                else
+                {
+                    task.Update(delta);
+                    i++;
+                }
+            }
+        }
+        void ITaskScheduler.PeriodicExecute(float duration, Action onUpdate, bool ignoreTimeScale)
+        {
+            var act = new PeriodicAction(onUpdate, duration);
+            (ignoreTimeScale ? mUnscaledQueue : mActionQueue).Push(act);
+        }
+        void ITaskScheduler.DelayExecute(float duration, Action onCompleted, bool ignoreTimeScale)
+        {
+            var act = new DelayRunAction(duration, onCompleted);
+            (ignoreTimeScale ? mUnscaledQueue : mActionQueue).Push(act);
+        }
+        void ITaskScheduler.UntilConditionExecute(Func<bool> onExit, Action onUpdate, bool ignoreTimeScale)
+        {
+            var act = new UntilConditionAction(onExit, onUpdate);
+            (ignoreTimeScale ? mUnscaledQueue : mActionQueue).Push(act);
         }
     }
 }

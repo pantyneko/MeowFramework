@@ -24,6 +24,12 @@ using System.Collections.Generic;
 */
 namespace Panty
 {
+    public interface ITimeInfo
+    {
+        float deltaTime { get; }
+        float timeScale { get; }
+        float unscaledDeltaTime { get; }
+    }
     /// <summary>
     /// 用于分离命令中的具体执行逻辑 
     /// </summary>
@@ -321,6 +327,7 @@ namespace Panty
         {
 #if DEBUG
             if (evt == null) throw new Exception($"{evt} 不可为Null");
+            if (typeof(E).IsEnum) throw new Exception($"不可使用{typeof(E)}枚举类型作为事件标识");
 #endif
             var key = typeof(E);
             if (mEvents.TryGetValue(key, out var methods))
@@ -347,6 +354,7 @@ namespace Panty
         {
 #if DEBUG
             if (evt == null) throw new Exception($"{evt} 不可为Null");
+            if (typeof(E).IsEnum) throw new Exception($"不可使用{typeof(E)}枚举类型作为事件标识");
 #endif
             var key = typeof(E);
             if (mEvents.TryGetValue(key, out var methods))
@@ -374,6 +382,9 @@ namespace Panty
         void IModuleHub.RmvEvent<E>(Action<E> evt) => Separate<E>(evt);
         void IModuleHub.SendEvent<E>(E e)
         {
+#if DEBUG
+            if (typeof(E).IsEnum) throw new Exception($"不可使用{typeof(E)}枚举类型作为事件标识");
+#endif
             if (mEvents.TryGetValue(typeof(E), out var methods))
             {
 #if DEBUG
@@ -388,6 +399,9 @@ namespace Panty
         }
         void IModuleHub.SendEvent<E>()
         {
+#if DEBUG
+            if (typeof(E).IsEnum) throw new Exception($"不可使用{typeof(E)}枚举类型作为事件标识");
+#endif
             if (mEvents.TryGetValue(typeof(E), out var methods))
             {
 #if DEBUG
@@ -419,7 +433,7 @@ namespace Panty
                 {
 #if DEBUG
                     if (!(ms is Action))
-                        throw new Exception($"{key}为有参事件 请使用 AddEvent<E,T>(E type, Action<T> evt)");
+                        throw new Exception($"尝试将有参事件{key}.{type}添加到无参事件中 请使用 AddEvent<E>(E type, Action evt)");
 #endif   
                     arr[id] = Delegate.Combine(ms, evt);
                 }
@@ -451,7 +465,7 @@ namespace Panty
                 {
 #if DEBUG
                     if (ms is Action)
-                        throw new Exception($"{key}为无参事件 请使用 AddEvent<E>(E type, Action evt)");
+                        throw new Exception($"尝试将无参事件{key}.{type}添加到有参事件中 请使用 AddEvent<E,T>(E type, Action<T> evt)");
 #endif   
                     arr[id] = Delegate.Combine(ms, evt);
                 }
@@ -484,7 +498,7 @@ namespace Panty
                 }
 #if DEBUG
                 if (!(ms is Action))
-                    throw new Exception($"{key}为有参事件 请使用 RmvEvent<E,T>(E type, Action<T> evt)");
+                    throw new Exception($"{key}.{type}为有参事件 请使用 RmvEvent<E,T>(E type, Action<T> evt)");
 #endif
                 arr[id] = Delegate.Remove(ms, evt);
             }
@@ -510,7 +524,7 @@ namespace Panty
                     return;
                 }
 #if DEBUG
-                if (ms is Action) throw new Exception($"{key}为无参事件 请使用 RmvEvent<E>(E type, Action evt)");
+                if (ms is Action) throw new Exception($"{key}.{type}为无参事件 请使用 RmvEvent<E>(E type, Action evt)");
                 if (!(ms is Action<T>)) throw new Exception($"参数{typeof(T)}不正确");
 #endif
                 arr[id] = Delegate.Remove(ms, evt);
@@ -535,7 +549,7 @@ namespace Panty
                 }
 #if DEBUG
                 if (!(ms is Action))
-                    throw new Exception($"{key}为有参事件 请使用 EnumEvent<E,T>(E type,T info)");
+                    throw new Exception($"{key}.{type}为有参事件 请使用 EnumEvent<E,T>(E type,T info)");
 #endif
                 (ms as Action).Invoke();
             }
@@ -558,7 +572,7 @@ namespace Panty
                     return;
                 }
 #if DEBUG
-                if (ms is Action) throw new Exception($"{key}为无参事件 请使用 EnumEvent<E>(E type)");
+                if (ms is Action) throw new Exception($"{key}.{type}为无参事件 请使用 EnumEvent<E>(E type)");
                 if (!(ms is Action<T>)) throw new Exception($"参数{typeof(T)}不正确");
 #endif
                 (ms as Action<T>).Invoke(info);
