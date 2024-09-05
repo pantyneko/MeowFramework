@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Panty
 {
@@ -80,6 +79,7 @@ namespace Panty
         void StopSequence(TaskScheduler.Step step);
 
         void PeriodicExecute(float duration, Action onUpdate, bool ignoreTimeScale = false);
+        void WaitExecute(Func<bool> exit, Action onFinished, bool ignoreTimeScale = false);
         void DelayExecute(float duration, Action onUpdate, bool ignoreTimeScale = false);
         void UntilConditionExecute(Func<bool> onExit, Action onUpdate, bool ignoreTimeScale = false);
     }
@@ -87,6 +87,7 @@ namespace Panty
     {
         public interface IAction
         {
+            void Exit();
             bool IsExit();
             void Reset();
             void Update(float delta);
@@ -122,16 +123,41 @@ namespace Panty
         private class WaitAction : IAction
         {
             private Func<bool> exitCondition;
-            public WaitAction(Func<bool> exit)
+            public WaitAction(Func<bool> onExit)
             {
 #if UNITY_EDITOR
-                ThrowEx.EmptyCallback(exit);
+                ThrowEx.EmptyCallback(onExit);
 #endif
-                exitCondition = exit;
+                exitCondition = onExit;
             }
-            public bool IsExit() => exitCondition();
-            public void Reset() { }
+            public virtual bool IsExit() => exitCondition();
             public void Update(float delta) { }
+            public void Reset() { }
+            public void Exit() { }
+        }
+        // 单纯等待条件退出 退出时执行方法
+        private class WaitRunAction : WaitAction
+        {
+            private bool exit;
+            private Action call;
+            public WaitRunAction(Func<bool> onExit, Action call) : base(onExit)
+            {
+#if UNITY_EDITOR
+                ThrowEx.EmptyCallback(call);
+#endif
+                this.call = call;
+            }
+            public override bool IsExit()
+            {
+                if (exit) return true;
+
+                if (base.IsExit())
+                {
+                    call.Invoke();
+                    exit = true;
+                }
+                return exit;
+            }
         }
         // 单纯延迟N秒退出
         private class DelayAction : IAction
@@ -139,34 +165,35 @@ namespace Panty
             private float duration, cur;
             public DelayAction(float duration) =>
                 this.duration = duration < 0f ? 0f : duration;
-            public bool IsExit() => cur >= duration;
+
+            public void Exit() => cur = float.MaxValue;
+            public virtual bool IsExit() => cur >= duration;
             public void Reset() => cur = 0;
             public void Update(float delta) => cur += delta;
         }
         // 延迟N秒后执行一件事情 退出
-        private class DelayRunAction : IAction
+        private class DelayRunAction : DelayAction
         {
-            private float duration, cur;
             private Action call;
-            public DelayRunAction(float duration, Action call)
+            private bool exit;
+            public DelayRunAction(float duration, Action call) : base(duration)
             {
 #if UNITY_EDITOR
                 ThrowEx.EmptyCallback(call);
 #endif
-                this.duration = duration < 0f ? 0f : duration;
                 this.call = call;
             }
-            public bool IsExit()
+            public override bool IsExit()
             {
-                if (cur >= duration)
+                if (exit) return true;
+
+                if (base.IsExit())
                 {
                     call.Invoke();
-                    return true;
+                    exit = true;
                 }
-                return false;
+                return exit;
             }
-            public void Reset() => cur = 0;
-            public void Update(float delta) => cur += delta;
         }
         // 指定次数内重复执行的任务
         private class RepeatAction : IAction
@@ -180,6 +207,10 @@ namespace Panty
 #endif
                 this.repeatCount = count == 0 ? (byte)1 : count;
                 this.call = call;
+            }
+            public void Exit()
+            {
+                currentCount = byte.MaxValue;
             }
             public bool IsExit() => currentCount >= repeatCount;
             public void Reset() => currentCount = 0;
@@ -203,6 +234,7 @@ namespace Panty
                 this.exit = exit;
                 this.call = call;
             }
+            public void Exit() { }
             public bool IsExit() => exit();
             public void Reset() { }
             public void Update(float delta) => call.Invoke();
@@ -220,6 +252,10 @@ namespace Panty
                 this.call = call;
                 this.duration = duration < 0f ? 0f : duration;
             }
+            public void Exit()
+            {
+                cur = float.MaxValue;
+            }
             public bool IsExit() => cur >= duration;
             public void Reset() => cur = 0;
             public void Update(float delta)
@@ -228,9 +264,28 @@ namespace Panty
                 call?.Invoke();
             }
         }
+        private class ResetAction : IAction
+        {
+            private IAction act;
+            private bool exit;
+            public ResetAction(IAction act) => this.act = act;
+            public bool IsExit()
+            {
+                if (!exit)
+                {
+                    act.Reset();
+                    exit = true;
+                }
+                return exit;
+            }
+            public void Exit() => exit = true;
+            public void Reset() => exit = false;
+            public void Update(float delta) { }
+        }
         // 直接执行一个逻辑
         private class DoAction : IAction
         {
+            private bool exit;
             private Action call;
             public DoAction(Action call)
             {
@@ -239,23 +294,28 @@ namespace Panty
 #endif
                 this.call = call;
             }
+            public void Exit() => exit = true;
+            public void Reset() => exit = false;
+            public void Update(float delta) { }
             public bool IsExit()
             {
-                call.Invoke();
-                return true;
+                if (!exit)
+                {
+                    call.Invoke();
+                    exit = true;
+                }
+                return exit;
             }
-            public void Reset() { }
-            public void Update(float delta) { }
+        }
+        private class ActionGrp
+        {
+            protected PArray<IAction> actions;
+            public void Init(PArray<IAction> actions) => this.actions = actions;
         }
         // 随机执行组 每次从组中随机一个方法执行
-        private class RandomGroup : IAction
+        private class RandomGroup : ActionGrp, IAction
         {
-            private readonly PArray<IAction> actions;
             private IAction select;
-            public RandomGroup(PArray<IAction> actions)
-            {
-                this.actions = actions;
-            }
             public bool IsExit()
             {
                 if (select == null)
@@ -271,17 +331,19 @@ namespace Panty
                 select = actions.RandomGet();
                 select.Reset();
             }
+            public void Exit()
+            {
+
+            }
         }
         // 重复组 将组内的逻辑 重复执行N次
-        private class RepeatGroup : IAction
+        private class RepeatGroup : ActionGrp, IAction
         {
-            private readonly PArray<IAction> actions;
             private int repeatCount, current;
             private int cur;
-            public RepeatGroup(PArray<IAction> actions, int count)
+            public RepeatGroup(int count)
             {
-                this.repeatCount = count == 0 ? 1 : count;
-                this.actions = actions;
+                this.repeatCount = count <= 0 ? 1 : count;
             }
             public bool IsExit() => current >= repeatCount;
             public void ResetAll() { foreach (var s in actions) s.Reset(); }
@@ -305,30 +367,48 @@ namespace Panty
                 }
                 else sq.Update(delta);
             }
+            public void Exit()
+            {
+                current = int.MaxValue;
+            }
         }
         // 并行组 将组内的逻辑同步执行 直到都完成
-        private class ParallelGroup : IAction
+        private class ParallelGroup : ActionGrp, IAction
         {
-            private readonly PArray<IAction> actions = new PArray<IAction>();
-            public ParallelGroup(PArray<IAction> actions) => this.actions = actions;
-            public bool IsExit() => actions.All(action => action.IsExit());
-            public void Reset() { foreach (var s in actions) s.Reset(); }
-            public void Update(float delta) { foreach (var s in actions) s.Update(delta); }
+            public void Exit() { }
+            public bool IsExit()
+            {
+                bool r = true;
+                foreach (var s in actions)
+                    if (!s.IsExit()) r = false;
+                return r;
+            }
+            public void Reset()
+            {
+                foreach (var s in actions) s.Reset();
+            }
+            public void Update(float delta)
+            {
+                foreach (var s in actions)
+                {
+                    if (s.IsExit()) continue;
+                    s.Update(delta);
+                }
+            }
         }
         // 循环组 在条件未满足的时候 顺序执行组内动作
-        private class LoopGroup : IAction
+        private class LoopGroup : ActionGrp, IAction
         {
             private int cur = 0;
-            private readonly PArray<IAction> actions;
             private Func<bool> exitCondition;
-            public LoopGroup(PArray<IAction> actions, Func<bool> exit)
+            public LoopGroup(Func<bool> exit)
             {
 #if UNITY_EDITOR
                 ThrowEx.EmptyCallback(exit);
 #endif
-                this.actions = actions;
                 this.exitCondition = exit;
             }
+            public void Exit() { }
             public bool IsExit() => exitCondition();
             public void Reset() { foreach (var s in actions) s.Reset(); }
             public void Update(float delta)
@@ -342,37 +422,26 @@ namespace Panty
                 else s.Update(delta);
             }
         }
-        private enum E_Type : byte
-        {
-            Loop, Parallel, Repeat, Random
-        }
         private class Group
         {
+            private IAction grp;
             private Group father;
-            private E_Type type;
             public Group Father => father;
             public bool IsRoot => father == null;
-            public Group(E_Type type, Group father)
+            public Group(IAction grp, Group father)
             {
-                this.type = type;
+                this.grp = grp;
                 this.father = father;
             }
             private PArray<IAction> cache = new PArray<IAction>();
             public void Push(IAction action) => cache.Push(action);
-            public IAction GetAction() => type switch
-            {
-                E_Type.Repeat => new RepeatGroup(cache, mCounter),
-                E_Type.Loop => new LoopGroup(cache, mOnExit),
-                E_Type.Parallel => new ParallelGroup(cache),
-                E_Type.Random => new RandomGroup(cache),
-                _ => throw new Exception("未知动作"),
-            };
+            public PArray<IAction> Cache => cache;
+            public IAction Get() => grp;
         }
         public partial class Step
         {
             private static TaskScheduler mScheduler;
-            private Action mEvt;
-            public Action evt => mEvt;
+            private static Action mEvt;
             public bool ignoreTimeScale;
             public Step(TaskScheduler scheduler, bool ignoreTimeScale)
             {
@@ -393,9 +462,22 @@ namespace Panty
                 return this;
             }
             /// <summary>
+            /// 插入一个等待事件 完成后执行
+            /// </summary>
+            public Step Wait(Func<bool> onExit, Action onFinished)
+            {
+                mScheduler.ToSequence(this, new WaitRunAction(onExit, onFinished));
+                return this;
+            }
+            public Step Reset(IAction action)
+            {
+                mScheduler.ToSequence(this, new ResetAction(action));
+                return this;
+            }
+            /// <summary>
             /// 插入一个自定义动作
             /// </summary>
-            public Step CustomAct(IAction action)
+            public Step CustomActNoInit(IAction action)
             {
                 mScheduler.ToSequence(this, action);
                 return this;
@@ -451,7 +533,7 @@ namespace Panty
             /// <summary>
             /// 插入一个可执行事件 使用全局事件
             /// </summary>
-            public Step Event() => Event(evt);
+            public Step Event() => Event(mEvt);
             /// <summary>
             /// 插入一个重复次数事件
             /// </summary>
@@ -463,7 +545,7 @@ namespace Panty
             /// <summary>
             /// 插入一个重复次数事件 使用全局事件
             /// </summary>
-            public Step Repeat(byte repeatCount) => Repeat(repeatCount, evt);
+            public Step Repeat(byte repeatCount) => Repeat(repeatCount, mEvt);
             /// <summary>
             /// 插入一个在条件未成立时重复执行的事件
             /// </summary>
@@ -475,7 +557,7 @@ namespace Panty
             /// <summary>
             /// 插入一个在条件未成立时重复执行的事件 使用全局的事件
             /// </summary>
-            public Step Until(Func<bool> exit) => Until(exit, evt);
+            public Step Until(Func<bool> exit) => Until(exit, mEvt);
             /// <summary>
             /// 插入一个周期内重复执行任务
             /// </summary>
@@ -487,18 +569,18 @@ namespace Panty
             /// <summary>
             /// 插入一个周期内重复执行任务 使用全局事件
             /// </summary>
-            public Step Periodic(float duration) => Periodic(duration, evt);
+            public Step Periodic(float duration) => Periodic(duration, mEvt);
+            public Step Clone() => new Step(mScheduler, ignoreTimeScale);
             /// <summary>
-            /// 开始处理随机组 在End调用前 将会以缓存来处理每次的任务
+            /// 启用连续循环模式 在End调用前 将会以缓存来处理每次的任务
+            /// 注意 ：onExit不能为null
             /// </summary>
-            public Step RandomGroup(Action<Step> call)
+            public Step LoopGroup(Func<bool> onExit)
             {
 #if UNITY_EDITOR
-                ThrowEx.EmptyCallback(call);
+                ThrowEx.EmptyCallback(onExit);
 #endif
-                mScheduler.NextGroup(E_Type.Random);
-                call.Invoke(this);
-                mScheduler.EndGroup(this);
+                mScheduler.NextGroup(new LoopGroup(onExit));
                 return this;
             }
             /// <summary>
@@ -511,10 +593,17 @@ namespace Panty
                 ThrowEx.EmptyCallback(onExit);
                 ThrowEx.EmptyCallback(call);
 #endif
-                mOnExit = onExit;
-                mScheduler.NextGroup(E_Type.Loop);
+                mScheduler.NextGroup(new LoopGroup(onExit));
                 call.Invoke(this);
-                mScheduler.EndGroup(this);
+                return End();
+            }
+            /// <summary>
+            /// 启用次数循环模式 在End调用前 将会以缓存来处理每次的任务
+            /// </summary>
+            /// <param name="repeatCount">循环次数，必须大于 0</param>
+            public Step RepeatGroup(int repeatCount)
+            {
+                mScheduler.NextGroup(new RepeatGroup(repeatCount));
                 return this;
             }
             /// <summary>
@@ -526,10 +615,16 @@ namespace Panty
 #if UNITY_EDITOR
                 ThrowEx.EmptyCallback(call);
 #endif
-                mCounter = repeatCount <= 0 ? 1 : repeatCount;
-                mScheduler.NextGroup(E_Type.Repeat);
+                RepeatGroup(repeatCount);
                 call.Invoke(this);
-                mScheduler.EndGroup(this);
+                return End();
+            }
+            /// <summary>
+            /// 启用并行组模式 在End调用前 将会以缓存来处理每次的任务
+            /// </summary>
+            public Step ParallelGroup()
+            {
+                mScheduler.NextGroup(new ParallelGroup());
                 return this;
             }
             /// <summary>
@@ -540,49 +635,29 @@ namespace Panty
 #if UNITY_EDITOR
                 ThrowEx.EmptyCallback(call);
 #endif
-                mScheduler.NextGroup(E_Type.Parallel);
+                ParallelGroup();
                 call.Invoke(this);
-                mScheduler.EndGroup(this);
-                return this;
+                return End();
             }
             /// <summary>
             /// 开始处理随机组 在End调用前 将会以缓存来处理每次的任务
             /// </summary>
             public Step RandomGroup()
             {
-                mScheduler.NextGroup(E_Type.Random);
+                mScheduler.NextGroup(new RandomGroup());
                 return this;
             }
             /// <summary>
-            /// 启用连续循环模式 在End调用前 将会以缓存来处理每次的任务
-            /// 注意 ：onExit不能为null
+            /// 开始处理随机组 在End调用前 将会以缓存来处理每次的任务
             /// </summary>
-            public Step LoopGroup(Func<bool> onExit)
+            public Step RandomGroup(Action<Step> call)
             {
 #if UNITY_EDITOR
-                ThrowEx.EmptyCallback(onExit);
+                ThrowEx.EmptyCallback(call);
 #endif
-                mOnExit = onExit;
-                mScheduler.NextGroup(E_Type.Loop);
-                return this;
-            }
-            /// <summary>
-            /// 启用次数循环模式 在End调用前 将会以缓存来处理每次的任务
-            /// </summary>
-            /// <param name="repeatCount">循环次数，必须大于 0</param>
-            public Step RepeatGroup(int repeatCount)
-            {
-                mCounter = repeatCount <= 0 ? 1 : repeatCount;
-                mScheduler.NextGroup(E_Type.Repeat);
-                return this;
-            }
-            /// <summary>
-            /// 启用并行组模式 在End调用前 将会以缓存来处理每次的任务
-            /// </summary>
-            public Step ParallelGroup()
-            {
-                mScheduler.NextGroup(E_Type.Parallel);
-                return this;
+                RandomGroup();
+                call.Invoke(this);
+                return End();
             }
             /// <summary>
             /// 用于封闭动作组
@@ -593,8 +668,6 @@ namespace Panty
                 return this;
             }
         }
-        private static int mCounter;
-        private static Func<bool> mOnExit;
         private ITimeInfo time;
 
         private Group stepGroup = null;
@@ -651,18 +724,19 @@ namespace Panty
             group.Execute(step, data);
             return step;
         }
-        private void NextGroup(E_Type type)
+        private void NextGroup<T>(T grp) where T : ActionGrp, IAction
         {
             if (stepGroup == null)
             {
-                stepGroup = new Group(type, null);
+                stepGroup = new Group(grp, null);
             }
             else
             {
                 var cur = stepGroup;
-                stepGroup = new Group(type, cur);
-                cur.Push(stepGroup.GetAction());
+                stepGroup = new Group(grp, cur);
+                cur.Push(grp);
             }
+            grp.Init(stepGroup.Cache);
         }
         private void EndGroup(Step step)
         {
@@ -672,7 +746,7 @@ namespace Panty
 #endif
             if (stepGroup.IsRoot)
             {
-                GetSequence(step).Enqueue(stepGroup.GetAction());
+                GetSequence(step).Enqueue(stepGroup.Get());
                 stepGroup = null;
             }
             else stepGroup = stepGroup.Father;
@@ -778,6 +852,11 @@ namespace Panty
         void ITaskScheduler.UntilConditionExecute(Func<bool> onExit, Action onUpdate, bool ignoreTimeScale)
         {
             var act = new UntilConditionAction(onExit, onUpdate);
+            (ignoreTimeScale ? mUnscaledQueue : mActionQueue).Push(act);
+        }
+        void ITaskScheduler.WaitExecute(Func<bool> onExit, Action onFinished, bool ignoreTimeScale)
+        {
+            var act = new WaitRunAction(onExit, onFinished);
             (ignoreTimeScale ? mUnscaledQueue : mActionQueue).Push(act);
         }
     }

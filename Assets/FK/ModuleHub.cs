@@ -30,6 +30,7 @@ namespace Panty
         float timeScale { get; }
         float unscaledDeltaTime { get; }
     }
+    public interface INeedInit { void Init(); }
     /// <summary>
     /// 用于分离命令中的具体执行逻辑 
     /// </summary>
@@ -65,7 +66,7 @@ namespace Panty
     /// <summary>
     /// 可初始化接口，用于对外隐藏模块的初始化方法。
     /// </summary>
-    public interface ICanInit : IModule
+    public interface ICanInitModule : IModule
     {
         bool Preload { get; }
         void PreInit(IModuleHub hub);
@@ -74,12 +75,12 @@ namespace Panty
     /// <summary>
     /// 抽象模块基类，实现基本生命周期和权限提供。
     /// </summary>
-    public abstract class AbsModule : ICanInit, IPermissionProvider
+    public abstract class AbsModule : ICanInitModule, IPermissionProvider
     {
         protected bool Inited;
         private IModuleHub mHub;
         // 预初始化 > 当所有模块被注册时调用。如果Preload标记为true，会立即初始化模块。
-        void ICanInit.PreInit(IModuleHub hub)
+        void ICanInitModule.PreInit(IModuleHub hub)
         {
             mHub = hub;
 
@@ -103,7 +104,7 @@ namespace Panty
             Inited = true;
         }
         // 逆初始化 > 用于集中处理模块的内存释放和销毁处理
-        void ICanInit.Deinit()
+        void ICanInitModule.Deinit()
         {
             if (Inited)
             {
@@ -262,7 +263,7 @@ namespace Panty
         protected void AddModule<M>(M module) where M : IModule
         {
             if (mModules.TryAdd(typeof(M), module))
-                (module as ICanInit).PreInit(this);
+                (module as ICanInitModule).PreInit(this);
         }
         // 往架构添加工具
         protected void AddUtility<U>(U utility) where U : IUtility
@@ -281,7 +282,7 @@ namespace Panty
             if (mModules.Count > 0)
             {
                 foreach (var module in mModules.Values)
-                    (module as ICanInit).Deinit();
+                    (module as ICanInitModule).Deinit();
             }
             mModules = null;
             mUtilities = null;

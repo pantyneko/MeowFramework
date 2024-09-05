@@ -21,6 +21,14 @@ namespace Panty
             float num2 = lhs.y - rhs.y;
             return num * num + num2 * num2 < 9.99999944E-11f;
         }
+        // 将角度限制在 [-180, 180] 范围内
+        public static Vector3 WrapAngle(this Vector3 e)
+        {
+            e.x.WrapAngle();
+            e.y.WrapAngle();
+            e.z.WrapAngle();
+            return e;
+        }
         /// <summary>
         /// 得到一根向量的垂线 XNA [-x => -pi/2] [-y => +pi/2]
         /// </summary>
@@ -32,17 +40,40 @@ namespace Panty
         public static float2 GetVecF(float r) => new float2(MathF.Cos(r), MathF.Sin(r));
         public static Vector2 Abs(this Vector2 v) => new Vector2(v.x.Abs(), v.y.Abs());
         /// <summary>
-        /// 获取2维二次贝塞尔曲线
+        /// 获取2维2次贝塞尔曲线
         /// </summary>
-        /// <param name="s">起始点</param>
-        /// <param name="m">中间点</param>
-        /// <param name="e">结束点</param>
-        /// <param name="t">时间系数 通常在[0-1]</param>
-        /// <returns>插值点</returns>
-        public static Vector2 GetBezier2(Vector2 s, Vector2 m, Vector2 e, float t)
+        public static Vector2 Get2DBezier2(Vector2 s, Vector2 m, Vector2 e, float t)
         {
             float omt = 1f - t;
             return s * (omt * omt) + m * (2f * t * omt) + e * (t * t);
+        }
+        /// <summary>
+        /// 获取3维2次贝塞尔曲线
+        /// </summary>
+        public static Vector3 Get3DBezier2(Vector3 s, Vector3 m, Vector3 e, float t)
+        {
+            float omt = 1f - t;
+            return s * (omt * omt) + m * (2f * t * omt) + e * (t * t);
+        }
+        /// <summary>
+        /// 获取2维3次贝塞尔曲线
+        /// </summary>
+        public static Vector2 Get2DBezier3(Vector2 s, Vector2 c1, Vector2 c2, Vector2 e, float t)
+        {
+            float t2 = t * t;
+            float omt = 1f - t;
+            float omt2 = omt * omt;
+            return s * (omt2 * omt) + c1 * (3f * omt2 * t) + c2 * (3f * omt * t2) + e * (t * t2);
+        }
+        /// <summary>
+        /// 获取3维3次贝塞尔曲线
+        /// </summary>
+        public static Vector2 Get3DBezier3(Vector3 s, Vector3 c1, Vector3 c2, Vector3 e, float t)
+        {
+            float t2 = t * t;
+            float omt = 1f - t;
+            float omt2 = omt * omt;
+            return s * (omt2 * omt) + c1 * (3f * omt2 * t) + c2 * (3f * omt * t2) + e * (t * t2);
         }
         /// <summary>
         /// 判断当前点是否在线段附近

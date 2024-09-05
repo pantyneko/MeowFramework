@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -71,6 +72,21 @@ namespace Panty
             mSystem.localPosition = Vector2.zero;
 
             mLoader = this.Module<IResLoader>();
+            var e = GameObject.FindObjectOfType<EventSystem>();
+            if (e)
+            {
+                obj = e.gameObject;
+            }
+            else
+            {
+                obj = new GameObject("EventSystem", typeof(EventSystem));
+#if ENABLE_INPUT_SYSTEM
+                obj.AddComponent<UnityEngine.InputSystem.InputSystemUIInputModule>();
+#else
+                obj.AddComponent<StandaloneInputModule>();
+#endif                
+            }
+            GameObject.DontDestroyOnLoad(obj);
         }
         private void OnSceneUnloaded(Scene scene)
         {

@@ -8,7 +8,7 @@ namespace Panty
 {
     // 定义资源字典类型的简写
     using ResDic = Dictionary<string, UnityEngine.Object>;
-    public interface IResLoader : IModule
+    public partial interface IResLoader : IModule
     {
         Task<T> AsyncLoad<T>(string path) where T : UnityEngine.Object;
         T SyncLoad<T>(string path) where T : UnityEngine.Object;
@@ -22,7 +22,7 @@ namespace Panty
         void AsyncLoadFromCache<T>(string path, Action<T> call) where T : UnityEngine.Object;
         Task<T> AsyncLoadFromCache<T>(string path) where T : UnityEngine.Object;
     }
-    public class ResLoader : AbsModule, IResLoader
+    public partial class ResLoader : AbsModule, IResLoader
     {
         private Dictionary<Type, ResDic> mInfos;
         protected override void OnInit()
