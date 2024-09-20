@@ -76,20 +76,42 @@ namespace Panty
         /// <summary>
         /// 规范化（归一化）函数，将当前值按给定的最小值和最大值转换为0到1之间的值。
         /// </summary>
-        public static float Normalize(this float cur, float min, float max) => (cur - min) / (max - min);
+        public static float Normalize(this float cur, float min, float max)
+        {
+#if DEBUG
+            if (max == min) throw new Exception("原始范围的最大值不能等于最小值");
+#endif
+            return (cur - min) / (max - min);
+        }
         /// <summary>
         /// 将一个范围映射到另一个范围
         /// </summary>
-        public static float RangeToRange(this float cur, float min, float max, float minA, float maxA)
+        public static float ToRange(this float cur, float min, float max, float minA, float maxA)
         {
+#if DEBUG
+            if (max == min) throw new Exception("原始范围的最大值不能等于最小值");
+#endif
             return minA + (maxA - minA) / (max - min) * (cur - min);
         }
         /// <summary>
         /// 将一个范围映射到另一个范围 最小值相同
         /// </summary>
-        public static float RangeToRange(this float cur, float min, float max, float maxA)
+        public static float ToRange(this float cur, float min, float max, float maxA)
         {
+#if DEBUG
+            if (max == min) throw new Exception("原始范围的最大值不能等于最小值");
+#endif
             return maxA / (max - min) * (cur - min);
+        }
+        /// <summary>
+        /// 将max范围映射到maxA范围 最小值为 0
+        /// </summary>
+        public static float ToRange(this float cur, float max, float maxA)
+        {
+#if DEBUG
+            if (max == 0) throw new Exception("原始范围的最大值不能为 0");
+#endif
+            return maxA / max * cur;
         }
         /// <summary>
         /// 计算数值的倒数平方根。

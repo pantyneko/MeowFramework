@@ -72,7 +72,11 @@ namespace Panty
             mSystem.localPosition = Vector2.zero;
 
             mLoader = this.Module<IResLoader>();
+#if UNITY_2021_3_OR_NEWER
+            var e = GameObject.FindFirstObjectByType<EventSystem>();
+#else
             var e = GameObject.FindObjectOfType<EventSystem>();
+#endif
             if (e)
             {
                 obj = e.gameObject;
@@ -81,10 +85,10 @@ namespace Panty
             {
                 obj = new GameObject("EventSystem", typeof(EventSystem));
 #if ENABLE_INPUT_SYSTEM
-                obj.AddComponent<UnityEngine.InputSystem.InputSystemUIInputModule>();
+                 obj.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
 #else
                 obj.AddComponent<StandaloneInputModule>();
-#endif                
+#endif
             }
             GameObject.DontDestroyOnLoad(obj);
         }

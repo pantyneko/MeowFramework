@@ -35,7 +35,7 @@ namespace Panty
             if (ass == null)
                 throw new Exception($"{typeof(T)}资源加载失败");
         }
-        public static void EmptyValue<T>(T value)
+        public static void EmptyValue<T>(T value) where T:class
         {
             if (value == null)
                 throw new Exception($"{typeof(T)}值为空");

@@ -17,6 +17,7 @@ namespace Panty
         private T[] arr;
         private int N = 0;
         public int Count => N;
+        public int MaxIndex => N - 1;
         public int Capacity => arr.Length;
         public bool IsEmpty => N == 0;
         public T[] Self
@@ -84,7 +85,7 @@ namespace Panty
                 arr[index] = value;
             }
         }
-        public bool SetIfChanged(int index, T newValue)
+        public bool OnChanged(int index, T newValue)
         {
 #if DEBUG
             ThrowEx.EmptyItem<T>(N);
@@ -157,6 +158,16 @@ namespace Panty
                 e = arr[index];
                 arr[index] = arr[--N];
             }
+        }
+        public void RemoveAt(int index)
+        {
+#if DEBUG
+            ThrowEx.EmptyItem<T>(N);
+            ThrowEx.InvalidIndex(index, N);
+#endif
+            N--;
+            for (int i = index; i < N; i++)
+                arr[i] = arr[i + 1];
         }
         /// <summary>
         /// 交换式移除

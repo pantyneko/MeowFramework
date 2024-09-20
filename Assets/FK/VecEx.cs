@@ -68,7 +68,7 @@ namespace Panty
         /// <summary>
         /// 获取3维3次贝塞尔曲线
         /// </summary>
-        public static Vector2 Get3DBezier3(Vector3 s, Vector3 c1, Vector3 c2, Vector3 e, float t)
+        public static Vector3 Get3DBezier3(Vector3 s, Vector3 c1, Vector3 c2, Vector3 e, float t)
         {
             float t2 = t * t;
             float omt = 1f - t;

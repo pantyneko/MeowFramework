@@ -85,9 +85,12 @@ namespace Panty
     }
     public partial class TaskScheduler : AbsModule, ITaskScheduler
     {
+        public interface ICache
+        {
+            void TryCache();
+        }
         public interface IAction
         {
-            void Exit();
             bool IsExit();
             void Reset();
             void Update(float delta);
@@ -113,6 +116,7 @@ namespace Panty
                 if (a.IsExit())
                 {
                     actions.Dequeue();
+                    //(actions.Peek() as IStateAnim)?.Init();
                     if (actions.Count == 0)
                         mExit = true;
                 }
@@ -133,7 +137,6 @@ namespace Panty
             public virtual bool IsExit() => exitCondition();
             public void Update(float delta) { }
             public void Reset() { }
-            public void Exit() { }
         }
         // 单纯等待条件退出 退出时执行方法
         private class WaitRunAction : WaitAction
@@ -208,10 +211,7 @@ namespace Panty
                 this.repeatCount = count == 0 ? (byte)1 : count;
                 this.call = call;
             }
-            public void Exit()
-            {
-                currentCount = byte.MaxValue;
-            }
+            public void Exit() => currentCount = byte.MaxValue;
             public bool IsExit() => currentCount >= repeatCount;
             public void Reset() => currentCount = 0;
             public void Update(float delta)
@@ -234,7 +234,6 @@ namespace Panty
                 this.exit = exit;
                 this.call = call;
             }
-            public void Exit() { }
             public bool IsExit() => exit();
             public void Reset() { }
             public void Update(float delta) => call.Invoke();
@@ -252,10 +251,7 @@ namespace Panty
                 this.call = call;
                 this.duration = duration < 0f ? 0f : duration;
             }
-            public void Exit()
-            {
-                cur = float.MaxValue;
-            }
+            public void Exit() => cur = float.MaxValue;
             public bool IsExit() => cur >= duration;
             public void Reset() => cur = 0;
             public void Update(float delta)
@@ -311,6 +307,11 @@ namespace Panty
         {
             protected PArray<IAction> actions;
             public void Init(PArray<IAction> actions) => this.actions = actions;
+            public virtual void Reset()
+            {
+                for (int i = actions.MaxIndex; i >= 0; i--)
+                    actions[i].Reset();
+            }
         }
         // 随机执行组 每次从组中随机一个方法执行
         private class RandomGroup : ActionGrp, IAction
@@ -326,14 +327,10 @@ namespace Panty
             {
                 select.Update(delta);
             }
-            public void Reset()
+            public override void Reset()
             {
                 select = actions.RandomGet();
                 select.Reset();
-            }
-            public void Exit()
-            {
-
             }
         }
         // 重复组 将组内的逻辑 重复执行N次
@@ -345,37 +342,32 @@ namespace Panty
             {
                 this.repeatCount = count <= 0 ? 1 : count;
             }
+            public void Exit() => current = int.MaxValue;
             public bool IsExit() => current >= repeatCount;
-            public void ResetAll() { foreach (var s in actions) s.Reset(); }
-            public void Reset()
+            public override void Reset()
             {
                 cur = 0;
                 current = 0;
-                ResetAll();
+                base.Reset();
             }
             public void Update(float delta)
             {
                 var sq = actions[cur];
                 if (sq.IsExit())
                 {
-                    actions.LoopPosN(ref cur);
-                    if (cur == 0)
+                    if (++cur == actions.Count)
                     {
                         current++;
-                        ResetAll();
+                        cur = 0;
+                        base.Reset();
                     }
                 }
                 else sq.Update(delta);
             }
-            public void Exit()
-            {
-                current = int.MaxValue;
-            }
         }
         // 并行组 将组内的逻辑同步执行 直到都完成
-        private class ParallelGroup : ActionGrp, IAction
+        private class ParallelGroup : ActionGrp, IAction, ICache
         {
-            public void Exit() { }
             public bool IsExit()
             {
                 bool r = true;
@@ -383,16 +375,19 @@ namespace Panty
                     if (!s.IsExit()) r = false;
                 return r;
             }
-            public void Reset()
-            {
-                foreach (var s in actions) s.Reset();
-            }
             public void Update(float delta)
             {
                 foreach (var s in actions)
                 {
                     if (s.IsExit()) continue;
                     s.Update(delta);
+                }
+            }
+            public void TryCache()
+            {
+                foreach (var action in actions)
+                {
+                    (action as ICache)?.TryCache();
                 }
             }
         }
@@ -408,17 +403,35 @@ namespace Panty
 #endif
                 this.exitCondition = exit;
             }
-            public void Exit() { }
             public bool IsExit() => exitCondition();
-            public void Reset() { foreach (var s in actions) s.Reset(); }
+            public override void Reset()
+            {
+                cur = 0;
+                base.Reset();
+            }
             public void Update(float delta)
             {
                 var s = actions[cur];
                 if (s.IsExit())
                 {
-                    s.Reset();
-                    actions.LoopPosN(ref cur);
+                    if (++cur == actions.Count) Reset();
                 }
+                else s.Update(delta);
+            }
+        }
+        private class QueueGroup : ActionGrp, IAction
+        {
+            private int cur = 0;
+            public bool IsExit() => cur == actions.Count;
+            public override void Reset()
+            {
+                cur = 0;
+                base.Reset();
+            }
+            public void Update(float delta)
+            {
+                var s = actions[cur];
+                if (s.IsExit()) cur++;
                 else s.Update(delta);
             }
         }
@@ -477,23 +490,15 @@ namespace Panty
             /// <summary>
             /// 插入一个自定义动作
             /// </summary>
-            public Step CustomActNoInit(IAction action)
+            public Step CustomAct(IAction action)
             {
                 mScheduler.ToSequence(this, action);
                 return this;
             }
             /// <summary>
-            /// 插入一个自定义动作
-            /// </summary>
-            public Step CustomAct<T>() where T : IAction, new()
-            {
-                mScheduler.ToSequence(this, new T());
-                return this;
-            }
-            /// <summary>
             /// 插入一个自定义组
             /// </summary>
-            public Step Custom<G>(G group = default) where G : struct, IGroup
+            public Step CustomGrp<G>(G group = default) where G : struct, IGroup
             {
                 group.Execute(this);
                 return this;
@@ -501,7 +506,7 @@ namespace Panty
             /// <summary>
             /// 插入一个自定义组
             /// </summary>
-            public Step Custom<T, G>(G group, T data) where G : struct, IGroup<T>
+            public Step CustomGrp<T, G>(G group, T data) where G : struct, IGroup<T>
             {
                 group.Execute(this, data);
                 return this;
@@ -571,29 +576,25 @@ namespace Panty
             /// </summary>
             public Step Periodic(float duration) => Periodic(duration, mEvt);
             public Step Clone() => new Step(mScheduler, ignoreTimeScale);
-            /// <summary>
-            /// 启用连续循环模式 在End调用前 将会以缓存来处理每次的任务
-            /// 注意 ：onExit不能为null
-            /// </summary>
-            public Step LoopGroup(Func<bool> onExit)
+
+            public Step QueueGroup(Action<Step> call = null)
             {
-#if UNITY_EDITOR
-                ThrowEx.EmptyCallback(onExit);
-#endif
-                mScheduler.NextGroup(new LoopGroup(onExit));
-                return this;
+                mScheduler.NextGroup(new QueueGroup());
+                if (call == null) return this;
+                call.Invoke(this);
+                return End();
             }
             /// <summary>
             /// 启用连续循环模式 在End调用前 将会以缓存来处理每次的任务
             /// 注意 ：onExit不能为null
             /// </summary>
-            public Step LoopGroup(Func<bool> onExit, Action<Step> call)
+            public Step LoopGroup(Func<bool> onExit, Action<Step> call = null)
             {
 #if UNITY_EDITOR
                 ThrowEx.EmptyCallback(onExit);
-                ThrowEx.EmptyCallback(call);
 #endif
                 mScheduler.NextGroup(new LoopGroup(onExit));
+                if (call == null) return this;
                 call.Invoke(this);
                 return End();
             }
@@ -601,61 +602,30 @@ namespace Panty
             /// 启用次数循环模式 在End调用前 将会以缓存来处理每次的任务
             /// </summary>
             /// <param name="repeatCount">循环次数，必须大于 0</param>
-            public Step RepeatGroup(int repeatCount)
+            public Step RepeatGroup(int repeatCount, Action<Step> call = null)
             {
                 mScheduler.NextGroup(new RepeatGroup(repeatCount));
-                return this;
-            }
-            /// <summary>
-            /// 启用次数循环模式 在End调用前 将会以缓存来处理每次的任务
-            /// </summary>
-            /// <param name="repeatCount">循环次数，必须大于 0</param>
-            public Step RepeatGroup(int repeatCount, Action<Step> call)
-            {
-#if UNITY_EDITOR
-                ThrowEx.EmptyCallback(call);
-#endif
-                RepeatGroup(repeatCount);
+                if (call == null) return this;
                 call.Invoke(this);
                 return End();
             }
             /// <summary>
             /// 启用并行组模式 在End调用前 将会以缓存来处理每次的任务
             /// </summary>
-            public Step ParallelGroup()
+            public Step ParallelGroup(Action<Step> call = null)
             {
                 mScheduler.NextGroup(new ParallelGroup());
-                return this;
-            }
-            /// <summary>
-            /// 启用并行组模式 在End调用前 将会以缓存来处理每次的任务
-            /// </summary>
-            public Step ParallelGroup(Action<Step> call)
-            {
-#if UNITY_EDITOR
-                ThrowEx.EmptyCallback(call);
-#endif
-                ParallelGroup();
+                if (call == null) return this;
                 call.Invoke(this);
                 return End();
             }
             /// <summary>
             /// 开始处理随机组 在End调用前 将会以缓存来处理每次的任务
             /// </summary>
-            public Step RandomGroup()
+            public Step RandomGroup(Action<Step> call = null)
             {
                 mScheduler.NextGroup(new RandomGroup());
-                return this;
-            }
-            /// <summary>
-            /// 开始处理随机组 在End调用前 将会以缓存来处理每次的任务
-            /// </summary>
-            public Step RandomGroup(Action<Step> call)
-            {
-#if UNITY_EDITOR
-                ThrowEx.EmptyCallback(call);
-#endif
-                RandomGroup();
+                if (call == null) return this;
                 call.Invoke(this);
                 return End();
             }
@@ -798,9 +768,10 @@ namespace Panty
             {
                 var q = pair.Value;
                 if (q.IsExit())
+                {
                     mRmvStep.Push(pair.Key);
-                else
-                    q.Update(delta);
+                }
+                else q.Update(delta);
             }
             while (mRmvStep.Count > 0)
             {

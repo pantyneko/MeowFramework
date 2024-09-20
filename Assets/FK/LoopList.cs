@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Panty
@@ -12,9 +13,6 @@ namespace Panty
         [UnityEngine.SerializeField]
 #endif
         private T[] arr;
-#if UNITY_EDITOR
-        [UnityEngine.SerializeField]
-#endif
         private int N = 0, first = 0;
         public int Count => N;
         public int Capacity => arr.Length;
@@ -57,20 +55,8 @@ namespace Panty
         }
         public T Last
         {
-            get
-            {
-#if DEBUG
-                ThrowEx.EmptyItem<T>(N);
-#endif
-                return this[N - 1];
-            }
-            set
-            {
-#if DEBUG
-                ThrowEx.EmptyItem<T>(N);
-#endif
-                this[N - 1] = value;
-            }
+            get => this[N - 1];
+            set => this[N - 1] = value;
         }
         /// <summary>
         /// 构造函数
@@ -82,6 +68,15 @@ namespace Panty
             ThrowEx.InvalidCapacity(capacity);
 #endif
             arr = new T[capacity];
+        }
+        public LoopList(IEnumerable<T> collection)
+        {
+#if DEBUG
+            ThrowEx.EmptyValue(collection);
+#endif
+            var coll = collection as ICollection<T>;
+            arr = new T[coll == null ? collection.Count() : coll.Count];
+            foreach (var item in collection) arr[N++] = item;
         }
         public void AddFirst(T e)
         {
@@ -95,22 +90,30 @@ namespace Panty
             if (N == arr.Length) Resize(N << 1);
             this[N++] = e;
         }
-        public void PosMove()
+        public void RmvAt(int index)
         {
 #if DEBUG
             ThrowEx.EmptyItem<T>(N);
+            ThrowEx.InvalidIndex(index, N);
 #endif
+            // 将要删除的元素与最后一个元素交换
+            if (index != --N) this[index] = this[N];
+        }
+        public void PosMove()
+        {
             this[N] = arr[first];
             LoopPos();
         }
         public void NegMove()
         {
-#if DEBUG
-            ThrowEx.EmptyItem<T>(N);
-#endif
             T e = Last;
             LoopNeg();
             arr[first] = e;
+        }
+        public T RandomGet(out int index)
+        {
+            index = SysRandom.Range(N);
+            return this[index];
         }
         public void Slice(int start, int count)
         {

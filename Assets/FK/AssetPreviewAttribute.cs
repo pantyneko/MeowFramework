@@ -1,9 +1,27 @@
 ﻿#if UNITY_EDITOR
-using UnityEngine;
 using UnityEditor;
+#endif
+using UnityEngine;
+
 
 namespace Panty
 {
+    // 用于处理打开资源选择器
+    // EditorGUIUtility.ShowObjectPicker<Object>()
+    // EditorGUIUtility.GetObjectPickerControlID()
+    // EditorGUIUtility.GetObjectPickerObject()
+    // 自定义属性类，用于在属性上添加预览图像
+    public class AssetPreviewAttribute : PropertyAttribute
+    {
+        public int Width { get; }
+        public int Height { get; }
+        public AssetPreviewAttribute(int width = 32, int height = 32)
+        {
+            Width = width;
+            Height = height;
+        }
+    }
+#if UNITY_EDITOR
     [CustomPropertyDrawer(typeof(AssetPreviewAttribute))]
     public class AssetPreviewDrawer : PropertyDrawer
     {
@@ -58,20 +76,5 @@ namespace Panty
             else $"{property.name} doesn't have an asset preview".Log();
         }
     }
-    // 用于处理打开资源选择器
-    // EditorGUIUtility.ShowObjectPicker<Object>()
-    // EditorGUIUtility.GetObjectPickerControlID()
-    // EditorGUIUtility.GetObjectPickerObject()
-    // 自定义属性类，用于在属性上添加预览图像
-    public class AssetPreviewAttribute : PropertyAttribute
-    {
-        public int Width { get; }
-        public int Height { get; }
-        public AssetPreviewAttribute(int width = 32, int height = 32)
-        {
-            Width = width;
-            Height = height;
-        }
-    }
-}
 #endif
+}

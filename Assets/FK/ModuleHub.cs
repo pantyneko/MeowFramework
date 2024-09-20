@@ -30,7 +30,6 @@ namespace Panty
         float timeScale { get; }
         float unscaledDeltaTime { get; }
     }
-    public interface INeedInit { void Init(); }
     /// <summary>
     /// 用于分离命令中的具体执行逻辑 
     /// </summary>
