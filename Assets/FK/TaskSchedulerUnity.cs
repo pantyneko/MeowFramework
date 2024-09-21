@@ -56,7 +56,7 @@ namespace Panty
         public class Single
         {
             [Serializable]
-            public class UI_Bezier2_TV_V2 : Bs.Bezier2_V2<Vector2, RectTransform>
+            public class UI_Bezier2_Move_TV_V2 : Bs.Bezier2_V2<RectTransform, Vector2>
             {
                 public override Vector2 Cur { get => cur.anchoredPosition; set => cur.anchoredPosition = value; }
                 protected override Vector2 GetTarget() => target;
@@ -65,9 +65,55 @@ namespace Panty
 #endif
             }
             [Serializable]
-            public class UI_Bezier3_TV_V2 : Bs.Bezier3_V2<Vector2, RectTransform>
+            public class Bezier2_Move_TV_V2 : Bs.Bezier2_V2<Transform, Vector2>
+            {
+#if UNITY_EDITOR
+                [PropLabel("本地变换")]
+#endif
+                [SerializeField] protected bool local = true;
+                public override Vector2 Cur
+                {
+                    get => local ? cur.localPosition : cur.position;
+                    set
+                    {
+                        if (local)
+                            cur.localPosition = value;
+                        else
+                            cur.position = value;
+                    }
+                }
+                protected override Vector2 GetTarget() => target;
+#if UNITY_EDITOR
+                protected override void SetTarget(Vector2 pos) => target = pos;
+#endif
+            }
+            [Serializable]
+            public class UI_Bezier3_Move_TV_V2 : Bs.Bezier3_V2<RectTransform, Vector2>
             {
                 public override Vector2 Cur { get => cur.anchoredPosition; set => cur.anchoredPosition = value; }
+                protected override Vector2 GetTarget() => target;
+#if UNITY_EDITOR
+                protected override void SetTarget(Vector2 pos) => target = pos;
+#endif
+            }
+            [Serializable]
+            public class Bezier3_Move_TV_V2 : Bs.Bezier3_V2<Transform, Vector2>
+            {
+#if UNITY_EDITOR
+                [PropLabel("本地变换")]
+#endif
+                [SerializeField] protected bool local = true;
+                public override Vector2 Cur
+                {
+                    get => local ? cur.localPosition : cur.position;
+                    set
+                    {
+                        if (local)
+                            cur.localPosition = value;
+                        else
+                            cur.position = value;
+                    }
+                }
                 protected override Vector2 GetTarget() => target;
 #if UNITY_EDITOR
                 protected override void SetTarget(Vector2 pos) => target = pos;
@@ -242,7 +288,7 @@ namespace Panty
             /// 基于 Transform 的 弹性旋转动画 2D
             /// </summary>
             [Serializable]
-            public class Elastic_Rot_TV_V2 : Bs.Elastic_Rot<float>, TaskScheduler.IInitOnlyAnim
+            public class Elastic_Rot_TV_V2 : Bs.Elastic_Rot<float>, TaskScheduler.IInitOnlyAnim, TaskScheduler.ICache
             {
                 private float off; // 旋转速度向量
                 public bool IsExit() => Vel.Abs() <= 0.0001f; // 检查速度是否接近零
@@ -262,7 +308,7 @@ namespace Panty
             /// 基于 Transform 的 弹性旋转动画 3D
             /// </summary>
             [Serializable]
-            public class Elastic_Rot_TV_V3 : Bs.Elastic_Rot<Vector3>, TaskScheduler.IInitOnlyAnim
+            public class Elastic_Rot_TV_V3 : Bs.Elastic_Rot<Vector3>, TaskScheduler.IInitOnlyAnim, TaskScheduler.ICache
             {
                 private Vector3 off; // 旋转速度向量
                 public bool IsExit() => Vel.sqrMagnitude <= 0.0001f; // 检查速度是否接近零
@@ -336,7 +382,7 @@ namespace Panty
         }
         public class Bs
         {
-            public abstract class Bezier2_V2<T, K> : Linear_Move_V2<K, T>
+            public abstract class Bezier2_V2<T, K> : Linear_Move_V2<T, K>
             {
 #if UNITY_EDITOR
                 [PropLabel("控制点A")]
@@ -358,7 +404,7 @@ namespace Panty
                 {
                     base.Check(std, end, size, m);
                     var c1 = ctrl1 + start;
-                    if (typeof(K) == typeof(RectTransform))
+                    if (typeof(T) == typeof(RectTransform))
                     {
                         c1.x += Screen.width >> 1;
                         c1.y += Screen.height >> 1;
@@ -384,7 +430,7 @@ namespace Panty
                 protected override void DrawLine(Vector2 std, Vector2 end, Color c)
                 {
                     var _ctrl = ctrl1 + start;
-                    if (typeof(K) == typeof(RectTransform))
+                    if (typeof(T) == typeof(RectTransform))
                     {
                         _ctrl.x += Screen.width >> 1;
                         _ctrl.y += Screen.height >> 1;
@@ -418,7 +464,7 @@ namespace Panty
                 {
                     base.Check(std, end, size, m);
                     var c2 = ctrl2 + GetTarget();
-                    if (typeof(K) == typeof(RectTransform))
+                    if (typeof(T) == typeof(RectTransform))
                     {
                         c2.x += Screen.width >> 1;
                         c2.y += Screen.height >> 1;
@@ -435,7 +481,7 @@ namespace Panty
                 {
                     var _ctrl01 = ctrl1 + start;
                     var _ctrl02 = ctrl2 + GetTarget();
-                    if (typeof(K) == typeof(RectTransform))
+                    if (typeof(T) == typeof(RectTransform))
                     {
                         float w = Screen.width >> 1;
                         float h = Screen.height >> 1;
@@ -601,6 +647,11 @@ namespace Panty
                 [PropLabel("本地变换")]
 #endif
                 [SerializeField] protected bool local;
+                public override void Init()
+                {
+                    base.Init();
+                    start = Quaternion.identity;
+                }
                 public override Quaternion Cur
                 {
                     get => local ? cur.localRotation : cur.rotation;
@@ -618,7 +669,7 @@ namespace Panty
             /// </summary>
             /// <typeparam name="T">操作对象</typeparam>
             /// <typeparam name="K">操作类型</typeparam>
-            public abstract class Linear<T, K> : TaskScheduler.IStateAnim
+            public abstract class Linear<T, K> : TaskScheduler.IStateAnim, TaskScheduler.ICache
             {
 #if UNITY_EDITOR
                 [PropLabel("控制对象")]
@@ -644,7 +695,10 @@ namespace Panty
                 [PropLabel("预缓存")]
 #endif
                 [SerializeField] private bool isCache;
-
+#if UNITY_EDITOR
+                [SerializeField]
+                [ReadOnly]
+#endif
                 private float t, time, mLeave;
                 private float mLeaveTime = -1f;
                 private bool exit;
@@ -655,7 +709,8 @@ namespace Panty
                 public float Progress => t;
                 public abstract T Cur { get; set; }
                 protected abstract void _Update(float _t);
-                public void Init()
+                public virtual void Init() => SetTime();
+                public void SetTime()
                 {
 #if UNITY_EDITOR
                     dur = duration;
@@ -676,7 +731,7 @@ namespace Panty
                     reverse = !reverse;
                     _Reverse();
                     exit = false;
-                    Init();
+                    SetTime();
 #if UNITY_EDITOR
                     rev = reverse;
 #endif
@@ -720,7 +775,71 @@ namespace Panty
                     if (mLeaveTime >= 0f)
                         mLeave = mLeaveTime;
                     if (!reverse) Cur = start;
-                    Init();
+                    SetTime();
+                }
+            }
+            public abstract class LinearArr<T, K> : TaskScheduler.IStateAnim
+            {
+                private K[] arr;
+                private float time;
+                private bool exit;
+#if UNITY_EDITOR
+                [PropLabel("起始值")]
+#endif
+                [SerializeField] protected T start;
+#if UNITY_EDITOR
+                [PropLabel("持续时间")]
+#endif
+                [SerializeField] private float duration = 1f;
+#if UNITY_EDITOR
+                [PropLabel("反转动画")]
+#endif
+                [SerializeField] private bool reverse;
+#if UNITY_EDITOR
+                [PropLabel("动画曲线")]
+#endif
+                [SerializeField] private AnimationCurve curve;
+
+#if UNITY_EDITOR
+                private bool rev;
+                private float dur;
+#endif   
+                protected abstract void CreateAll(out K[] arr);
+                public void Init()
+                {
+                    CreateAll(out arr);
+#if UNITY_EDITOR
+                    dur = duration;
+#endif
+                    time = reverse ? duration : 0f;
+                }
+
+                public bool IsExit()
+                {
+                    return exit;
+                }
+
+                public void Reset()
+                {
+
+                }
+                public void Reverse()
+                {
+
+                }
+                public void SetLeaveTime(float time, bool percentageMode)
+                {
+
+                }
+
+                public void TryCache()
+                {
+
+                }
+
+                public void Update(float delta)
+                {
+
                 }
             }
             public abstract class Elastic<T, V, O>
@@ -751,7 +870,7 @@ namespace Panty
                 public virtual void Reset() => Vel = maxVel;
                 public void Exit() => Vel = default;
             }
-            public abstract class ElasticV2<T> : Elastic<T, Vector2, Vector2>, TaskScheduler.IInitOnlyAnim
+            public abstract class ElasticV2<T> : Elastic<T, Vector2, Vector2>, TaskScheduler.IInitOnlyAnim, TaskScheduler.ICache
             {
                 public bool IsExit() => Vel.sqrMagnitude <= 0.0001f;
                 public void Update(float delta)
@@ -857,11 +976,11 @@ namespace Panty
                 else (actions[++cur] as ICache)?.TryCache();
             }
         }
-        public interface IInitOnlyAnim : IAction, ICache
+        public interface IInitOnlyAnim : IAction
         {
             void Init();
         }
-        public interface IStateAnim : IAction, ICache
+        public interface IStateAnim : IAction
         {
             void Init();
             void SetLeaveTime(float time, bool percentageMode);
@@ -869,11 +988,9 @@ namespace Panty
         }
         public partial class Step
         {
-            public ICache cache;
             public Step CustomAnim(IInitOnlyAnim act)
             {
                 act.Init();
-                cache = act;
                 mScheduler.ToSequence(this, act);
                 return this;
             }
@@ -881,11 +998,10 @@ namespace Panty
             {
                 act.Init();
                 act.SetLeaveTime(leaveTime, percentageMode);
-                cache = act;
                 mScheduler.ToSequence(this, act);
                 return this;
             }
-            public Step InitValuePreCache()
+            public Step PreCacheInitValue(ICache cache)
             {
                 cache.TryCache();
                 return this;

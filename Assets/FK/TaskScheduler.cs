@@ -77,7 +77,7 @@ namespace Panty
         TaskScheduler.Step Sequence<G>(G group = default, bool ignoreTimeScale = false) where G : struct, TaskScheduler.IGroup;
         TaskScheduler.Step Sequence<G, T>(G group, T data, bool ignoreTimeScale = false) where G : struct, TaskScheduler.IGroup<T>;
         void StopSequence(TaskScheduler.Step step);
-
+        void DelayQueue(TaskScheduler.IQueueItem[] arr, float offsetTime, bool ignoreTimeScale = false);
         void PeriodicExecute(float duration, Action onUpdate, bool ignoreTimeScale = false);
         void WaitExecute(Func<bool> exit, Action onFinished, bool ignoreTimeScale = false);
         void DelayExecute(float duration, Action onUpdate, bool ignoreTimeScale = false);
@@ -88,6 +88,10 @@ namespace Panty
         public interface ICache
         {
             void TryCache();
+        }
+        public interface IQueueItem
+        {
+            void Run();
         }
         public interface IAction
         {
@@ -815,7 +819,7 @@ namespace Panty
             var act = new PeriodicAction(onUpdate, duration);
             (ignoreTimeScale ? mUnscaledQueue : mActionQueue).Push(act);
         }
-        void ITaskScheduler.DelayExecute(float duration, Action onCompleted, bool ignoreTimeScale)
+        public void DelayExecute(float duration, Action onCompleted, bool ignoreTimeScale)
         {
             var act = new DelayRunAction(duration, onCompleted);
             (ignoreTimeScale ? mUnscaledQueue : mActionQueue).Push(act);
@@ -829,6 +833,18 @@ namespace Panty
         {
             var act = new WaitRunAction(onExit, onFinished);
             (ignoreTimeScale ? mUnscaledQueue : mActionQueue).Push(act);
+        }
+        void ITaskScheduler.DelayQueue(IQueueItem[] arr, float offsetTime, bool ignoreTimeScale)
+        {
+#if DEBUG
+            ThrowEx.EmptyArray(arr);
+#endif
+            arr[0].Run();
+            for (int i = 1; i < arr.Length; i++)
+            {
+                int index = i;
+                DelayExecute(index * offsetTime, arr[index].Run, ignoreTimeScale);
+            }
         }
     }
 }
