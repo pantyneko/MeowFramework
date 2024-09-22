@@ -98,6 +98,8 @@ namespace Panty
         private static void ChangePathMode()
         {
             $"切换为 {((PathMode = !PathMode) ? "Hub" : "TPath")} 作为路径".Log();
+            // 更新菜单的打勾状态
+            Menu.SetChecked("PnTool/Cmd/PathMode", PathMode);
         }
         [MenuItem("PnTool/Cmd/AddBind #B")]
         private static void AddBind()

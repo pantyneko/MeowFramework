@@ -290,6 +290,9 @@ namespace Panty
             [Serializable]
             public class Elastic_Rot_TV_V2 : Bs.Elastic_Rot<float>, TaskScheduler.IInitOnlyAnim, TaskScheduler.ICache
             {
+#if UNITY_EDITOR
+                [SerializeField, SerializeOrReadOnly]
+#endif
                 private float off; // 旋转速度向量
                 public bool IsExit() => Vel.Abs() <= 0.0001f; // 检查速度是否接近零
                 public override void Reset()
@@ -310,6 +313,9 @@ namespace Panty
             [Serializable]
             public class Elastic_Rot_TV_V3 : Bs.Elastic_Rot<Vector3>, TaskScheduler.IInitOnlyAnim, TaskScheduler.ICache
             {
+#if UNITY_EDITOR
+                [SerializeField, SerializeOrReadOnly]
+#endif
                 private Vector3 off; // 旋转速度向量
                 public bool IsExit() => Vel.sqrMagnitude <= 0.0001f; // 检查速度是否接近零
                 public override void Reset()
@@ -544,7 +550,7 @@ namespace Panty
             public abstract class Linear_Move_V2<T, K> : Linear_V2<T, K>
             {
 #if UNITY_EDITOR
-                [SerializeField][PropLabel("绘制路径")] private bool isDraw = true;
+                [SerializeField, PropLabel("绘制路径")] private bool isDraw = true;
                 protected byte code = 255;
                 private bool state = false;
                 protected abstract void SetTarget(Vector2 pos);
@@ -678,7 +684,7 @@ namespace Panty
 #if UNITY_EDITOR
                 [PropLabel("起始值")]
 #endif
-                [SerializeField] protected T start;
+                public T start;
 #if UNITY_EDITOR
                 [PropLabel("持续时间")]
 #endif
@@ -696,11 +702,12 @@ namespace Panty
 #endif
                 [SerializeField] private bool isCache;
 #if UNITY_EDITOR
-                [SerializeField]
-                [ReadOnly]
+                [SerializeField, SerializeOrReadOnly]
 #endif
-                private float t, time, mLeave;
-                private float mLeaveTime = -1f;
+                private float t, time, _LeaveTime, mCacheTime = -1f;
+#if UNITY_EDITOR
+                [SerializeField, SerializeOrReadOnly]
+#endif
                 private bool exit;
 #if UNITY_EDITOR
                 private bool rev;
@@ -720,10 +727,10 @@ namespace Panty
                 public void SetLeaveTime(float time, bool percentageMode)
                 {
                     if (time >= 0f)
-                        mLeave = percentageMode ? time.Clamp_01().ToRange(1f, duration) : time;
-                    else mLeave = reverse ? 0f : duration;
-                    // 下面这个确保 mLeaveTime 只赋值一次
-                    if (mLeaveTime < 0f) mLeaveTime = mLeave;
+                        _LeaveTime = percentageMode ? time.Clamp_01().ToRange(1f, duration) : time;
+                    else _LeaveTime = reverse ? 0f : duration;
+                    // 下面这个确保 mCacheTime 只赋值一次
+                    if (mCacheTime < 0f) mCacheTime = _LeaveTime;
                     exit = false;
                 }
                 public void Reverse()
@@ -738,8 +745,8 @@ namespace Panty
                 }
                 private void _Reverse()
                 {
-                    if (reverse && mLeave == duration) mLeave = 0f;
-                    else if (!reverse && mLeave == 0f) mLeave = duration;
+                    if (reverse && _LeaveTime == duration) _LeaveTime = 0f;
+                    else if (!reverse && _LeaveTime == 0f) _LeaveTime = duration;
                 }
                 public void TryCache()
                 {
@@ -766,86 +773,22 @@ namespace Panty
 #endif
                     time += reverse ? -delta : delta;
                     t = (time / duration).Clamp_01();
-                    if (reverse ? time <= mLeave : time >= mLeave) exit = true;
+                    if (reverse ? time <= _LeaveTime : time >= _LeaveTime) exit = true;
                     _Update(curve.Evaluate(t));
                 }
                 public void Reset()
                 {
                     exit = false;
-                    if (mLeaveTime >= 0f)
-                        mLeave = mLeaveTime;
+                    if (mCacheTime >= 0f)
+                        _LeaveTime = mCacheTime;
                     if (!reverse) Cur = start;
                     SetTime();
-                }
-            }
-            public abstract class LinearArr<T, K> : TaskScheduler.IStateAnim
-            {
-                private K[] arr;
-                private float time;
-                private bool exit;
-#if UNITY_EDITOR
-                [PropLabel("起始值")]
-#endif
-                [SerializeField] protected T start;
-#if UNITY_EDITOR
-                [PropLabel("持续时间")]
-#endif
-                [SerializeField] private float duration = 1f;
-#if UNITY_EDITOR
-                [PropLabel("反转动画")]
-#endif
-                [SerializeField] private bool reverse;
-#if UNITY_EDITOR
-                [PropLabel("动画曲线")]
-#endif
-                [SerializeField] private AnimationCurve curve;
-
-#if UNITY_EDITOR
-                private bool rev;
-                private float dur;
-#endif   
-                protected abstract void CreateAll(out K[] arr);
-                public void Init()
-                {
-                    CreateAll(out arr);
-#if UNITY_EDITOR
-                    dur = duration;
-#endif
-                    time = reverse ? duration : 0f;
-                }
-
-                public bool IsExit()
-                {
-                    return exit;
-                }
-
-                public void Reset()
-                {
-
-                }
-                public void Reverse()
-                {
-
-                }
-                public void SetLeaveTime(float time, bool percentageMode)
-                {
-
-                }
-
-                public void TryCache()
-                {
-
-                }
-
-                public void Update(float delta)
-                {
-
                 }
             }
             public abstract class Elastic<T, V, O>
             {
 #if UNITY_EDITOR
-                [PropLabel("目标值")]
+                [PropLabel("操作对象")]
 #endif
                 [SerializeField] protected T cur;
 #if UNITY_EDITOR
@@ -860,18 +803,28 @@ namespace Panty
                 [PropLabel("最大速度")]
 #endif
                 [SerializeField] private V maxVel;
-
+#if UNITY_EDITOR
+                [SerializeField, SerializeOrReadOnly]
+#endif
                 protected O start;
+#if UNITY_EDITOR
+                [SerializeField, SerializeOrReadOnly]
+#endif
                 protected V Vel;
 
                 public void TryCache() => start = Cur;
-                public void Init() => Vel = maxVel;
+                public virtual void Init() => Vel = maxVel;
                 public abstract O Cur { get; set; }
                 public virtual void Reset() => Vel = maxVel;
                 public void Exit() => Vel = default;
             }
             public abstract class ElasticV2<T> : Elastic<T, Vector2, Vector2>, TaskScheduler.IInitOnlyAnim, TaskScheduler.ICache
             {
+                public override void Init()
+                {
+                    base.Init();
+                    start = Vector2.one;
+                }
                 public bool IsExit() => Vel.sqrMagnitude <= 0.0001f;
                 public void Update(float delta)
                 {
@@ -888,6 +841,11 @@ namespace Panty
                 [PropLabel("本地变换")]
 #endif
                 [SerializeField] private bool local = true;
+                public override void Init()
+                {
+                    base.Init();
+                    start = Quaternion.identity;
+                }
                 public override Quaternion Cur
                 {
                     get => local ? cur.localRotation : cur.rotation;
