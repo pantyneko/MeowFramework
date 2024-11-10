@@ -71,7 +71,7 @@ namespace Panty
     public class MonoKit : MonoBehaviour
     {
         private static MonoKit mono;
-        public static MonoKit GetIns() => mono;
+        // public static MonoKit GetIns() => mono;
 
         public static event Action OnUpdate;
         public static event Action OnFixedUpdate;
@@ -91,12 +91,6 @@ namespace Panty
     }
     public static partial class HubTool
     {
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void Initialize()
-        {
-            var o = new GameObject(nameof(MonoKit), typeof(MonoKit));
-            GameObject.DontDestroyOnLoad(o);
-        }
         public static Component GetOrAddComponent(this GameObject o, Type type)
         {
             var t = o.GetComponent(type);
@@ -249,6 +243,9 @@ namespace Panty
     {
         protected ModuleHub()
         {
+            var o = new GameObject(nameof(MonoKit), typeof(MonoKit));
+            GameObject.DontDestroyOnLoad(o);
+
             Application.quitting += async () =>
             {
                 await Task.Yield();
